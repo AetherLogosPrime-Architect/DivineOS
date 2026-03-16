@@ -892,17 +892,17 @@ class TestComputeEffectiveness:
 class TestHealthCheck:
     def test_empty_database(self):
         result = health_check()
-        assert result["stale_decayed"] == 0
         assert result["confirmed_boosted"] == 0
         assert result["total_checked"] == 0
 
-    def test_stale_entry_decayed(self):
-        kid = store_knowledge("FACT", "stale entry for decay test", confidence=0.8)
-        # Backdate the entry to 15 days ago
+    def test_old_entry_not_decayed(self):
+        """Knowledge does NOT decay just because time passed."""
+        kid = store_knowledge("FACT", "old but still true fact", confidence=0.8)
+        # Backdate the entry to 60 days ago
         import divineos.ledger as lm
         import sqlite3
         conn = sqlite3.connect(str(lm.DB_PATH))
-        old_time = time.time() - (15 * 86400)
+        old_time = time.time() - (60 * 86400)
         conn.execute(
             "UPDATE knowledge SET created_at = ?, updated_at = ? WHERE knowledge_id = ?",
             (old_time, old_time, kid),
@@ -911,34 +911,9 @@ class TestHealthCheck:
         conn.close()
 
         result = health_check()
-        assert result["stale_decayed"] == 1
-        entry = get_knowledge(knowledge_type="FACT")[0]
-        assert entry["confidence"] == pytest.approx(0.7)
-
-    def test_fresh_entry_not_decayed(self):
-        kid = store_knowledge("FACT", "fresh entry should not decay", confidence=0.8)
-        result = health_check()
-        assert result["stale_decayed"] == 0
+        # Confidence should be UNCHANGED — age alone doesn't reduce trust
         entry = get_knowledge(knowledge_type="FACT")[0]
         assert entry["confidence"] == pytest.approx(0.8)
-
-    def test_accessed_entry_not_decayed(self):
-        kid = store_knowledge("FACT", "accessed entry no decay", confidence=0.8)
-        record_access(kid)
-        # Backdate to old
-        import divineos.ledger as lm
-        import sqlite3
-        conn = sqlite3.connect(str(lm.DB_PATH))
-        old_time = time.time() - (20 * 86400)
-        conn.execute(
-            "UPDATE knowledge SET created_at = ? WHERE knowledge_id = ?",
-            (old_time, kid),
-        )
-        conn.commit()
-        conn.close()
-
-        result = health_check()
-        assert result["stale_decayed"] == 0  # access_count > 0
 
     def test_confirmed_entry_boosted(self):
         kid = store_knowledge("FACT", "highly accessed entry", confidence=0.8)
@@ -984,23 +959,29 @@ class TestHealthCheck:
         lessons = get_lessons(category="old_mistake")
         assert lessons[0]["status"] == "resolved"
 
-    def test_confidence_floor_respected(self):
-        kid = store_knowledge("FACT", "entry already at floor", confidence=0.3)
+    def test_resolved_lesson_lowers_confidence_gently(self):
+        """Resolved lessons lower mistake confidence but not below 0.5."""
+        kid = store_knowledge("MISTAKE", "resolved mistake floor test", confidence=0.55)
+        record_lesson("floor_test", "resolved mistake floor test", "s1")
+        record_lesson("floor_test", "resolved mistake floor test", "s2")
+        record_lesson("floor_test", "resolved mistake floor test", "s3")
+        mark_lesson_improving("floor_test", "s4")
+
         import divineos.ledger as lm
         import sqlite3
         conn = sqlite3.connect(str(lm.DB_PATH))
-        old_time = time.time() - (15 * 86400)
+        old_time = time.time() - (31 * 86400)
         conn.execute(
-            "UPDATE knowledge SET created_at = ?, updated_at = ? WHERE knowledge_id = ?",
-            (old_time, old_time, kid),
+            "UPDATE lesson_tracking SET last_seen = ? WHERE category = 'floor_test'",
+            (old_time,),
         )
         conn.commit()
         conn.close()
 
         result = health_check()
-        assert result["stale_decayed"] == 1
-        entry = get_knowledge(knowledge_type="FACT")[0]
-        assert entry["confidence"] == pytest.approx(0.3)  # floor
+        assert result["resolved_lessons"] == 1
+        entry = get_knowledge(knowledge_type="MISTAKE")[0]
+        assert entry["confidence"] == pytest.approx(0.5)  # floor
 
 
 class TestApplySessionFeedback:

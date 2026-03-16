@@ -1491,14 +1491,16 @@ def compute_effectiveness(entry: dict) -> dict[str, str]:
 def health_check() -> dict[str, Any]:
     """Review the knowledge store and adjust confidence scores.
 
-    1. Decay stale knowledge (access_count=0, age > 14 days)
-    2. Boost confirmed knowledge (access_count > 5)
-    3. Escalate recurring lessons (3+ occurrences → MISTAKE confidence 0.95)
-    4. Resolve old improving lessons (no activity 30+ days)
+    Knowledge does NOT decay just because time passed. A lesson that's
+    true on day 1 is still true on day 100. Confidence only changes when:
+
+    1. Confirmed: knowledge keeps coming up across sessions → trust more
+    2. Recurring: a lesson happened 3+ times → it's clearly a real problem
+    3. Resolved: an improving lesson hasn't come back in 30+ days → probably fixed
+    4. Contradicted: a superseded entry already gets marked by update_knowledge
     """
     now = time.time()
     result = {
-        "stale_decayed": 0,
         "confirmed_boosted": 0,
         "recurring_escalated": 0,
         "resolved_lessons": 0,
@@ -1508,23 +1510,14 @@ def health_check() -> dict[str, Any]:
     all_entries = get_knowledge(limit=1000)
     result["total_checked"] = len(all_entries)
 
-    # 1. Stale decay
-    for entry in all_entries:
-        if entry["access_count"] == 0:
-            age_days = (now - entry["created_at"]) / 86400
-            if age_days > 14:
-                new_conf = _adjust_confidence(entry["knowledge_id"], -0.1, floor=0.3)
-                if new_conf is not None:
-                    result["stale_decayed"] += 1
-
-    # 2. Confirmed boost
+    # 1. Confirmed boost — if something keeps coming up, it's clearly useful
     for entry in all_entries:
         if entry["access_count"] > 5 and entry["confidence"] < 1.0:
             new_conf = _adjust_confidence(entry["knowledge_id"], 0.05, cap=1.0)
             if new_conf is not None:
                 result["confirmed_boosted"] += 1
 
-    # 3. Recurring lesson escalation
+    # 2. Recurring lesson escalation — same mistake 3+ times = serious problem
     active_lessons = get_lessons(status="active")
     mistakes = [e for e in all_entries if e["knowledge_type"] == "MISTAKE"]
     for lesson in active_lessons:
@@ -1540,18 +1533,19 @@ def health_check() -> dict[str, Any]:
                         result["recurring_escalated"] += 1
                     break
 
-    # 4. Resolve old improving lessons
+    # 3. Resolve old improving lessons — hasn't come back in 30 days = fixed
     improving_lessons = get_lessons(status="improving")
     for lesson in improving_lessons:
         age_days = (now - lesson["last_seen"]) / 86400
         if age_days > 30:
             _resolve_lesson(lesson["lesson_id"])
             result["resolved_lessons"] += 1
-            # Lower associated MISTAKE confidence
+            # Gently lower the associated MISTAKE — the problem went away,
+            # but the knowledge is still worth keeping in case it comes back
             for mistake in mistakes:
                 overlap = _compute_overlap(lesson["description"], mistake["content"])
                 if overlap > 0.4:
-                    _adjust_confidence(mistake["knowledge_id"], -0.1, floor=0.3)
+                    _adjust_confidence(mistake["knowledge_id"], -0.05, floor=0.5)
                     break
 
     return result

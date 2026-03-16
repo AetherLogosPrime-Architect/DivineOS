@@ -501,12 +501,11 @@ def consolidate_cmd(min_cluster: int):
 
 @cli.command("health")
 def health_cmd():
-    """Run knowledge health check — decay stale, boost confirmed, resolve old lessons."""
+    """Run knowledge health check — boost confirmed, escalate recurring, resolve old."""
     result = health_check()
 
     click.secho("\n=== Knowledge Health Check ===\n", fg="cyan", bold=True)
     click.secho(f"  Entries checked:        {result['total_checked']}", fg="white")
-    click.secho(f"  Stale entries decayed:  {result['stale_decayed']}", fg="yellow" if result["stale_decayed"] else "bright_black")
     click.secho(f"  Confirmed boosted:      {result['confirmed_boosted']}", fg="green" if result["confirmed_boosted"] else "bright_black")
     click.secho(f"  Recurring escalated:    {result['recurring_escalated']}", fg="red" if result["recurring_escalated"] else "bright_black")
     click.secho(f"  Lessons resolved:       {result['resolved_lessons']}", fg="green" if result["resolved_lessons"] else "bright_black")
