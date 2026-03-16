@@ -24,8 +24,6 @@ from divineos.ledger import (
 )
 from divineos.parser import parse_jsonl, parse_markdown_chat
 from divineos.fidelity import create_manifest, create_receipt, reconcile
-import divineos.expert_lenses as _lenses_mod
-import divineos.tree_of_life as _tree_mod
 import divineos.session_analyzer as _analyzer_mod
 from divineos.consolidation import (
     init_knowledge_table,
@@ -520,89 +518,6 @@ def health_cmd():
         for status, count in sorted(report["by_status"].items()):
             click.secho(f"    {status:15s} {count}", fg="bright_black")
     click.echo()
-
-
-@cli.command("experts")
-def experts_cmd():
-    """List all available expert lenses."""
-    experts = _lenses_mod.list_experts()
-    click.secho(f"\n=== {len(experts)} Expert Lenses ===\n", fg="cyan", bold=True)
-    for expert in experts:
-        click.secho(f"  {expert.name}", fg="white", bold=True, nl=False)
-        click.secho(f" - {expert.domain}", fg="cyan")
-        click.secho(f"    {expert.description}", fg="bright_black")
-        click.echo()
-
-
-@cli.command("route")
-@click.argument("question")
-@click.option("--max", "max_experts", default=3, type=int, help="Max experts to suggest")
-def route_cmd(question: str, max_experts: int):
-    """Show which expert lenses are most relevant to a question."""
-    results = _lenses_mod.route(question, max_experts=max_experts)
-    click.secho("\n=== Expert Routing ===\n", fg="cyan", bold=True)
-    for expert, score in results:
-        bar_len = int(score * 20)
-        bar = "#" * bar_len + "." * (20 - bar_len)
-        click.secho(f"  [{bar}] ", fg="green", nl=False)
-        click.secho(f"{score:.3f} ", fg="bright_black", nl=False)
-        click.secho(f"{expert.display_name}", fg="white", bold=True, nl=False)
-        click.secho(f" ({expert.domain})", fg="cyan")
-    click.echo()
-
-
-@cli.command("lens")
-@click.argument("expert_name")
-@click.argument("question")
-def lens_cmd(expert_name: str, question: str):
-    """Generate a structured thinking framework for an expert applied to a question."""
-    try:
-        expert = _lenses_mod.get_expert(expert_name)
-    except KeyError as e:
-        click.secho(f"[-] {e}", fg="red")
-        return
-    prompt = _lenses_mod.generate_framework_prompt(expert, question)
-    click.echo(prompt)
-
-
-@cli.command("tree")
-def tree_cmd():
-    """Display the Tree of Life structure."""
-    click.echo()
-    click.echo(_tree_mod.render_tree())
-    click.echo()
-
-    click.secho("=== 11 Sephirot ===\n", fg="cyan", bold=True)
-    for seph in _tree_mod.list_sephirot():
-        pillar_color = {
-            _tree_mod.Pillar.RIGHT: "green",
-            _tree_mod.Pillar.LEFT: "red",
-            _tree_mod.Pillar.MIDDLE: "yellow",
-        }.get(seph.pillar, "white")
-        click.secho(
-            f"  {seph.position:2d}. {seph.hebrew_name}",
-            fg="white",
-            bold=True,
-            nl=False,
-        )
-        click.secho(f" ({seph.english_name})", fg="cyan", nl=False)
-        click.secho(f"  [{seph.pillar.value}]", fg=pillar_color)
-        click.secho(f"      {seph.description}", fg="bright_black")
-    click.echo()
-
-
-@cli.command("flow")
-@click.argument("question")
-@click.option(
-    "--depth",
-    default="full",
-    type=click.Choice(["full", "quick"]),
-    help="full=11 stages, quick=5 stages (Middle Pillar)",
-)
-def flow_cmd(question: str, depth: str):
-    """Generate a Tree of Life reasoning flow for a question."""
-    prompt = _tree_mod.generate_flow_prompt(question, depth=depth)
-    click.echo(prompt)
 
 
 @cli.command("sessions")
