@@ -1108,16 +1108,35 @@ def knowledge_cmd(knowledge_type: str, min_confidence: float, limit: int) -> Non
 def ask_cmd(query: str, limit: int) -> None:
     """Search what the system knows about a topic.
 
-    Uses full-text search with relevance ranking.
+    Searches both the knowledge store and core memory.
     Example: divineos ask "testing"
     """
+    from divineos.core.memory import get_core
+
     results = search_knowledge(query, limit=limit)
 
-    if not results:
+    # Also search core memory — it's part of what I know
+    query_lower = query.lower()
+    core = get_core()
+    core_matches = []
+    for slot_id, content in core.items():
+        if query_lower in content.lower() or query_lower in slot_id.lower():
+            core_matches.append((slot_id, content))
+
+    if not results and not core_matches:
         click.secho(f"[-] Nothing found for '{query}'.", fg="yellow")
         return
 
-    click.secho(f"\n=== {len(results)} results for '{query}' ===\n", fg="cyan", bold=True)
+    total = len(results) + len(core_matches)
+    click.secho(f"\n=== {total} results for '{query}' ===\n", fg="cyan", bold=True)
+
+    # Show core memory matches first — identity comes first
+    for slot_id, content in core_matches:
+        label = slot_id.replace("_", " ").title()
+        click.secho("  [CORE] ", fg="magenta", bold=True, nl=False)
+        click.secho(f"{label}: ", fg="white", bold=True, nl=False)
+        _safe_echo(content[:300])
+        click.echo()
     for entry in results:
         color = {
             "BOUNDARY": "red",
