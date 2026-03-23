@@ -1005,6 +1005,11 @@ def context(n: int) -> None:
 
     click.secho(f"\n=== Context Window (last {len(events)} events) ===\n", fg="cyan", bold=True)
     _print_events(events)
+    _wrapped_log_event(
+        event_type="OS_QUERY",
+        actor="assistant",
+        payload={"tool": "context", "query": f"last {n} events"},
+    )
 
 
 @cli.command()
@@ -1113,6 +1118,11 @@ def ask_cmd(query: str, limit: int) -> None:
     """
     from divineos.core.memory import get_core
 
+    _wrapped_log_event(
+        event_type="OS_QUERY",
+        actor="assistant",
+        payload={"tool": "ask", "query": query},
+    )
     results = search_knowledge(query, limit=limit)
 
     # Also search core memory — it's part of what I know
@@ -1163,6 +1173,11 @@ def ask_cmd(query: str, limit: int) -> None:
 @click.option("--topic", default="", help="Topic hint to boost relevant knowledge (e.g. 'testing')")
 def briefing_cmd(max_items: int, types: str, topic: str) -> None:
     """Generate a session context briefing from stored knowledge."""
+    _wrapped_log_event(
+        event_type="OS_QUERY",
+        actor="assistant",
+        payload={"tool": "briefing", "query": topic or "session start"},
+    )
     # Refresh active memory on briefing — this is my "waking up" moment,
     # so knowledge should be freshly ranked before I see it.
     try:
@@ -1299,6 +1314,11 @@ def directive_cmd(name: str, links: tuple[str, ...], tags: str) -> None:
 @cli.command("directives")
 def directives_cmd() -> None:
     """List all active directives."""
+    _wrapped_log_event(
+        event_type="OS_QUERY",
+        actor="assistant",
+        payload={"tool": "directives", "query": "list directives"},
+    )
     entries = get_knowledge(knowledge_type="DIRECTIVE", limit=100)
 
     if not entries:
@@ -1851,6 +1871,11 @@ def core_cmd(action: str, slot: str | None, content: str | None) -> None:
 @click.option("--topic", default="", help="Topic hint to boost relevant memories")
 def recall_cmd(topic: str) -> None:
     """Show what the AI remembers right now — core + active + relevant."""
+    _wrapped_log_event(
+        event_type="OS_QUERY",
+        actor="assistant",
+        payload={"tool": "recall", "query": topic or "general recall"},
+    )
     init_memory_tables()
     result = _wrapped_recall(context_hint=topic)
     text = _wrapped_format_recall(result)
