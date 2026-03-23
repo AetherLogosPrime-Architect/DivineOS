@@ -611,6 +611,46 @@ _wrapped_get_cross_session_summary = wrap_tool_execution(
 _db_ready = False
 
 
+def _load_seed_if_empty() -> None:
+    """Populate a fresh database from seed.json so new instances start with identity."""
+    import json as _json
+
+    from divineos.core.memory import set_core
+
+    # Only seed if knowledge table is completely empty
+    existing = _wrapped_get_knowledge(limit=1)
+    if existing:
+        return
+
+    seed_path = Path(__file__).parent / "seed.json"
+    if not seed_path.exists():
+        return
+
+    seed = _json.loads(seed_path.read_text(encoding="utf-8"))
+
+    # Seed core memory
+    for slot_id, content in seed.get("core_memory", {}).items():
+        try:
+            set_core(slot_id, content)
+        except ValueError:
+            pass
+
+    # Seed foundational knowledge
+    for entry in seed.get("knowledge", []):
+        _wrapped_store_knowledge(
+            knowledge_type=entry["type"],
+            content=entry["content"],
+            confidence=entry.get("confidence", 1.0),
+            tags=entry.get("tags", []),
+        )
+
+    # Refresh active memory so briefing works immediately
+    try:
+        _wrapped_refresh_active_memory(importance_threshold=0.3)
+    except Exception:
+        pass
+
+
 def _ensure_db() -> None:
     """Create all tables if they don't exist. Idempotent and fast after first call."""
     global _db_ready  # noqa: PLW0603
@@ -621,6 +661,7 @@ def _ensure_db() -> None:
     init_quality_tables()
     init_feature_tables()
     init_memory_tables()
+    _load_seed_if_empty()
     _db_ready = True
 
 
