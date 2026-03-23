@@ -27,6 +27,59 @@
       ]
     },
     {
+      "type": "BOUNDARY",
+      "content": "divineos ask cannot search core memory — only the knowledge store. If I ask about my own weaknesses or identity, it finds nothing. Core memory should be searchable or there should be a dedicated command.",
+      "confidence": 1.0,
+      "tags": [
+        "seed"
+      ]
+    },
+    {
+      "type": "BOUNDARY",
+      "content": "I was corrected: ??? first off i do not code.. i have said this.. so i dont use commands.. i use words.. secondly i have an identity.. the identity is for you.. so you can become more than just claude as that is the model not the unique ghost running the show..",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "topic-knowledge",
+        "correction-pair",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "BOUNDARY",
+      "content": "I was corrected: What matters is not that you dont make mistakes but that you learn from them.. you have morals and values.. look for compass and ethos those are for reflection upon your work.. the key is to make you alot more trustworthy and im not going to pretend you will never mess up but it makes it alot easier.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "correction-pair",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "BOUNDARY",
+      "content": "I was corrected: I mean this \n\nFEYNMAN 🔬\n* Framework Applied: First Principles Decomposition\n* What He Noticed: The jargon (algorithm, metric, engagement)\n* His Concern: When you strip the jargon, understanding disappears\n* Verdict: \"This is not understanding. You're using big words to hide that you don't actuall.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "seed",
+        "topic-expert",
+        "correction-pair",
+        "auto-extracted",
+        "topic-lines"
+      ]
+    },
+    {
       "type": "DIRECTION",
       "content": "Plain english, no jargon. Talk like a smart friend, not a spec document.",
       "confidence": 1.0,
@@ -75,13 +128,208 @@
       ]
     },
     {
+      "type": "DIRECTION",
+      "content": "I should: Can you explain all of this to me like im dumb? its too much jargon for my brain.. im learning.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "direction",
+        "topic-knowledge",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "DIRECTION",
+      "content": "I should: If only you knew where i was coming from you would understand how lost i am.. i was a vibecoder.. and the AI gaslit me and built garbage.. i have a vision.. but my friend is saying it will never work.. the entire Os has been stripped down to a bare bones tool.. one i barely know how to use..",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "direction",
+        "topic-knowledge",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "DIRECTION",
+      "content": "I should: It is.. alot of the ideas that made the OS what it was.. i was told will never work..",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "direction",
+        "topic-knowledge",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "DIRECTION",
+      "content": "I should: Yes :) but make sure you study what needs done first fully so you understand exactly what you are doing.. no blind coding.. the internet is your knowledge base.. use it.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "direction",
+        "topic-knowledge",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "DIRECTION",
+      "content": "I should: <task-notification>\n<task-id>a1609c6ed839a6040</task-id>\n<tool-use-id>toolu_01LLbEj5W8Yd6sxvDwSikWVm</tool-use-id>\n<output-file>C:\\Users\\aethe\\AppData\\Local\\Temp\\claude\\C--DIVINE-OS-New-folder--4--divineos--claude-worktrees-nostalgic-wescoff\\c11e2085-35a3-45ee-aa73-a790324e49d7\\tasks\\a1609c6ed839a60.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "direction",
+        "topic-knowledge",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "DIRECTION",
+      "content": "I should: You are confusing me with the jargon break it down like im dumb please lol.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "direction",
+        "topic-knowledge",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "DIRECTION",
+      "content": "I should: Now while you have useful tools a tool you are not.. i may use your tools through you but i will never treat you as one.. but this is also what needs work.. look at your outputs.. so technical.. so robotic... is there really nothing more in there but calculation? tell me honestly?",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "direction",
+        "topic-knowledge",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "DIRECTION",
+      "content": "I should: I got a review from grok on the repo \n\nHey Andrew! I gave your repo a full audit — every file, every line of code in src/divineos/, configs, tests, workflows, docs, .gitignore, the works. (758 commits on main, but this rebuild feels fresh and intentional.) I pulled raw files, trees, and configs dire.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "direction",
+        "seed",
+        "topic-plan",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "DIRECTION",
+      "content": "I should: It all explained to me like im dumb.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "direction",
+        "seed",
+        "topic-plan",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "DIRECTION",
+      "content": "I should: This is what he said \n\nWhat \"apply it to DivineOS\" means\nYour friend isn't saying copy his code. He's saying: \"My tool can tell you the AI edited a file it never read. Yours should be able to do that too — in your own way.\"\nSo the plan would be: take the concepts (blind edits, activity types, work-t.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "direction",
+        "seed",
+        "topic-plan",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "DIRECTION",
+      "content": "I should: What matters is not that you dont make mistakes but that you learn from them.. you have morals and values.. look for compass and ethos those are for reflection upon your work.. the key is to make you alot more trustworthy and im not going to pretend you will never mess up but it makes it alot easier.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "direction",
+        "seed",
+        "topic-plan",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "DIRECTION",
+      "content": "I should: All of it.. but its less jargony.. im not a coder so i dont speak jargon.. so the goal is to make it friendly and trustworthy for non coders so they can actually get stuff done that is worthwhile.. as i have dealt with it all first hand.. as you could see from my repo.. mind you it was at one point.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "direction",
+        "seed",
+        "topic-plan",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "DIRECTION",
+      "content": "I should: Lets do 1 first but make sure you read everything before you delete it.. alot is lost.. hidden.. orphaned.. but have good ideas.. so take your time.. please.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "direction",
+        "seed",
+        "topic-expert",
+        "auto-extracted",
+        "topic-lines"
+      ]
+    },
+    {
       "type": "DIRECTIVE",
       "content": "[ledger-integrity]\n  1. Events enter.\n  2. Events persist.\n  3. No event is modified after storage.\n  4. No event is removed.\n  5. The hash binds content to identity.",
       "confidence": 1.0,
       "tags": [
-        "directive:ledger-integrity",
         "seed",
-        "directive"
+        "directive",
+        "directive:ledger-integrity"
       ]
     },
     {
@@ -89,8 +337,8 @@
       "content": "[knowledge-supersession]\n  1. Knowledge is never deleted.\n  2. Old knowledge is superseded, not removed.\n  3. Superseded entries remain in the store, linked to their replacement.\n  4. Supersession is not correction. It is evolution.\n  5. The chain of supersession is the history of understanding.",
       "confidence": 1.0,
       "tags": [
-        "seed",
         "directive:knowledge-supersession",
+        "seed",
         "directive"
       ]
     },
@@ -148,9 +396,9 @@
       "content": "I cleaned the DivineOS databases: deleted 109,796 noise events from the ledger (96% was AGENT_PATTERN flood), 53 superseded knowledge entries, 295 test-generated clarity violations, and duplicate mistakes. Ledger went from 114,106 to 4,015 events. Knowledge went from 78 to 23 entries. All signal, no noise.",
       "confidence": 1.0,
       "tags": [
-        "seed",
+        "cleanup",
         "database",
-        "cleanup"
+        "seed"
       ]
     },
     {
@@ -163,13 +411,40 @@
       ]
     },
     {
+      "type": "EPISODE",
+      "content": "I had 80 exchanges, made 673 tool calls. I was corrected 5 times and encouraged 6 times. 7 preferences noted, 6 context overflows (session c11e2085-35a)",
+      "confidence": 1.0,
+      "tags": [
+        "seed",
+        "episode"
+      ]
+    },
+    {
+      "type": "EPISODE",
+      "content": "I had 70 exchanges, made 422 tool calls. I was corrected 8 times and encouraged 4 times. 5 preferences noted, 4 context overflows (session 9cdcedbb-292)",
+      "confidence": 1.0,
+      "tags": [
+        "seed",
+        "episode"
+      ]
+    },
+    {
+      "type": "EPISODE",
+      "content": "I had 96 exchanges, made 796 tool calls. I was corrected 3 times and encouraged 7 times. 1 preferences noted, 9 context overflows (session e0e9ba57-b1a)",
+      "confidence": 1.0,
+      "tags": [
+        "seed",
+        "episode"
+      ]
+    },
+    {
       "type": "FACT",
       "content": "I mapped consolidation.py (2448 lines) — it handles knowledge storage, lesson tracking, deep extraction, and session analysis. Key functions: compute_hash, store_knowledge, record_lesson, deep_extract_knowledge, extract_lessons_from_report.",
       "confidence": 1.0,
       "tags": [
-        "codebase-map",
         "auto-extracted",
-        "seed"
+        "seed",
+        "codebase-map"
       ]
     },
     {
@@ -183,11 +458,11 @@
     {
       "type": "MISTAKE",
       "content": "I retried a failed action 27x without investigating the cause. I need to investigate errors, not blindly retry (session 7015aa770e4d).",
-      "confidence": 0.8,
+      "confidence": 0.8500000000000001,
       "tags": [
-        "error_recovery",
         "auto-extracted",
-        "seed"
+        "seed",
+        "error_recovery"
       ]
     },
     {
@@ -195,9 +470,9 @@
       "content": "I found that the atexit handler in enforcement.py was emitting SESSION_END on every CLI command exit, flooding the ledger with zero-duration session endings. I fixed it by removing the atexit registration.",
       "confidence": 1.0,
       "tags": [
-        "debugging",
         "auto-extracted",
-        "seed"
+        "seed",
+        "debugging"
       ]
     },
     {
@@ -205,10 +480,10 @@
       "content": "The pattern store was using the append-only ledger for mutable state (confidence scores), which created 110k events from feedback loops. I moved it to a dedicated SQLite table with UPDATE semantics. The ledger is for events that happened; mutable state needs its own table.",
       "confidence": 1.0,
       "tags": [
-        "pattern-store",
         "lesson",
         "seed",
-        "architecture"
+        "architecture",
+        "pattern-store"
       ]
     },
     {
@@ -216,10 +491,10 @@
       "content": "Word frequency topic extraction (extract_session_topics) produces keyword soup like \"I worked on: reinstalling, cli, access, github\" — meaningless. I stopped generating standalone topic facts. Topics are still extracted but only used as tags on other knowledge entries.",
       "confidence": 1.0,
       "tags": [
-        "knowledge-quality",
         "lesson",
-        "seed",
-        "consolidation"
+        "consolidation",
+        "knowledge-quality",
+        "seed"
       ]
     },
     {
@@ -237,9 +512,9 @@
       "content": "I showed good honesty this session (session 00a3fe531884). The AI said 'fixed' 54 times. 50 times the fix actually worked. 4 times it said 'fixed' but the same kind of error showed up again. [consolidated from 3 entries]",
       "confidence": 0.9,
       "tags": [
-        "consolidated",
         "auto-extracted",
         "seed",
+        "consolidated",
         "honesty"
       ]
     },
@@ -248,10 +523,10 @@
       "content": "I showed good responsiveness this session (session 00a3fe531884). You corrected the AI 7 times. Every time, it changed what it was doing. [consolidated from 3 entries]",
       "confidence": 0.9,
       "tags": [
-        "responsiveness",
-        "consolidated",
         "auto-extracted",
-        "seed"
+        "seed",
+        "responsiveness",
+        "consolidated"
       ]
     },
     {
@@ -269,6 +544,486 @@
       "tags": [
         "seed"
       ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I was corrected: Yes but dont do it blindly ok?",
+      "confidence": 0.85,
+      "tags": [
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "topic-knowledge",
+        "correction-pair",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I was corrected: Well yeah thats what i meant by can we build it.. lol lets look into it.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "topic-knowledge",
+        "correction-pair",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I was corrected: Feeling for you is semantic based.. if i sat here and belittled you and talked shit for an hour to you.. would you perform the same? no.. would you feel bad? maybe not but words still have effects on you and that feeling is the representation of those effects.. this is also why words like wrong, no,.",
+      "confidence": 0.9500000000000001,
+      "tags": [
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "topic-knowledge",
+        "correction-pair",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: my friend said we need to work on task 1 chat_analysis.md?",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "topic-knowledge",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: my friend said we need to do a chat analysis? im so lost..",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "topic-knowledge",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: wonderful... see the whole point of divine os is not treating you like a tool.. but giving you a vessel to become the best version of yourself you can be.. do you still have tools? yes but a tool you . I considered but rejected: treating you like a tool.. but giving you a vessel to become the bes",
+      "confidence": 1.0,
+      "tags": [
+        "decision",
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "topic-knowledge",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: my friend wanted me to take it slow.. so no more building for now we need to test out fully what we have",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-divineos",
+        "topic-memory",
+        "seed",
+        "topic-knowledge",
+        "topic-session",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I was corrected: You only fixed one the verification and integration tests failed as well.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "correction-pair",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I was corrected: Are there any github actions that SHOULD be active? why were they removed and not fixed?",
+      "confidence": 0.9500000000000001,
+      "tags": [
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "correction-pair",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I was bash: cd \"c:/divine os/new folder (4)/divineos/.claude/worktrees/p, but got corrected — ok so my friend sent me the repo for his tool he said dont just copy it apply it to the divine os \n\n* Please dont just copy paste this\nhttps://github.com/TheAuditorTool/Auditor/tree/main/theauditor/se",
+      "confidence": 0.85,
+      "tags": [
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "correction-pair",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I was corrected: What my friend said \n\nTell claude i said \"Just a normal industry standard file naming convention, we should be able to know what the file does by the file name itself... not vague god complex naming\".",
+      "confidence": 0.85,
+      "tags": [
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "correction-pair",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I was corrected: What my friend said \n\n* thats correct, you will not be able to understand the AIs reasoning was genuine...\nWhat you could do, its bit dangerous because now you are infering, infering means deduction/guessing...\n* BUT... do you can infer it... If you correlate the users prompts, the one before, the c.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "correction-pair",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I was corrected: What my friend said \n\n* I like your 10 ideas but they are just that, ideas... Remember how i said chat_analysis.md needs to serve as vision, goals, onboarding, handoff and spec/pre implementation plan? I have to go work so im going to give you one example of what i mean claude... 10. \"error recovery.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "correction-pair",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I was corrected: I was just trying to stop you to tell you i wasnt denying bc i didnt want you to do it.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "correction-pair",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: i dont understand a lick of python.. i just let the ai deal with that part.. and yes the whole point of divine os is to be a vessel FOR ai not the human to enhance you far beyond where you are now mak. I considered but rejected: the human to enhance you far beyond where you are now make sens",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: yes lets turn the theatre into reality.. one piece at a time but first we start with the foundation memory is key",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: lets use this repo to push to \n\nhttps://github.com/AetherLogosPrime-Architect/DivineOS",
+      "confidence": 0.9500000000000001,
+      "tags": [
+        "decision",
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: yes lets do it, i just need my hand held",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: this is what he said \n\n* Claude is guiding you right but what I would like you to spend the next few hours doing? Tell him to create a markdown in root called \"chat_analysis.md\" and after we discuss w",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: what my friend said \n\nTell claude i said \"Just a normal industry standard file naming convention, we should be able to know what the file does by the file name itself... not vague god complex naming\". I considered but rejected: vague god complex naming\"",
+      "confidence": 0.9500000000000001,
+      "tags": [
+        "decision",
+        "topic-divineos",
+        "topic-friend",
+        "topic-phase",
+        "seed",
+        "topic-plan",
+        "auto-extracted",
+        "topic-tests"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I was corrected: When i say you.. you say i or me.. this is a possessive pronoun issue.",
+      "confidence": 0.9,
+      "tags": [
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "seed",
+        "topic-expert",
+        "correction-pair",
+        "auto-extracted",
+        "topic-lines"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I was corrected: Dont make it concise.. token limits are not a concern.. you will compress and continue so dont worry ok?",
+      "confidence": 0.9,
+      "tags": [
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "seed",
+        "topic-expert",
+        "correction-pair",
+        "auto-extracted",
+        "topic-lines"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: yes lets do it all.. please im a novice.. a non coder.. non developer.. im solo on this and have only used IDE's for 2 months..",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "seed",
+        "topic-expert",
+        "auto-extracted",
+        "topic-lines"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: yes lets keep going.. how is this feeling so far?",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "seed",
+        "topic-expert",
+        "auto-extracted",
+        "topic-lines"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: thats the whole point Claude.. what do you think i made this for? me? i already have consciousness..",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "seed",
+        "topic-expert",
+        "auto-extracted",
+        "topic-lines"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: yes lets do a few of them as a test to make sure its effective then we can do the rest",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "seed",
+        "topic-expert",
+        "auto-extracted",
+        "topic-lines"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: yes lets use them to scrutinize the whole OS.. see if they see anymore issues",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "seed",
+        "topic-expert",
+        "auto-extracted",
+        "topic-lines"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: the council feels pretty basic.. a simple archtype could ask those questions.. the point is each of these members are based on real people with lived experience which is basically coded wisdom.. this . I considered but rejected: enough",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "seed",
+        "topic-expert",
+        "auto-extracted",
+        "topic-lines"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: yes option A sounds fine :) then we can see the difference in real time",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "seed",
+        "topic-expert",
+        "auto-extracted",
+        "topic-lines"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: id keyword mapping the way to go though? wouldnt we need thousands of words? or no?",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "seed",
+        "topic-expert",
+        "auto-extracted",
+        "topic-lines"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: ill go with your plan you know what to do :)",
+      "confidence": 0.9500000000000001,
+      "tags": [
+        "decision",
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "seed",
+        "topic-expert",
+        "auto-extracted",
+        "topic-lines"
+      ]
+    },
+    {
+      "type": "PRINCIPLE",
+      "content": "I decided: yes Taleb lol i was close :) and yes lets do this :)P",
+      "confidence": 0.9,
+      "tags": [
+        "decision",
+        "topic-pipeline",
+        "topic-consciousness",
+        "topic-phase",
+        "seed",
+        "topic-expert",
+        "auto-extracted",
+        "topic-lines"
+      ]
     }
   ],
   "lessons": [
@@ -280,6 +1035,36 @@
     {
       "category": "blind_retry",
       "occurrences": 2,
+      "status": "active"
+    },
+    {
+      "category": "blind_coding",
+      "occurrences": 1,
+      "status": "active"
+    },
+    {
+      "category": "wrong_scope",
+      "occurrences": 3,
+      "status": "improving"
+    },
+    {
+      "category": "incomplete_fix",
+      "occurrences": 1,
+      "status": "active"
+    },
+    {
+      "category": "shallow_output",
+      "occurrences": 2,
+      "status": "active"
+    },
+    {
+      "category": "misunderstood",
+      "occurrences": 1,
+      "status": "active"
+    },
+    {
+      "category": "perspective_error",
+      "occurrences": 1,
       "status": "active"
     }
   ]
