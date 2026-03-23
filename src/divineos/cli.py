@@ -635,7 +635,7 @@ def _load_seed_if_empty() -> None:
         except ValueError:
             pass
 
-    # Seed foundational knowledge
+    # Seed all knowledge — directives, boundaries, episodes, observations, everything
     for entry in seed.get("knowledge", []):
         _wrapped_store_knowledge(
             knowledge_type=entry["type"],
@@ -643,6 +643,29 @@ def _load_seed_if_empty() -> None:
             confidence=entry.get("confidence", 1.0),
             tags=entry.get("tags", []),
         )
+
+    # Seed lessons — warnings from past experience
+    from divineos.core.consolidation import record_lesson
+
+    for lesson in seed.get("lessons", []):
+        lesson_id = record_lesson(
+            category=lesson["category"],
+            description=f"(seeded) {lesson['category']}",
+            session_id="seed",
+        )
+        # Set correct occurrence count from seed
+        if lesson.get("occurrences", 0) > 1:
+            from divineos.core.consolidation import _get_connection as _cons_conn
+
+            conn = _cons_conn()
+            try:
+                conn.execute(
+                    "UPDATE lesson_tracking SET occurrences = ?, status = ? WHERE lesson_id = ?",
+                    (lesson["occurrences"], lesson.get("status", "active"), lesson_id),
+                )
+                conn.commit()
+            finally:
+                conn.close()
 
     # Refresh active memory so briefing works immediately
     try:
