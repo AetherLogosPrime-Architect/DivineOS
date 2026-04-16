@@ -405,9 +405,9 @@ src/divineos/
     planning_commitments.py    Commitment tracking and fulfillment checking
     skill_library.py           Evidence-based skill proficiency tracking
     curiosity_engine.py        Question tracking (OPEN → INVESTIGATING → ANSWERED)
-    corrections.py             Raw correction notebook (Andrew's exact words, no framing)
+    corrections.py             Raw correction notebook (user's exact words, no framing)
     exploration_reader.py      Surfaces past explorations in briefing and search
-    lesson_interrupt.py        Mid-session chronic lesson questions (Aria's interrupt)
+    lesson_interrupt.py        Mid-session chronic lesson questions (named-voice interrupt)
     self_model.py              Unified self-model assembled from all OS systems
     drift_detection.py         Behavioral drift detection (lesson regressions, quality trends)
     predictive_session.py      Session profile detection and need prediction
