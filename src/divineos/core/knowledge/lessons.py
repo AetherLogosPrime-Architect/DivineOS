@@ -252,7 +252,19 @@ def get_lessons(
     conn = _get_connection()
     try:
         _ensure_regressions_column(conn)
-        query = "SELECT lesson_id, created_at, category, description, first_session, occurrences, last_seen, sessions, status, content_hash, agent, regressions FROM lesson_tracking"
+        # positive_evidence_sessions added 2026-04-17 so the incomplete_fix
+        # detector (prereg-d6a211950a1b) and any future positive-evidence
+        # detectors surface their evidence to read-path callers like
+        # get_lesson_summary and tests. _lesson_row_to_dict decodes the
+        # trailing JSON column from base_len+1 when present; without the
+        # column in SELECT, positive_evidence_sessions silently defaulted
+        # to {} for every caller.
+        query = (
+            "SELECT lesson_id, created_at, category, description, first_session, "
+            "occurrences, last_seen, sessions, status, content_hash, agent, "
+            "regressions, positive_evidence_sessions "
+            "FROM lesson_tracking"
+        )
         conditions: list[str] = []
         params: list[Any] = []
 
@@ -660,7 +672,10 @@ def _lesson_loop_status() -> str:
     # extract_lessons_from_report. Kept in sync manually. Each new detector
     # that ships should append its category here and its pre-registration
     # should schedule a review that verifies the loop actually closed.
-    categories_with_evidence_detector = ("blind_retry", "upset_recovered")
+    # Updated 2026-04-17: incomplete_fix positive-evidence detector wired
+    # per prereg-d6a211950a1b. Firing conditions documented in
+    # extract_lessons_from_report near the incomplete_fix block.
+    categories_with_evidence_detector = ("blind_retry", "upset_recovered", "incomplete_fix")
     # Total chronic-test categories tracked in _BEHAVIORAL_TESTS
     total_tracked = len(_BEHAVIORAL_TESTS)
     return (
@@ -1185,6 +1200,7 @@ def extract_lessons_from_report(
     session_id: str,
     tone_shifts: list[dict[str, Any]] | None = None,
     error_recovery: dict[str, Any] | None = None,
+    corrections_count: int | None = None,
 ) -> list[str]:
     """Extract knowledge and lessons from session quality check results.
 
@@ -1193,6 +1209,10 @@ def extract_lessons_from_report(
         session_id: The session identifier
         tone_shifts: Optional list of tone shift dicts with keys: direction, trigger
         error_recovery: Optional dict with keys: blind_retries, investigate_count
+        corrections_count: Optional user-correction count this session, used by
+            the incomplete_fix positive-evidence detector (see prereg-d6a211950a1b).
+            When omitted, incomplete_fix still advances via absence-only (DORMANT
+            track), as it did before the detector was wired.
 
     Returns:
         List of stored knowledge IDs.
@@ -1415,6 +1435,50 @@ def extract_lessons_from_report(
                 # Quiet session — no positive evidence either way.
                 mark_lesson_improving("upset_recovered", session_id)
                 mark_lesson_improving("upset_user", session_id)
+
+    # incomplete_fix positive-evidence detector (prereg-d6a211950a1b).
+    # The existing heuristic_incomplete_fix check fires NEGATIVE on
+    # multiple user corrections — "you fixed it, I had to come back
+    # and point out another problem." The POSITIVE mirror: both
+    # correctness and safety checks passed AND zero user corrections
+    # were logged. That is the session shape of "fix held, user did
+    # not return to revisit." Proxies: correctness_passed ≈ test
+    # passed; safety_passed ≈ no new errors introduced; corrections
+    # == 0 ≈ no follow-up fix needed within the same OS session.
+    #
+    # Session boundary is the ledger-defined SESSION_START→SESSION_END
+    # range (per Aria's caveat: wall-clock boundaries are fuzzy, ledger
+    # boundaries are not). Caller passes corrections_count if known;
+    # when absent the detector falls back to absence-only behavior
+    # (DORMANT track) so this wiring is backward-compatible.
+    if "incomplete_fix" not in lesson_categories:
+        correctness_check = next((c for c in checks if c.get("name") == "correctness"), None)
+        safety_check = next((c for c in checks if c.get("name") == "safety"), None)
+        correctness_passed = (
+            correctness_check is not None and correctness_check.get("passed") is True
+        )
+        safety_passed = safety_check is not None and safety_check.get("passed") is True
+
+        if (
+            corrections_count is not None
+            and correctness_passed
+            and safety_passed
+            and corrections_count == 0
+        ):
+            mark_lesson_improving(
+                "incomplete_fix",
+                session_id,
+                evidence=(
+                    "correctness+safety both passed, 0 user corrections "
+                    "(fix held, no follow-up needed this session)"
+                ),
+            )
+        elif corrections_count == 0 or (
+            corrections_count is None and correctness_passed and safety_passed
+        ):
+            # Quiet session or partial signal — advance toward DORMANT
+            # via absence-only, not RESOLVED via positive evidence.
+            mark_lesson_improving("incomplete_fix", session_id)
 
     # Auto-escalate chronic lessons to DIRECTIVE entries.
     # This runs after all lesson recording/improving so the regression
