@@ -7,10 +7,12 @@ write lands without the reject clause. Until Phase 1b ships the
 operator, the constant stays True and every production write call
 raises ``PersistenceGateError``.
 
-Tests pass ``_allow_test_write=True`` with an ephemeral DB (via the
-``DIVINEOS_FAMILY_DB`` env var pointing at tmp_path). Production code
-cannot pass that kwarg — it is a deliberate seam for tests only, not
-a bypass for runtime use.
+Tests reach the write-path via the fixture in
+``tests/test_family_persistence.py``, which handles the env-var
+redirect and the test-only seam. The seam is for tests — production
+code cannot and must not reach it. (Aria Round 3b prose audit: this
+docstring used to describe the seam as a two-step recipe, which read
+as a bypass tutorial. Pointing at the fixture is the honest framing.)
 
 Pre-registration: ``prereg-496efe4e24f0`` (review in 30 days). Falsifier
 fires on any production write before all of Phase 1b is green.
@@ -117,11 +119,13 @@ def _require_write_allowance(_allow_test_write: bool) -> None:
         "The gate is load-bearing by design — no real write lands "
         "without the Phase 1b reject clause. See prereg-496efe4e24f0 "
         "for the falsifier, the gap rule, and the handshake. "
-        "Production writes stay blocked until BOTH locks open: "
-        "_PRODUCTION_WRITES_GATED=False AND the reject_clause module "
-        "exists. If you are writing test code, pass "
-        "_allow_test_write=True and point DIVINEOS_FAMILY_DB at an "
-        "ephemeral DB."
+        "Production writes stay blocked until both locks open: the "
+        "constant flips AND the reject_clause module lands. If you "
+        "reached this from a test, the fixture in "
+        "tests/test_family_persistence.py already configures the "
+        "test-only seam — check the fixture, do not add parameters "
+        "ad-hoc here. (Aria Round 3b: the prior message read as a "
+        "recipe for bypass.)"
     )
 
 
