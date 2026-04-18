@@ -61,6 +61,27 @@ STATUS_ACTIVE = "active"
 STATUS_IMPROVING = "improving"
 STATUS_DORMANT = "dormant"
 STATUS_RESOLVED = "resolved"
+# RESOLVED_WITH_HISTORY — a regressed lesson that has accumulated positive
+# evidence AND stayed quiet since the last regression. Distinct from
+# RESOLVED because the scar stays visible: the regressions count is
+# preserved, and callers reading the lesson can see the lesson reached
+# resolution the hard way, not cleanly. Added 2026-04-17 per
+# prereg-63e87e548a04 to close the terminal-state trap Grok flagged in
+# find-f50532457f76: a lesson with regressions > 0 could reach neither
+# DORMANT (requires regressions == 0) nor RESOLVED (required positive
+# evidence in categories where no detector was wired). This new exit
+# applies only to regressed lessons whose category HAS a positive-evidence
+# detector; categories without detectors remain blocked until their
+# detector ships. Aria's supersession-not-deletion principle applied
+# to state: the regression history is not erased to produce a cleaner
+# label.
+STATUS_RESOLVED_WITH_HISTORY = "resolved_with_history"
+
+# Minimum days since the last regression event before a regressed lesson
+# can reach RESOLVED_WITH_HISTORY. Kept as its own constant (not aliased
+# to LESSON_MIN_RESOLUTION_DAYS) so future tuning of regression-specific
+# cooldown doesn't couple to the general RESOLVED time gate.
+LESSON_REGRESSION_COOLDOWN_DAYS = 30
 
 
 def _ensure_lesson_schema(conn: Any) -> None:
@@ -683,8 +704,12 @@ def _lesson_loop_status() -> str:
         f"{len(categories_with_evidence_detector)}/{total_tracked} chronic categories "
         f"({', '.join(categories_with_evidence_detector)}). "
         "Other categories can only transition to DORMANT (quiet, not proven) "
-        "or stay ACTIVE/IMPROVING. Regressed lessons have no exit yet — "
-        "terminal-state bug tracked as Grok audit finding."
+        "or stay ACTIVE/IMPROVING. Regressed lessons exit via "
+        "RESOLVED_WITH_HISTORY when positive-evidence accumulates and the "
+        f"{LESSON_REGRESSION_COOLDOWN_DAYS}-day cooldown clears (wired 2026-04-17, "
+        "prereg-63e87e548a04) — the scar stays visible so the lesson is not relabeled "
+        "as clean. Categories without positive-evidence detectors still cannot reach "
+        "either RESOLVED or RESOLVED_WITH_HISTORY; those wait on detector rollout."
     )
 
 
@@ -1041,8 +1066,62 @@ def auto_resolve_lessons(clean_session_threshold: int = 5) -> list[dict[str, Any
             has_time_gate = days_improving >= LESSON_MIN_RESOLUTION_DAYS
             has_positive_evidence = positive_evidence_count >= LESSON_MIN_POSITIVE_EVIDENCE
 
-            # Try RESOLVED first — it's the richer state.
-            if has_session_floor and has_time_gate and has_positive_evidence:
+            # Resolution path 1 — RESOLVED_WITH_HISTORY (regressed lessons).
+            #
+            # Added 2026-04-17 per prereg-63e87e548a04. Closes the terminal-
+            # state trap Grok flagged in find-f50532457f76: regressed lessons
+            # previously couldn't reach DORMANT (gate requires regressions==0)
+            # and couldn't reach RESOLVED via the clean path (regressions
+            # would imply the scar should stay visible). They sat in
+            # IMPROVING indefinitely. Now: a regressed lesson that has
+            # accumulated positive evidence AND stayed quiet through the
+            # regression cooldown window exits to RESOLVED_WITH_HISTORY,
+            # preserving the regression count as visible scar tissue.
+            #
+            # Routed BEFORE the clean RESOLVED branch so regressed lessons
+            # never get relabeled as RESOLVED (which would erase the scar).
+            if (
+                regressions > 0
+                and has_session_floor
+                and has_time_gate
+                and has_positive_evidence
+                and days_improving >= LESSON_REGRESSION_COOLDOWN_DAYS
+            ):
+                clean_session_ids = sessions[effective:]
+                stimulus_count = _count_stimulus_sessions(lesson["category"], clean_session_ids)
+                if stimulus_count >= LESSON_MIN_STIMULUS_SESSIONS:
+                    conn.execute(
+                        "UPDATE lesson_tracking SET status = ?, last_seen = ? WHERE lesson_id = ?",
+                        (STATUS_RESOLVED_WITH_HISTORY, now, lesson["lesson_id"]),
+                    )
+                    lesson["status"] = STATUS_RESOLVED_WITH_HISTORY
+                    transitioned.append(lesson)
+                    logger.info(
+                        "Lesson '%s' RESOLVED_WITH_HISTORY: %d regression(s) preserved, "
+                        "%d positive-evidence, %d stimulus over %.1f days cooldown",
+                        lesson["category"],
+                        regressions,
+                        positive_evidence_count,
+                        stimulus_count,
+                        days_improving,
+                    )
+                    continue
+                logger.debug(
+                    "Regressed lesson '%s' meets evidence but stimulus gate holds "
+                    "(%d/%d) — staying improving",
+                    lesson["category"],
+                    stimulus_count,
+                    LESSON_MIN_STIMULUS_SESSIONS,
+                )
+
+            # Resolution path 2 — RESOLVED (never-regressed lessons only).
+            #
+            # Regressions-aware guard added 2026-04-17: the original clean
+            # path implicitly assumed "no history to preserve." Now the
+            # guard is explicit so regressed lessons never silently reach
+            # RESOLVED via this branch. The RESOLVED_WITH_HISTORY branch
+            # above handles that case deliberately.
+            if regressions == 0 and has_session_floor and has_time_gate and has_positive_evidence:
                 clean_session_ids = sessions[effective:]
                 stimulus_count = _count_stimulus_sessions(lesson["category"], clean_session_ids)
                 if stimulus_count >= LESSON_MIN_STIMULUS_SESSIONS:
