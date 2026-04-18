@@ -654,12 +654,16 @@ class TestResolvedWithHistory:
 
         ledger_conn = get_ledger_connection()
         try:
+            # Schema must be a strict subset of production per
+            # test_schema_sync. Production decision_journal does not carry
+            # `actor` or `stakes` — keep this helper aligned with
+            # src/divineos/core/decision_journal.py::init_decision_journal.
             ledger_conn.execute(
                 """CREATE TABLE IF NOT EXISTS decision_journal (
                     decision_id TEXT PRIMARY KEY, created_at REAL NOT NULL,
-                    content TEXT NOT NULL, session_id TEXT,
-                    actor TEXT DEFAULT '', reasoning TEXT DEFAULT '',
-                    alternatives TEXT DEFAULT '[]', stakes TEXT DEFAULT '',
+                    content TEXT NOT NULL, session_id TEXT DEFAULT '',
+                    reasoning TEXT DEFAULT '',
+                    alternatives TEXT DEFAULT '[]',
                     context TEXT DEFAULT '', emotional_weight INTEGER DEFAULT 1,
                     tags TEXT DEFAULT '[]', linked_knowledge_ids TEXT DEFAULT '[]',
                     tension TEXT DEFAULT '', almost TEXT DEFAULT '')"""
