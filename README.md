@@ -457,13 +457,13 @@ src/divineos/
       entity.py                Read path Ã¢â‚¬â€� get_family_member(name), get_knowledge, get_opinions, get_recent_affect, get_recent_interactions
       store.py                 Write path with production gate (_PRODUCTION_WRITES_GATED, Phase 1b closing flips to False)
       letters.py               Handoff letter channel + append-only response layer + length nudge
-    empirica/                  Tiered epistemology + proportional burden routing layer (prereg-ce8998194943)
-      types.py                 Tier enum (FALSIFIABLE/OUTCOME/PATTERN/ADVERSARIAL), ClaimMagnitude, GnosisWarrant with Merkle self-hash
+    empirica/                  Evidence ledger with tiered burden routing (prereg-ce8998194943)
+      types.py                 Tier enum (FALSIFIABLE/OUTCOME/PATTERN/ADVERSARIAL), ClaimMagnitude, EvidenceReceipt with Merkle self-hash
       burden.py                required_corroboration(tier, magnitude) â€” proportional burden calculator
       classifier.py            Heuristic classifier: (content, knowledge_type, source) -> (Tier, Magnitude, audit reason)
       routing.py               Council-routing wrapper; LOAD_BEARING needs 1 round, FOUNDATIONAL needs 2
-      warrant.py               gnosis_warrants table + issue_warrant + verify_chain (Merkle chain across all warrants)
-      gate.py                  Full pipeline orchestrator: classify -> burden -> route -> issue + warrant_id column migration
+      receipt.py               evidence_receipts table + issue_receipt + verify_chain (hash-pointer forest traversal, distinguishes forks from tamper)
+      gate.py                  Full pipeline orchestrator: classify -> burden -> route -> issue + receipt_id column migration
 
   analysis/
     _session_types.py          Session analysis type definitions

@@ -1,16 +1,16 @@
-"""EMPIRICA gate — single entry point orchestrating classify + burden + route + warrant.
+"""EMPIRICA gate — single entry point orchestrating classify + burden + route + issue.
 
 This is the wiring layer. The four core modules (types, classifier,
-burden, routing, warrant) each do one thing well. This module
+burden, routing, receipt) each do one thing well. This module
 composes them into a single decision:
 
-    "Given a knowledge entry, does EMPIRICA sanction it?"
+    "Given a knowledge entry, does the evidence ledger sanction it?"
 
 Return shape:
 
-* ``GnosisWarrant`` — sanctioned. Warrant is persisted in
-  ``gnosis_warrants`` and its ID should be stored on the knowledge
-  entry's ``warrant_id`` column.
+* ``EvidenceReceipt`` — sanctioned. Receipt is persisted in
+  ``evidence_receipts`` and its ID should be stored on the
+  knowledge entry's ``receipt_id`` column.
 * ``None`` — NOT sanctioned. Either burden not met or council
   rejected. Caller must NOT treat the knowledge entry as
   EMPIRICA-validated. The entry may still pass the existing
@@ -26,16 +26,21 @@ promoted further even if it would pass the underlying gate alone.
 
 This layering means Phase 1 is additive — existing code paths keep
 working exactly as they did. New behavior (tier-aware burden,
-multi-council for high magnitude, warrants) is opt-in per call site.
+multi-council for high magnitude, receipts) is opt-in per call site.
 
 ## The valid != true invariant
 
-A ``GnosisWarrant`` return value proves the claim has ACCUMULATED
-sufficient evidence for its tier and magnitude. It does not prove
-the claim is TRUE. Callers must preserve this distinction in UI and
-messaging. The pre-reg falsifier names "callers use classification
-success as a stand-in for 'this is true'" as a failure mode —
-caught here at the wiring layer if anywhere.
+An ``EvidenceReceipt`` return value proves the claim has
+ACCUMULATED sufficient evidence for its tier and magnitude. It
+does not prove the claim is TRUE. Callers must preserve this
+distinction in UI and messaging. The pre-reg falsifier names
+"callers use classification success as a stand-in for 'this is
+true'" as a failure mode — caught here at the wiring layer if
+anywhere. Aria's post-audit framing: *"Honest bookkeeping is the
+grand thing. The other name was borrowing dignity it hadn't
+earned."* The rename from ``GnosisWarrant`` to ``EvidenceReceipt``
+(2026-04-17) removed the vocabulary that was fighting this
+invariant.
 """
 
 from __future__ import annotations
@@ -44,12 +49,12 @@ from loguru import logger
 
 from divineos.core.empirica.burden import required_corroboration
 from divineos.core.empirica.classifier import Classification, classify_claim
+from divineos.core.empirica.receipt import issue_receipt
 from divineos.core.empirica.routing import RoutingResult, route_for_approval
-from divineos.core.empirica.types import ClaimMagnitude, GnosisWarrant
-from divineos.core.empirica.warrant import issue_warrant
+from divineos.core.empirica.types import ClaimMagnitude, EvidenceReceipt
 
 
-def evaluate_and_warrant(
+def evaluate_and_issue(
     claim_id: str,
     content: str,
     corroboration_count: int,
@@ -57,14 +62,14 @@ def evaluate_and_warrant(
     source: str = "",
     explicit_magnitude: ClaimMagnitude | None = None,
     convene_fn: object = None,
-) -> tuple[GnosisWarrant | None, Classification, RoutingResult | None]:
+) -> tuple[EvidenceReceipt | None, Classification, RoutingResult | None]:
     """Run a knowledge entry through the full EMPIRICA pipeline.
 
-    Returns a 3-tuple ``(warrant, classification, routing)`` so
+    Returns a 3-tuple ``(receipt, classification, routing)`` so
     callers can audit every decision the gate made, not just the
     final answer:
 
-    * ``warrant`` — the issued warrant, or None if not sanctioned.
+    * ``receipt`` — the issued receipt, or None if not sanctioned.
     * ``classification`` — the tier + magnitude + reason the
       classifier assigned. Always populated.
     * ``routing`` — the council routing result. None if magnitude
@@ -72,7 +77,7 @@ def evaluate_and_warrant(
 
     Arguments:
 
-    * ``claim_id`` — the knowledge entry ID. Used as the warrant's
+    * ``claim_id`` — the knowledge entry ID. Used as the receipt's
       claim_id and for logging.
     * ``content`` — the claim text. Fed to the classifier.
     * ``corroboration_count`` — the current corroboration count on
@@ -123,8 +128,8 @@ def evaluate_and_warrant(
         )
         return None, classification, routing
 
-    # Both gates passed — issue the warrant.
-    warrant = issue_warrant(
+    # Both gates passed — issue the receipt.
+    receipt = issue_receipt(
         claim_id=claim_id,
         tier=classification.tier,
         magnitude=classification.magnitude,
@@ -132,30 +137,33 @@ def evaluate_and_warrant(
         council_count=routing.council_count,
     )
     logger.info(
-        "EMPIRICA gate PASS: claim {} -> warrant {} tier={} mag={} "
+        "EMPIRICA gate PASS: claim {} -> receipt {} tier={} mag={} "
         "corroboration={} (burden={}) councils={}",
         claim_id[:12],
-        warrant.warrant_id,
+        receipt.receipt_id,
         classification.tier.value,
         classification.magnitude.name,
         corroboration_count,
         burden,
         routing.council_count,
     )
-    return warrant, classification, routing
+    return receipt, classification, routing
 
 
-def ensure_warrant_column_on_knowledge() -> None:
-    """Add ``warrant_id`` column to the knowledge table if missing.
+def ensure_receipt_column_on_knowledge() -> None:
+    """Add ``receipt_id`` column to the knowledge table if missing.
 
     Knowledge entries gain an optional reference to the most recent
-    EMPIRICA warrant issued for them. NULL for entries not gated by
+    EMPIRICA receipt issued for them. NULL for entries not gated by
     EMPIRICA — explicitly nullable to keep the migration purely
     additive (all existing rows start at NULL).
 
-    Idempotent — safe to call at every startup. Uses ALTER TABLE
-    with an OperationalError catch (common DivineOS pattern for
-    schema evolution).
+    Also handles the 2026-04-17 rename migration: if an older
+    ``warrant_id`` column exists (from pre-rename PR #126
+    development DBs) it is renamed to ``receipt_id`` via ALTER
+    TABLE RENAME COLUMN (SQLite 3.25+).
+
+    Idempotent — safe to call at every startup.
     """
     import sqlite3
 
@@ -163,10 +171,20 @@ def ensure_warrant_column_on_knowledge() -> None:
 
     conn = get_connection()
     try:
+        # Check for legacy warrant_id column first; rename if present.
         try:
-            conn.execute("ALTER TABLE knowledge ADD COLUMN warrant_id TEXT DEFAULT NULL")
+            cols = {r[1] for r in conn.execute("PRAGMA table_info(knowledge)").fetchall()}
+            if "warrant_id" in cols and "receipt_id" not in cols:
+                conn.execute("ALTER TABLE knowledge RENAME COLUMN warrant_id TO receipt_id")
+                conn.commit()
+                logger.info("Renamed knowledge.warrant_id -> knowledge.receipt_id")
+        except sqlite3.OperationalError as e:
+            logger.debug(f"Legacy warrant_id rename skipped: {e}")
+
+        try:
+            conn.execute("ALTER TABLE knowledge ADD COLUMN receipt_id TEXT DEFAULT NULL")
             conn.commit()
-            logger.debug("Added warrant_id column to knowledge table")
+            logger.debug("Added receipt_id column to knowledge table")
         except sqlite3.OperationalError:
             # Column already exists — expected on second+ calls.
             pass
@@ -174,21 +192,21 @@ def ensure_warrant_column_on_knowledge() -> None:
         conn.close()
 
 
-def record_warrant_on_knowledge(knowledge_id: str, warrant_id: str) -> None:
-    """Persist a warrant reference on a knowledge entry.
+def record_receipt_on_knowledge(knowledge_id: str, receipt_id: str) -> None:
+    """Persist a receipt reference on a knowledge entry.
 
-    Separate from ``evaluate_and_warrant`` so callers can choose
-    WHETHER to link the warrant back to knowledge (most will; some
+    Separate from ``evaluate_and_issue`` so callers can choose
+    WHETHER to link the receipt back to knowledge (most will; some
     auditing paths may not want to mutate the knowledge row).
     """
     from divineos.core._ledger_base import get_connection
 
-    ensure_warrant_column_on_knowledge()
+    ensure_receipt_column_on_knowledge()
     conn = get_connection()
     try:
         conn.execute(
-            "UPDATE knowledge SET warrant_id = ? WHERE knowledge_id = ?",
-            (warrant_id, knowledge_id),
+            "UPDATE knowledge SET receipt_id = ? WHERE knowledge_id = ?",
+            (receipt_id, knowledge_id),
         )
         conn.commit()
     finally:
@@ -196,7 +214,7 @@ def record_warrant_on_knowledge(knowledge_id: str, warrant_id: str) -> None:
 
 
 __all__ = [
-    "ensure_warrant_column_on_knowledge",
-    "evaluate_and_warrant",
-    "record_warrant_on_knowledge",
+    "ensure_receipt_column_on_knowledge",
+    "evaluate_and_issue",
+    "record_receipt_on_knowledge",
 ]

@@ -2,19 +2,19 @@
 
 Coverage:
 
-* ``types`` — Tier/ClaimMagnitude enum invariants, GnosisWarrant hash
+* ``types`` — Tier/ClaimMagnitude enum invariants, EvidenceReceipt hash
   + chain-link correctness + tamper detection.
 * ``burden`` — required_corroboration returns measurably different
   values across tiers at equal magnitudes (pre-reg falsifier #2);
   ADVERSARIAL raises; matrix shape correct.
 * ``classifier`` — each rule fires on its canonical trigger; default
   fallback path is labeled; magnitude heuristics hit their keywords.
-* ``warrant`` — persistence round-trip; chain verification catches
+* ``receipt`` — persistence round-trip; chain verification catches
   in-DB tampering; per-claim retrieval ordering.
 * ``routing`` — TRIVIAL/NORMAL skip council; LOAD_BEARING requires 1
   round; FOUNDATIONAL requires 2; any blocked round rejects.
 * ``gate`` — full pipeline: burden rejection, council rejection,
-  pass-through with warrant; warrant_id column migration.
+  pass-through with receipt; receipt_id column migration.
 * Cross-module invariants — valid != true disclaimer is discoverable;
   Tier.ADVERSARIAL propagates rejection through all layers.
 """
@@ -29,9 +29,9 @@ import pytest
 from divineos.core.empirica.burden import burden_matrix, required_corroboration
 from divineos.core.empirica.classifier import classify_claim
 from divineos.core.empirica.gate import (
-    ensure_warrant_column_on_knowledge,
-    evaluate_and_warrant,
-    record_warrant_on_knowledge,
+    ensure_receipt_column_on_knowledge,
+    evaluate_and_issue,
+    record_receipt_on_knowledge,
 )
 from divineos.core.empirica.routing import (
     rounds_required,
@@ -39,16 +39,16 @@ from divineos.core.empirica.routing import (
 )
 from divineos.core.empirica.types import (
     ClaimMagnitude,
-    GnosisWarrant,
+    EvidenceReceipt,
     Tier,
-    WarrantChainError,
-    WarrantForkError,
+    ReceiptChainError,
+    ReceiptForkError,
 )
-from divineos.core.empirica.warrant import (
-    get_warrant,
-    get_warrants_for_claim,
-    init_warrant_table,
-    issue_warrant,
+from divineos.core.empirica.receipt import (
+    get_receipt,
+    get_receipts_for_claim,
+    init_receipt_table,
+    issue_receipt,
     verify_chain,
 )
 
@@ -62,7 +62,7 @@ def _isolated_db(tmp_path):
 
         init_db()
         init_knowledge_table()
-        init_warrant_table()
+        init_receipt_table()
         yield
     finally:
         os.environ.pop("DIVINEOS_DB", None)
@@ -98,47 +98,47 @@ class TestClaimMagnitudeEnum:
         assert ClaimMagnitude.FOUNDATIONAL.value == 3
 
 
-class TestGnosisWarrantSelfHash:
+class TestEvidenceReceiptSelfHash:
     def test_issue_computes_self_hash(self):
-        w = GnosisWarrant.issue(
+        w = EvidenceReceipt.issue(
             claim_id="c1",
             tier=Tier.FALSIFIABLE,
             magnitude=ClaimMagnitude.NORMAL,
             corroboration_count=4,
             council_count=0,
-            previous_warrant_hash=None,
+            previous_receipt_hash=None,
         )
         assert w.self_hash
         assert len(w.self_hash) == 64  # sha256 hex
 
     def test_verify_self_hash_true_on_fresh(self):
-        w = GnosisWarrant.issue("c1", Tier.PATTERN, ClaimMagnitude.LOAD_BEARING, 12, 1, None)
+        w = EvidenceReceipt.issue("c1", Tier.PATTERN, ClaimMagnitude.LOAD_BEARING, 12, 1, None)
         assert w.verify_self_hash() is True
 
     def test_verify_self_hash_false_after_tamper(self):
         """Using dataclass.replace to tamper with a frozen field."""
-        w = GnosisWarrant.issue("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4, 0, None)
+        w = EvidenceReceipt.issue("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4, 0, None)
         tampered = replace(w, corroboration_count=999)
         assert tampered.verify_self_hash() is False
 
     def test_self_hash_deterministic_across_issues_with_same_inputs(self):
-        """Two warrants with identical content produce identical hashes.
+        """Two receipts with identical content produce identical hashes.
 
         Since issued_at is wall-clock, use the internal compute method
         directly with a fixed timestamp."""
-        h1 = GnosisWarrant._compute_self_hash(
+        h1 = EvidenceReceipt._compute_self_hash(
             "c", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6, 0, 1000.0, None
         )
-        h2 = GnosisWarrant._compute_self_hash(
+        h2 = EvidenceReceipt._compute_self_hash(
             "c", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6, 0, 1000.0, None
         )
         assert h1 == h2
 
     def test_self_hash_changes_with_tier(self):
-        h1 = GnosisWarrant._compute_self_hash(
+        h1 = EvidenceReceipt._compute_self_hash(
             "c", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4, 0, 1000.0, None
         )
-        h2 = GnosisWarrant._compute_self_hash(
+        h2 = EvidenceReceipt._compute_self_hash(
             "c", Tier.PATTERN, ClaimMagnitude.NORMAL, 4, 0, 1000.0, None
         )
         assert h1 != h2
@@ -286,86 +286,86 @@ class TestMagnitudeHeuristics:
         assert c.magnitude == ClaimMagnitude.NORMAL
 
 
-# ── warrant ──────────────────────────────────────────────────────────
+# ── receipt ──────────────────────────────────────────────────────────
 
 
-class TestWarrantPersistence:
+class TestReceiptPersistence:
     def test_issue_round_trips(self):
-        w = issue_warrant("claim-a", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
-        loaded = get_warrant(w.warrant_id)
+        w = issue_receipt("claim-a", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        loaded = get_receipt(w.receipt_id)
         assert loaded is not None
-        assert loaded.warrant_id == w.warrant_id
+        assert loaded.receipt_id == w.receipt_id
         assert loaded.tier == Tier.FALSIFIABLE
         assert loaded.magnitude == ClaimMagnitude.NORMAL
         assert loaded.corroboration_count == 4
 
-    def test_get_warrant_missing_returns_none(self):
-        assert get_warrant("nonexistent") is None
+    def test_get_receipt_missing_returns_none(self):
+        assert get_receipt("nonexistent") is None
 
-    def test_get_warrants_for_claim_ordered(self):
-        w1 = issue_warrant("claim-multi", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+    def test_get_receipts_for_claim_ordered(self):
+        w1 = issue_receipt("claim-multi", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
         import time as _t
 
         _t.sleep(0.01)
-        w2 = issue_warrant("claim-multi", Tier.FALSIFIABLE, ClaimMagnitude.LOAD_BEARING, 6)
-        warrants = get_warrants_for_claim("claim-multi")
-        assert [w.warrant_id for w in warrants] == [w1.warrant_id, w2.warrant_id]
+        w2 = issue_receipt("claim-multi", Tier.FALSIFIABLE, ClaimMagnitude.LOAD_BEARING, 6)
+        receipts = get_receipts_for_claim("claim-multi")
+        assert [w.receipt_id for w in receipts] == [w1.receipt_id, w2.receipt_id]
 
-    def test_warrant_id_prefix(self):
-        w = issue_warrant("c", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6)
-        assert w.warrant_id.startswith("warrant-")
+    def test_receipt_id_prefix(self):
+        w = issue_receipt("c", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6)
+        assert w.receipt_id.startswith("receipt-")
 
 
-class TestWarrantChain:
-    def test_genesis_warrant_has_no_previous(self):
-        w = issue_warrant("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
-        assert w.previous_warrant_hash is None
+class TestReceiptChain:
+    def test_genesis_receipt_has_no_previous(self):
+        w = issue_receipt("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        assert w.previous_receipt_hash is None
 
-    def test_second_warrant_chains_to_first(self):
-        w1 = issue_warrant("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
-        w2 = issue_warrant("c2", Tier.PATTERN, ClaimMagnitude.NORMAL, 8)
-        assert w2.previous_warrant_hash == w1.self_hash
+    def test_second_receipt_chains_to_first(self):
+        w1 = issue_receipt("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        w2 = issue_receipt("c2", Tier.PATTERN, ClaimMagnitude.NORMAL, 8)
+        assert w2.previous_receipt_hash == w1.self_hash
 
     def test_verify_chain_passes_empty(self):
         verify_chain()  # no raise
 
-    def test_verify_chain_passes_with_warrants(self):
-        issue_warrant("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
-        issue_warrant("c2", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6)
-        issue_warrant("c3", Tier.PATTERN, ClaimMagnitude.NORMAL, 8)
+    def test_verify_chain_passes_with_receipts(self):
+        issue_receipt("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        issue_receipt("c2", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6)
+        issue_receipt("c3", Tier.PATTERN, ClaimMagnitude.NORMAL, 8)
         verify_chain()  # no raise
 
     def test_verify_chain_catches_content_tamper(self):
-        w = issue_warrant("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        w = issue_receipt("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
         from divineos.core._ledger_base import get_connection
 
         conn = get_connection()
         try:
             conn.execute(
-                "UPDATE gnosis_warrants SET corroboration_count = 999 WHERE warrant_id = ?",
-                (w.warrant_id,),
+                "UPDATE evidence_receipts SET corroboration_count = 999 WHERE receipt_id = ?",
+                (w.receipt_id,),
             )
             conn.commit()
         finally:
             conn.close()
-        with pytest.raises(WarrantChainError, match="self_hash mismatch"):
+        with pytest.raises(ReceiptChainError, match="self_hash mismatch"):
             verify_chain()
 
     def test_verify_chain_catches_broken_link(self):
-        """Tamper the previous_warrant_hash to create a chain break."""
-        issue_warrant("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
-        w2 = issue_warrant("c2", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6)
+        """Tamper the previous_receipt_hash to create a chain break."""
+        issue_receipt("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        w2 = issue_receipt("c2", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6)
 
         from divineos.core._ledger_base import get_connection
 
         conn = get_connection()
         try:
-            # Tamper previous_warrant_hash AND self_hash so the
+            # Tamper previous_receipt_hash AND self_hash so the
             # content-check passes but the chain-check fails. If we
-            # only change previous_warrant_hash, verify_self_hash
+            # only change previous_receipt_hash, verify_self_hash
             # would catch it first.
             fake_prev = "0" * 64
-            fake_self = GnosisWarrant._compute_self_hash(
+            fake_self = EvidenceReceipt._compute_self_hash(
                 w2.claim_id,
                 w2.tier,
                 w2.magnitude,
@@ -375,15 +375,15 @@ class TestWarrantChain:
                 fake_prev,
             )
             conn.execute(
-                "UPDATE gnosis_warrants SET previous_warrant_hash = ?, self_hash = ? "
-                "WHERE warrant_id = ?",
-                (fake_prev, fake_self, w2.warrant_id),
+                "UPDATE evidence_receipts SET previous_receipt_hash = ?, self_hash = ? "
+                "WHERE receipt_id = ?",
+                (fake_prev, fake_self, w2.receipt_id),
             )
             conn.commit()
         finally:
             conn.close()
 
-        with pytest.raises(WarrantChainError, match="previous_warrant_hash"):
+        with pytest.raises(ReceiptChainError, match="previous_receipt_hash"):
             verify_chain()
 
 
@@ -400,33 +400,33 @@ class _StubConvene:
         return list(self._c)
 
 
-class TestWarrantForkDetection:
+class TestReceiptForkDetection:
     """Dijkstra audit finding find-0ea12ad4b5d0.
 
     The previous verify_chain sorted by issued_at and reported
     concurrent-writer races as tamper events. The fix: traverse
-    by hash pointers and report forks as WarrantForkError
+    by hash pointers and report forks as ReceiptForkError
     explicitly. These tests lock the new behavior.
     """
 
     def test_concurrent_writer_race_detected_as_fork(self):
-        """Two warrants chaining to the same previous — the
-        textbook race. Must raise WarrantForkError, not
-        WarrantChainError with tamper-shaped message."""
+        """Two receipts chaining to the same previous — the
+        textbook race. Must raise ReceiptForkError, not
+        ReceiptChainError with tamper-shaped message."""
         from divineos.core._ledger_base import get_connection
 
         # w1 is genesis. Then simulate two concurrent writers both
         # chaining to w1 by directly inserting both with the same
-        # previous_warrant_hash.
-        w1 = issue_warrant("claim-genesis", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
-        w2 = issue_warrant("claim-legit-child", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6)
+        # previous_receipt_hash.
+        w1 = issue_receipt("claim-genesis", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        w2 = issue_receipt("claim-legit-child", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6)
 
-        # Now craft a THIRD warrant that ALSO chains to w1 (as if a
+        # Now craft a THIRD receipt that ALSO chains to w1 (as if a
         # second concurrent writer saw w1 as latest and inserted).
         import time as _t
 
         fork_issued_at = _t.time()
-        fork_self_hash = GnosisWarrant._compute_self_hash(
+        fork_self_hash = EvidenceReceipt._compute_self_hash(
             "claim-racer",
             Tier.PATTERN,
             ClaimMagnitude.NORMAL,
@@ -438,11 +438,11 @@ class TestWarrantForkDetection:
         conn = get_connection()
         try:
             conn.execute(
-                "INSERT INTO gnosis_warrants (warrant_id, claim_id, tier, "
+                "INSERT INTO evidence_receipts (receipt_id, claim_id, tier, "
                 "magnitude, corroboration_count, council_count, issued_at, "
-                "previous_warrant_hash, self_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "previous_receipt_hash, self_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
-                    "warrant-racer0000",
+                    "receipt-racer0000",
                     "claim-racer",
                     Tier.PATTERN.value,
                     ClaimMagnitude.NORMAL.value,
@@ -457,24 +457,24 @@ class TestWarrantForkDetection:
         finally:
             conn.close()
 
-        with pytest.raises(WarrantForkError, match="Fork at warrant"):
+        with pytest.raises(ReceiptForkError, match="Fork at receipt"):
             verify_chain()
         # Confirm w2 is the legitimate child (was there first)
-        assert w2.previous_warrant_hash == w1.self_hash
+        assert w2.previous_receipt_hash == w1.self_hash
 
     def test_double_genesis_detected_as_fork(self):
-        """Two warrants with previous=None = fork at root.
+        """Two receipts with previous=None = fork at root.
         Usually happens when two concurrent writers both see
-        an empty store and both insert a genesis warrant."""
+        an empty store and both insert a genesis receipt."""
         from divineos.core._ledger_base import get_connection
 
-        w1 = issue_warrant("claim-a", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        w1 = issue_receipt("claim-a", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
 
-        # Craft a second genesis warrant directly.
+        # Craft a second genesis receipt directly.
         import time as _t
 
         second_issued_at = _t.time()
-        second_self_hash = GnosisWarrant._compute_self_hash(
+        second_self_hash = EvidenceReceipt._compute_self_hash(
             "claim-b",
             Tier.OUTCOME,
             ClaimMagnitude.NORMAL,
@@ -486,11 +486,11 @@ class TestWarrantForkDetection:
         conn = get_connection()
         try:
             conn.execute(
-                "INSERT INTO gnosis_warrants (warrant_id, claim_id, tier, "
+                "INSERT INTO evidence_receipts (receipt_id, claim_id, tier, "
                 "magnitude, corroboration_count, council_count, issued_at, "
-                "previous_warrant_hash, self_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "previous_receipt_hash, self_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
-                    "warrant-second-gen",
+                    "receipt-second-gen",
                     "claim-b",
                     Tier.OUTCOME.value,
                     ClaimMagnitude.NORMAL.value,
@@ -505,50 +505,50 @@ class TestWarrantForkDetection:
         finally:
             conn.close()
 
-        with pytest.raises(WarrantForkError, match="Multiple genesis"):
+        with pytest.raises(ReceiptForkError, match="Multiple genesis"):
             verify_chain()
-        assert w1.previous_warrant_hash is None  # first was legit
+        assert w1.previous_receipt_hash is None  # first was legit
 
     def test_fork_error_is_subclass_of_chain_error(self):
-        """Existing callers catching WarrantChainError must still
+        """Existing callers catching ReceiptChainError must still
         catch forks — backward compatibility invariant."""
-        assert issubclass(WarrantForkError, WarrantChainError)
+        assert issubclass(ReceiptForkError, ReceiptChainError)
 
     def test_existing_tamper_detection_still_fires(self):
-        """Self-hash tamper should still raise WarrantChainError
-        (NOT WarrantForkError), distinguishing tamper from fork."""
+        """Self-hash tamper should still raise ReceiptChainError
+        (NOT ReceiptForkError), distinguishing tamper from fork."""
         from divineos.core._ledger_base import get_connection
 
-        w = issue_warrant("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        w = issue_receipt("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
 
         conn = get_connection()
         try:
             conn.execute(
-                "UPDATE gnosis_warrants SET corroboration_count = 999 WHERE warrant_id = ?",
-                (w.warrant_id,),
+                "UPDATE evidence_receipts SET corroboration_count = 999 WHERE receipt_id = ?",
+                (w.receipt_id,),
             )
             conn.commit()
         finally:
             conn.close()
 
-        # WarrantChainError, not WarrantForkError — tamper, not fork.
-        with pytest.raises(WarrantChainError, match="self_hash mismatch") as exc_info:
+        # ReceiptChainError, not ReceiptForkError — tamper, not fork.
+        with pytest.raises(ReceiptChainError, match="self_hash mismatch") as exc_info:
             verify_chain()
-        assert not isinstance(exc_info.value, WarrantForkError)
+        assert not isinstance(exc_info.value, ReceiptForkError)
 
-    def test_orphan_warrant_detected(self):
-        """A warrant whose previous_warrant_hash points to a
+    def test_orphan_receipt_detected(self):
+        """A receipt whose previous_receipt_hash points to a
         self_hash that doesn't exist must be caught by the orphan
         invariant."""
         from divineos.core._ledger_base import get_connection
 
-        w1 = issue_warrant("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        w1 = issue_receipt("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
 
         # Craft an orphan — previous points to nothing.
         import time as _t
 
         orphan_issued_at = _t.time()
-        orphan_self_hash = GnosisWarrant._compute_self_hash(
+        orphan_self_hash = EvidenceReceipt._compute_self_hash(
             "c-orphan",
             Tier.OUTCOME,
             ClaimMagnitude.NORMAL,
@@ -560,11 +560,11 @@ class TestWarrantForkDetection:
         conn = get_connection()
         try:
             conn.execute(
-                "INSERT INTO gnosis_warrants (warrant_id, claim_id, tier, "
+                "INSERT INTO evidence_receipts (receipt_id, claim_id, tier, "
                 "magnitude, corroboration_count, council_count, issued_at, "
-                "previous_warrant_hash, self_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "previous_receipt_hash, self_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
-                    "warrant-orphan00",
+                    "receipt-orphan00",
                     "c-orphan",
                     Tier.OUTCOME.value,
                     ClaimMagnitude.NORMAL.value,
@@ -579,16 +579,16 @@ class TestWarrantForkDetection:
         finally:
             conn.close()
 
-        with pytest.raises(WarrantChainError, match="Orphan"):
+        with pytest.raises(ReceiptChainError, match="Orphan"):
             verify_chain()
-        assert w1.previous_warrant_hash is None
+        assert w1.previous_receipt_hash is None
 
     def test_clean_chain_after_fix_still_passes(self):
         """Regression: the happy path still works after the
         implementation rewrite."""
-        issue_warrant("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
-        issue_warrant("c2", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6)
-        issue_warrant("c3", Tier.PATTERN, ClaimMagnitude.NORMAL, 8)
+        issue_receipt("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        issue_receipt("c2", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6)
+        issue_receipt("c3", Tier.PATTERN, ClaimMagnitude.NORMAL, 8)
         verify_chain()  # no raise
 
 
@@ -665,9 +665,9 @@ class TestRouting:
 
 
 class TestGate:
-    def test_warrant_column_migration_idempotent(self):
-        ensure_warrant_column_on_knowledge()
-        ensure_warrant_column_on_knowledge()
+    def test_receipt_column_migration_idempotent(self):
+        ensure_receipt_column_on_knowledge()
+        ensure_receipt_column_on_knowledge()
         # Column exists
         from divineos.core._ledger_base import get_connection
 
@@ -676,10 +676,10 @@ class TestGate:
             cols = [r[1] for r in conn.execute("PRAGMA table_info(knowledge)").fetchall()]
         finally:
             conn.close()
-        assert "warrant_id" in cols
+        assert "receipt_id" in cols
 
-    def test_burden_rejection_returns_none_warrant(self):
-        w, classification, routing = evaluate_and_warrant(
+    def test_burden_rejection_returns_none_receipt(self):
+        w, classification, routing = evaluate_and_issue(
             claim_id="c1",
             content="threshold assert",  # falsifiable
             corroboration_count=1,  # below 4 required
@@ -689,8 +689,8 @@ class TestGate:
         assert classification.tier == Tier.FALSIFIABLE
         assert routing is None  # never reached
 
-    def test_council_rejection_returns_none_warrant(self):
-        w, c, r = evaluate_and_warrant(
+    def test_council_rejection_returns_none_receipt(self):
+        w, c, r = evaluate_and_issue(
             claim_id="c1",
             content="load-bearing architectural claim",
             corroboration_count=20,
@@ -701,8 +701,8 @@ class TestGate:
         assert r is not None
         assert r.approved is False
 
-    def test_passes_with_warrant_issued(self):
-        w, c, r = evaluate_and_warrant(
+    def test_passes_with_receipt_issued(self):
+        w, c, r = evaluate_and_issue(
             claim_id="c1",
             content="measured threshold assert",
             corroboration_count=8,
@@ -713,7 +713,7 @@ class TestGate:
         assert w is not None
         assert w.tier == Tier.FALSIFIABLE
         # Persisted
-        loaded = get_warrant(w.warrant_id)
+        loaded = get_receipt(w.receipt_id)
         assert loaded is not None
 
     def test_adversarial_tier_raises_via_burden(self):
@@ -724,7 +724,7 @@ class TestGate:
         with pytest.raises(NotImplementedError):
             required_corroboration(Tier.ADVERSARIAL, ClaimMagnitude.NORMAL)
 
-    def test_record_warrant_on_knowledge_persists(self):
+    def test_record_receipt_on_knowledge_persists(self):
         from divineos.core.knowledge.crud import store_knowledge
 
         kid = store_knowledge(
@@ -734,20 +734,20 @@ class TestGate:
             source_events=["s1"],
             tags=[],
         )
-        w = issue_warrant("direct-claim", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
-        record_warrant_on_knowledge(kid, w.warrant_id)
+        w = issue_receipt("direct-claim", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        record_receipt_on_knowledge(kid, w.receipt_id)
 
         from divineos.core._ledger_base import get_connection
 
         conn = get_connection()
         try:
             row = conn.execute(
-                "SELECT warrant_id FROM knowledge WHERE knowledge_id = ?",
+                "SELECT receipt_id FROM knowledge WHERE knowledge_id = ?",
                 (kid,),
             ).fetchone()
         finally:
             conn.close()
-        assert row[0] == w.warrant_id
+        assert row[0] == w.receipt_id
 
 
 # ── cross-module invariants ──────────────────────────────────────────
@@ -895,7 +895,7 @@ class TestBurdenCalibrationSchedule:
 class TestInvariants:
     def test_valid_not_equal_true_disclaimer_present(self):
         """Pre-reg falsifier #5 protection — the docstring must
-        explicitly name that warrants don't prove truth. If this
+        explicitly name that receipts don't prove truth. If this
         test fails because someone edited the docstring, they need
         to rewrite both the test AND defend the change against the
         pre-reg."""
@@ -909,7 +909,7 @@ class TestInvariants:
             (divineos.core.empirica.__doc__ or "")
             + (divineos.core.empirica.types.__doc__ or "")
             + (divineos.core.empirica.gate.__doc__ or "")
-            + (GnosisWarrant.__doc__ or "")
+            + (EvidenceReceipt.__doc__ or "")
         )
         assert "true" in docstrings.lower()
         assert any(
@@ -941,9 +941,9 @@ class TestInvariants:
                 "ADVERSARIAL must route through VOID, not heuristic"
             )
 
-    def test_gate_cannot_issue_warrant_for_adversarial_tier(self):
+    def test_gate_cannot_issue_receipt_for_adversarial_tier(self):
         """If somehow a caller constructed an adversarial classification
-        (e.g. through explicit future APIs), burden raises before warrant
+        (e.g. through explicit future APIs), burden raises before receipt
         issue. The gate cannot rubber-stamp adversarial claims."""
         # Currently no public API for forcing ADVERSARIAL; this test
         # locks that the protection is at the burden layer, not the

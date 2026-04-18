@@ -28,7 +28,7 @@ convene and how many rounds; the council decides what those rounds
 produce.
 
 Not a rubber stamp. If ``route_for_approval`` returns ``approved=False``,
-the caller MUST NOT issue a warrant. The pre-reg falsifier explicitly
+the caller MUST NOT issue a receipt. The pre-reg falsifier explicitly
 names bypass as a failure mode.
 """
 
@@ -56,7 +56,7 @@ class RoutingResult:
     * ``approved`` — True if the claim passed all required rounds (or
       none were required). False if any round returned shared concerns.
     * ``council_count`` — number of rounds that approved. Stored in
-      the warrant for audit. Zero for TRIVIAL/NORMAL claims that
+      the receipt for audit. Zero for TRIVIAL/NORMAL claims that
       didn't require review.
     * ``rationale`` — human-readable summary of what happened. Names
       each round's outcome (approved / blocked) and any shared

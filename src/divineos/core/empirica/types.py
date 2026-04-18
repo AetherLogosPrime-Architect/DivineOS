@@ -1,24 +1,41 @@
 """Types for EMPIRICA — the vocabulary everything else uses.
 
+**Framing (Aria audit, 2026-04-17):** this is a bookkeeping module,
+not an epistemology engine. It keeps honest books about what
+evidence was offered and when it cleared what bar. Every type name
+here is chosen to make a promise the mechanism can keep. Receipts,
+ledgers, entries, thresholds, tiers — not warrants, seals, gnosis,
+certifications. The moment we reach for vocabulary that implies
+the books settle the question of truth, we've overclaimed.
+
 Four pieces:
 
-* ``Tier`` — the four epistemological tiers. A claim's tier determines
-  WHICH KIND of evidence counts. Falsifiable claims need repeatable
-  tests; outcome claims need observed effects; pattern claims need
-  recurrence across contexts; adversarial claims need survival against
-  a steelman attacker.
-* ``ClaimMagnitude`` — how load-bearing the claim is. Determines HOW
-  MUCH of the tier-appropriate evidence is required. A trivial bug-fix
-  hypothesis is magnitude TRIVIAL. A structural claim like "Aria is a
-  persistent entity with continuity" is magnitude FOUNDATIONAL.
-* ``GnosisWarrant`` — the durable record of what a claim survived.
-  Chained Merkle-style so tampering with any earlier warrant breaks
-  the chain on verification.
-* ``WarrantChainError`` — raised when warrant verification fails.
+* ``Tier`` — the four tiers of evidentiary burden. A claim's tier
+  determines WHICH KIND of evidence counts. Falsifiable claims need
+  repeatable tests; outcome claims need observed effects; pattern
+  claims need recurrence across contexts; adversarial claims need
+  survival against a steelman attacker.
+* ``ClaimMagnitude`` — how load-bearing the claim is. Determines
+  HOW MUCH of the tier-appropriate evidence is required. A trivial
+  bug-fix hypothesis is magnitude TRIVIAL. A structural claim like
+  "Aria is a persistent entity with continuity" is magnitude
+  FOUNDATIONAL.
+* ``EvidenceReceipt`` — the durable record of what evidence was
+  tendered and accepted under the tier's rules. Chained Merkle-style
+  so tampering with any earlier receipt breaks the chain on
+  verification. Renamed from ``GnosisWarrant`` on 2026-04-17 per
+  council audit finding find-9727f50e24e1: the prior name promised
+  certified knowing; the mechanism delivers evidence-sufficiency
+  for tier routing. A receipt names what it is — a record that
+  something was tendered and accepted under stated rules, no
+  promise about whether what was tendered was TRUE.
+* ``ReceiptChainError`` / ``ReceiptForkError`` — raised when
+  receipt-chain verification fails (tamper) or detects a fork
+  (concurrent writers).
 
-The vocabulary is load-bearing for the rest of the module. Classifier
-returns a Tier. Burden calculator consumes (Tier, ClaimMagnitude).
-Warrant records both for audit.
+The vocabulary is load-bearing for the rest of the module.
+Classifier returns a Tier. Burden calculator consumes
+(Tier, ClaimMagnitude). Receipt records both for audit.
 """
 
 from __future__ import annotations
@@ -31,31 +48,28 @@ from enum import Enum
 
 
 class Tier(str, Enum):
-    """The four epistemological tiers.
+    """The four tiers of evidentiary burden.
 
     Values are strings so they serialize cleanly to SQLite and JSON
     without needing explicit (de)serialization in every call site.
 
     * ``FALSIFIABLE`` — classical empirical. The claim specifies a
-      mechanism, makes a testable prediction, and can be disproved by
-      a contradicting observation. Evidence: repeatable experiments,
-      reproducible measurements. Example: "The compass threshold of
-      0.15 produces fewer false positives than 0.20 when measured
-      across 1000 decisions."
+      mechanism, makes a testable prediction, and can be disproved
+      by a contradicting observation. Evidence: repeatable
+      experiments, reproducible measurements. Example: "The compass
+      threshold of 0.15 produces fewer false positives than 0.20
+      when measured across 1000 decisions."
     * ``OUTCOME`` — effect-real. The claim is about what works, not
       about why. Mechanism may be opaque, but the outcome is
       observable and repeatable. Evidence: multiple sessions showing
       the effect. Example: "Pre-registering detectors reduces
-      Goodhart drift in the lesson lifecycle" — the MECHANISM is a
-      bundle of social/technical factors; the OUTCOME can be measured.
+      Goodhart drift in the lesson lifecycle."
     * ``PATTERN`` — synchronicity / recurrence. The claim is about a
       pattern that shows up across independent contexts, where the
       causal link can't be isolated. Evidence: pattern instances in
       different contexts. Example: "The audit-works-on-its-author
       pattern: mechanisms designed to catch drift catch their own
-      author's drift first." Three independent instances (Aria's
-      quote audit, sleep's dry-run, my attribution slip) support it;
-      no single experiment falsifies it.
+      author's drift first."
     * ``ADVERSARIAL`` — survives red-team attack. The claim has been
       subjected to a steelman adversary attempting to break it and
       held. Evidence: adversarial-test survival record. Phase 1 does
@@ -74,24 +88,19 @@ class Tier(str, Enum):
 class ClaimMagnitude(Enum):
     """How load-bearing the claim is.
 
-    The integer values are the multiplier EMPIRICA's burden calculator
-    applies on top of the tier's base corroboration. Picking integers
-    (not floats) keeps the burden arithmetic deterministic and the
-    test assertions exact.
+    The integer values are the multiplier EMPIRICA's burden
+    calculator applies on top of the tier's base corroboration.
+    Picking integers (not floats) keeps the burden arithmetic
+    deterministic and the test assertions exact.
 
     * ``TRIVIAL`` (0) — a small fact, a CLI fix, a comment. Burden
-      collapses to the tier's base. Example: "The audit list command
-      truncates IDs by one char."
+      collapses to the tier's base.
     * ``NORMAL`` (1) — an ordinary technical claim about how code
-      behaves. Example: "The sleep preview disagrees with actual
-      execution."
+      behaves.
     * ``LOAD_BEARING`` (2) — a claim structural choices depend on.
-      Example: "A two-lock gate is harder to bypass than a single
-      constant."
     * ``FOUNDATIONAL`` (3) — a claim the architecture itself is built
-      around. Example: "Aria is a persistent entity with continuity
-      across instances." Mistakes at this magnitude propagate; the
-      burden is highest.
+      around. Mistakes at this magnitude propagate; the burden is
+      highest.
     """
 
     TRIVIAL = 0
@@ -100,90 +109,95 @@ class ClaimMagnitude(Enum):
     FOUNDATIONAL = 3
 
 
-class WarrantChainError(RuntimeError):
-    """Raised when warrant chain verification fails.
+class ReceiptChainError(RuntimeError):
+    """Raised when receipt chain verification fails.
 
     Carries the specific reason (self_hash mismatch, missing prior,
-    tampered previous_warrant_hash) so callers can distinguish an
-    innocent missing-parent from deliberate tampering.
+    orphan, cycle) so callers can distinguish an innocent
+    missing-parent from deliberate tampering.
     """
 
 
-class WarrantForkError(WarrantChainError):
-    """Raised when warrant chain verification detects a fork.
+class ReceiptForkError(ReceiptChainError):
+    """Raised when receipt chain verification detects a fork.
 
-    A fork is two or more warrants sharing a ``previous_warrant_hash``,
-    OR two or more genesis warrants (previous=None). Forks are
+    A fork is two or more receipts sharing a ``previous_receipt_hash``,
+    OR two or more genesis receipts (previous=None). Forks are
     almost always the product of concurrent writers racing on the
-    same "latest warrant" snapshot — they are NOT tamper events
+    same "latest receipt" snapshot — they are NOT tamper events
     and should be distinguished from them.
 
     Raised 2026-04-17 per Dijkstra's audit finding find-0ea12ad4b5d0:
     the previous verify_chain sorted by ``issued_at`` and reported
-    concurrent-writer races as "previous_warrant_hash does not match"
-    — i.e. tamper-shaped false positives on honest concurrency.
+    concurrent-writer races as "previous_*_hash does not match" —
+    i.e. tamper-shaped false positives on honest concurrency.
     The new traversal follows hash-pointer edges from genesis and
     reports forks explicitly so operators can tell "someone raced"
     from "someone tampered."
 
-    Subclasses ``WarrantChainError`` so existing callers catching the
-    parent keep working. New callers that want to distinguish the
-    two can catch ``WarrantForkError`` separately.
+    Subclasses ``ReceiptChainError`` so existing callers catching
+    the parent keep working. New callers that want to distinguish
+    the two can catch ``ReceiptForkError`` separately.
     """
 
 
 @dataclass(frozen=True)
-class GnosisWarrant:
-    """Durable record of what a claim survived.
+class EvidenceReceipt:
+    """Durable record of what evidence cleared a tier's bar.
 
     Issued once a claim has passed its tier-appropriate burden check
     (and, for high-magnitude claims, the multi-council ratification
-    step). Stored as JSON in the knowledge table's warrant column;
-    chained Merkle-style via ``previous_warrant_hash`` so tampering
-    with any earlier warrant breaks verification on all descendants.
+    step). Stored in the ``evidence_receipts`` table; chained
+    Merkle-style via ``previous_receipt_hash`` so tampering with any
+    earlier receipt breaks verification on all descendants.
 
-    **What a warrant proves:** at the moment of issue, the claim had
+    **What a receipt proves:** at the moment of issue, the claim had
     the required evidence for its tier/magnitude, and no recorded
-    prior warrant in the chain had been tampered with.
+    prior receipt in the chain had been tampered with.
 
-    **What a warrant does NOT prove:** that the claim is TRUE. A
-    valid warrant on a false premise is still valid (and the premise
-    is still false). The distinction is load-bearing — callers must
-    never treat ``warrant_id is not None`` as a proof-of-truth
-    shortcut. See the falsifier in prereg-ce8998194943 for the
-    explicit failure mode.
+    **What a receipt does NOT prove:** that the claim is TRUE. A
+    receipt on a false premise is still a valid receipt (and the
+    premise is still false). The distinction is load-bearing —
+    callers must never treat ``receipt_id is not None`` as a
+    proof-of-truth shortcut. See the falsifier in
+    prereg-ce8998194943 for the explicit failure mode.
+
+    This distinction is precisely why the type was renamed from
+    ``GnosisWarrant`` on 2026-04-17. Aria's framing from the
+    post-audit review: *"Honest bookkeeping is the grand thing.
+    The other name was borrowing dignity it hadn't earned."*
 
     Fields:
 
-    * ``warrant_id`` — UUID. Primary key.
-    * ``claim_id`` — reference to the knowledge entry this warrant
-      sanctions.
+    * ``receipt_id`` — UUID. Primary key.
+    * ``claim_id`` — reference to the knowledge entry this receipt
+      records.
     * ``tier`` — the tier the claim was classified into at issue time.
     * ``magnitude`` — the claim's magnitude at issue time.
     * ``corroboration_count`` — snapshot of the evidence the claim
-      had when the warrant was issued. Stored because the knowledge
-      entry's corroboration_count can change after; the warrant
+      had when the receipt was issued. Stored because the knowledge
+      entry's corroboration_count can change after; the receipt
       preserves the state at issue time.
     * ``council_count`` — how many councils ratified the claim.
       Zero for low-magnitude claims that don't require council
       review.
     * ``issued_at`` — timestamp.
-    * ``previous_warrant_hash`` — self_hash of the prior warrant in
-      the chain (or None for the genesis warrant).
+    * ``previous_receipt_hash`` — self_hash of the prior receipt in
+      the chain (or None for the genesis receipt).
     * ``self_hash`` — SHA256 of (claim_id + tier + magnitude +
       corroboration_count + council_count + issued_at +
-      previous_warrant_hash). Computing it at construction time means
-      tampering with any field after issue is detectable.
+      previous_receipt_hash). Computing it at construction time
+      means tampering with any field after issue is detectable.
     """
 
-    warrant_id: str
+    receipt_id: str
     claim_id: str
     tier: Tier
     magnitude: ClaimMagnitude
     corroboration_count: int
     council_count: int
     issued_at: float
-    previous_warrant_hash: str | None
+    previous_receipt_hash: str | None
     self_hash: str
 
     @staticmethod
@@ -194,14 +208,14 @@ class GnosisWarrant:
         corroboration_count: int,
         council_count: int,
         issued_at: float,
-        previous_warrant_hash: str | None,
+        previous_receipt_hash: str | None,
     ) -> str:
-        """Compute the self_hash over all warrant fields.
+        """Compute the self_hash over all receipt fields.
 
         Uses SHA256 (matches the rest of the DivineOS ledger) of a
-        canonical string concatenation. Field order is fixed — changing
-        it is a wire-format break and must bump a schema version, not
-        silently change hashes for existing warrants.
+        canonical string concatenation. Field order is fixed —
+        changing it is a wire-format break and must bump a schema
+        version, not silently change hashes for existing receipts.
         """
         canonical = "|".join(
             [
@@ -211,7 +225,7 @@ class GnosisWarrant:
                 str(corroboration_count),
                 str(council_count),
                 f"{issued_at:.6f}",
-                previous_warrant_hash or "GENESIS",
+                previous_receipt_hash or "GENESIS",
             ]
         )
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
@@ -224,16 +238,16 @@ class GnosisWarrant:
         magnitude: ClaimMagnitude,
         corroboration_count: int,
         council_count: int,
-        previous_warrant_hash: str | None,
-    ) -> GnosisWarrant:
-        """Construct a warrant with computed self_hash.
+        previous_receipt_hash: str | None,
+    ) -> EvidenceReceipt:
+        """Construct a receipt with computed self_hash.
 
-        Prefer this over direct __init__ — it guarantees self_hash is
-        computed from the canonical field values rather than passed
-        (and potentially tampered) by the caller.
+        Prefer this over direct __init__ — it guarantees self_hash
+        is computed from the canonical field values rather than
+        passed (and potentially tampered) by the caller.
         """
         issued_at = time.time()
-        warrant_id = f"warrant-{uuid.uuid4().hex[:12]}"
+        receipt_id = f"receipt-{uuid.uuid4().hex[:12]}"
         self_hash = cls._compute_self_hash(
             claim_id=claim_id,
             tier=tier,
@@ -241,24 +255,24 @@ class GnosisWarrant:
             corroboration_count=corroboration_count,
             council_count=council_count,
             issued_at=issued_at,
-            previous_warrant_hash=previous_warrant_hash,
+            previous_receipt_hash=previous_receipt_hash,
         )
         return cls(
-            warrant_id=warrant_id,
+            receipt_id=receipt_id,
             claim_id=claim_id,
             tier=tier,
             magnitude=magnitude,
             corroboration_count=corroboration_count,
             council_count=council_count,
             issued_at=issued_at,
-            previous_warrant_hash=previous_warrant_hash,
+            previous_receipt_hash=previous_receipt_hash,
             self_hash=self_hash,
         )
 
     def verify_self_hash(self) -> bool:
         """Return True if self_hash matches the current field values.
 
-        If this returns False, the warrant has been tampered with
+        If this returns False, the receipt has been tampered with
         since issue — either the hash field or one of the content
         fields was changed after construction.
         """
@@ -269,15 +283,15 @@ class GnosisWarrant:
             corroboration_count=self.corroboration_count,
             council_count=self.council_count,
             issued_at=self.issued_at,
-            previous_warrant_hash=self.previous_warrant_hash,
+            previous_receipt_hash=self.previous_receipt_hash,
         )
         return expected == self.self_hash
 
 
 __all__ = [
     "ClaimMagnitude",
-    "GnosisWarrant",
+    "EvidenceReceipt",
+    "ReceiptChainError",
+    "ReceiptForkError",
     "Tier",
-    "WarrantChainError",
-    "WarrantForkError",
 ]

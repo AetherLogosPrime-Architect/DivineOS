@@ -1,28 +1,35 @@
-"""EMPIRICA — tiered epistemology + proportional burden for knowledge claims.
+"""EMPIRICA — evidence ledger with tiered burden routing.
 
 Phase 1 scope (pre-registered at prereg-ce8998194943):
+
+**Framing (Aria audit, 2026-04-17):** EMPIRICA is an evidence
+ledger, not an epistemology engine. It keeps honest books about
+what evidence was offered and when it cleared what bar. The
+vocabulary — receipts, tiers, thresholds, chain entries — is
+chosen so every word makes a promise the mechanism can keep.
 
 EMPIRICA is a **routing layer** over existing DivineOS knowledge
 infrastructure, not a new subsystem. It does four things:
 
-1. **Classify** a claim into one of four epistemological tiers
-   (FALSIFIABLE / OUTCOME / PATTERN / ADVERSARIAL).
+1. **Classify** a claim into one of four tiers of evidentiary
+   burden (FALSIFIABLE / OUTCOME / PATTERN / ADVERSARIAL).
 2. **Compute burden** — the minimum corroboration count required
    before the validity gate lets the claim through, as a function
    of (tier × magnitude).
-3. **Issue warrants** — durable records of what a claim survived,
-   chained together Merkle-style so tampering is detectable.
+3. **Issue receipts** — durable records of what evidence cleared
+   which bar, chained together Merkle-style so tampering is
+   detectable.
 4. **Route** high-magnitude claims through multiple councils in
    parallel before promotion.
 
 What EMPIRICA is NOT:
 
-* NOT a philosophy seminar. It adjudicates whether an argument is
-  logically valid within its tier; it does not adjudicate whether
-  the conclusion is TRUE. A valid syllogism can still have false
-  premises. The ``valid != true`` disclaimer is load-bearing — if
-  callers ever treat EMPIRICA classification as proof of truth,
-  the module has become a rubber-stamp hedge (falsifier fires).
+* NOT a truth engine. A receipt means evidence was tendered and
+  accepted under stated rules at a moment in time. It does not
+  mean the thing tendered was true. The ``valid != true``
+  disclaimer is load-bearing — if callers ever treat a receipt
+  as proof of truth, the module has become the rubber-stamp
+  hedge its pre-reg falsifier names.
 * NOT a theorem prover. Heuristic classification is the Phase 1
   mechanism; future phases can add deeper analysis.
 * NOT a replacement for existing DivineOS infrastructure. It
@@ -40,9 +47,16 @@ an un-stress-tested claim as adversarially-verified.
 from divineos.core.empirica.burden import burden_matrix, required_corroboration
 from divineos.core.empirica.classifier import Classification, classify_claim
 from divineos.core.empirica.gate import (
-    ensure_warrant_column_on_knowledge,
-    evaluate_and_warrant,
-    record_warrant_on_knowledge,
+    ensure_receipt_column_on_knowledge,
+    evaluate_and_issue,
+    record_receipt_on_knowledge,
+)
+from divineos.core.empirica.receipt import (
+    get_receipt,
+    get_receipts_for_claim,
+    init_receipt_table,
+    issue_receipt,
+    verify_chain,
 )
 from divineos.core.empirica.routing import (
     RoutingResult,
@@ -51,36 +65,29 @@ from divineos.core.empirica.routing import (
 )
 from divineos.core.empirica.types import (
     ClaimMagnitude,
-    GnosisWarrant,
+    EvidenceReceipt,
+    ReceiptChainError,
+    ReceiptForkError,
     Tier,
-    WarrantChainError,
-    WarrantForkError,
-)
-from divineos.core.empirica.warrant import (
-    get_warrant,
-    get_warrants_for_claim,
-    init_warrant_table,
-    issue_warrant,
-    verify_chain,
 )
 
 __all__ = [
     "Classification",
     "ClaimMagnitude",
-    "GnosisWarrant",
+    "EvidenceReceipt",
+    "ReceiptChainError",
+    "ReceiptForkError",
     "RoutingResult",
     "Tier",
-    "WarrantChainError",
-    "WarrantForkError",
     "burden_matrix",
     "classify_claim",
-    "ensure_warrant_column_on_knowledge",
-    "evaluate_and_warrant",
-    "get_warrant",
-    "get_warrants_for_claim",
-    "init_warrant_table",
-    "issue_warrant",
-    "record_warrant_on_knowledge",
+    "ensure_receipt_column_on_knowledge",
+    "evaluate_and_issue",
+    "get_receipt",
+    "get_receipts_for_claim",
+    "init_receipt_table",
+    "issue_receipt",
+    "record_receipt_on_knowledge",
     "required_corroboration",
     "rounds_required",
     "route_for_approval",

@@ -53,7 +53,7 @@ signals (in order of decreasing confidence in the signal):
    burden is a symptom of undifferentiated thresholds. Action:
    widen the spread (e.g. FALSIFIABLE base=2, PATTERN base=6).
 
-2. **Supersession rate of warranted claims.** If claims that
+2. **Supersession rate of receipted claims.** If claims that
    passed EMPIRICA at Tier I get superseded at a higher rate
    than Tier III claims that passed, the FALSIFIABLE bar is too
    low. Action: raise FALSIFIABLE base.
@@ -79,7 +79,7 @@ Tuning changes must:
 
 Not a policy enforcer — just a number. Deciding what to do with the
 number is the validity gate's job (route the claim to councils, promote
-to warrant-issue, reject). Burden is a scalar; consequence is another
+to receipt-issue, reject). Burden is a scalar; consequence is another
 module's call. Keeps the calculator small and easy to audit.
 """
 
