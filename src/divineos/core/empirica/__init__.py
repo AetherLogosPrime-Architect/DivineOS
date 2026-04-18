@@ -54,6 +54,7 @@ from divineos.core.empirica.types import (
     GnosisWarrant,
     Tier,
     WarrantChainError,
+    WarrantForkError,
 )
 from divineos.core.empirica.warrant import (
     get_warrant,
@@ -70,6 +71,7 @@ __all__ = [
     "RoutingResult",
     "Tier",
     "WarrantChainError",
+    "WarrantForkError",
     "burden_matrix",
     "classify_claim",
     "ensure_warrant_column_on_knowledge",

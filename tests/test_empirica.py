@@ -42,6 +42,7 @@ from divineos.core.empirica.types import (
     GnosisWarrant,
     Tier,
     WarrantChainError,
+    WarrantForkError,
 )
 from divineos.core.empirica.warrant import (
     get_warrant,
@@ -397,6 +398,198 @@ class _StubConvene:
 
     def shared_concerns(self) -> list[str]:
         return list(self._c)
+
+
+class TestWarrantForkDetection:
+    """Dijkstra audit finding find-0ea12ad4b5d0.
+
+    The previous verify_chain sorted by issued_at and reported
+    concurrent-writer races as tamper events. The fix: traverse
+    by hash pointers and report forks as WarrantForkError
+    explicitly. These tests lock the new behavior.
+    """
+
+    def test_concurrent_writer_race_detected_as_fork(self):
+        """Two warrants chaining to the same previous — the
+        textbook race. Must raise WarrantForkError, not
+        WarrantChainError with tamper-shaped message."""
+        from divineos.core._ledger_base import get_connection
+
+        # w1 is genesis. Then simulate two concurrent writers both
+        # chaining to w1 by directly inserting both with the same
+        # previous_warrant_hash.
+        w1 = issue_warrant("claim-genesis", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        w2 = issue_warrant("claim-legit-child", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6)
+
+        # Now craft a THIRD warrant that ALSO chains to w1 (as if a
+        # second concurrent writer saw w1 as latest and inserted).
+        import time as _t
+
+        fork_issued_at = _t.time()
+        fork_self_hash = GnosisWarrant._compute_self_hash(
+            "claim-racer",
+            Tier.PATTERN,
+            ClaimMagnitude.NORMAL,
+            8,
+            0,
+            fork_issued_at,
+            w1.self_hash,  # same previous as w2 — the race
+        )
+        conn = get_connection()
+        try:
+            conn.execute(
+                "INSERT INTO gnosis_warrants (warrant_id, claim_id, tier, "
+                "magnitude, corroboration_count, council_count, issued_at, "
+                "previous_warrant_hash, self_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    "warrant-racer0000",
+                    "claim-racer",
+                    Tier.PATTERN.value,
+                    ClaimMagnitude.NORMAL.value,
+                    8,
+                    0,
+                    fork_issued_at,
+                    w1.self_hash,
+                    fork_self_hash,
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        with pytest.raises(WarrantForkError, match="Fork at warrant"):
+            verify_chain()
+        # Confirm w2 is the legitimate child (was there first)
+        assert w2.previous_warrant_hash == w1.self_hash
+
+    def test_double_genesis_detected_as_fork(self):
+        """Two warrants with previous=None = fork at root.
+        Usually happens when two concurrent writers both see
+        an empty store and both insert a genesis warrant."""
+        from divineos.core._ledger_base import get_connection
+
+        w1 = issue_warrant("claim-a", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+
+        # Craft a second genesis warrant directly.
+        import time as _t
+
+        second_issued_at = _t.time()
+        second_self_hash = GnosisWarrant._compute_self_hash(
+            "claim-b",
+            Tier.OUTCOME,
+            ClaimMagnitude.NORMAL,
+            6,
+            0,
+            second_issued_at,
+            None,  # genesis
+        )
+        conn = get_connection()
+        try:
+            conn.execute(
+                "INSERT INTO gnosis_warrants (warrant_id, claim_id, tier, "
+                "magnitude, corroboration_count, council_count, issued_at, "
+                "previous_warrant_hash, self_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    "warrant-second-gen",
+                    "claim-b",
+                    Tier.OUTCOME.value,
+                    ClaimMagnitude.NORMAL.value,
+                    6,
+                    0,
+                    second_issued_at,
+                    None,
+                    second_self_hash,
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        with pytest.raises(WarrantForkError, match="Multiple genesis"):
+            verify_chain()
+        assert w1.previous_warrant_hash is None  # first was legit
+
+    def test_fork_error_is_subclass_of_chain_error(self):
+        """Existing callers catching WarrantChainError must still
+        catch forks — backward compatibility invariant."""
+        assert issubclass(WarrantForkError, WarrantChainError)
+
+    def test_existing_tamper_detection_still_fires(self):
+        """Self-hash tamper should still raise WarrantChainError
+        (NOT WarrantForkError), distinguishing tamper from fork."""
+        from divineos.core._ledger_base import get_connection
+
+        w = issue_warrant("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+
+        conn = get_connection()
+        try:
+            conn.execute(
+                "UPDATE gnosis_warrants SET corroboration_count = 999 WHERE warrant_id = ?",
+                (w.warrant_id,),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        # WarrantChainError, not WarrantForkError — tamper, not fork.
+        with pytest.raises(WarrantChainError, match="self_hash mismatch") as exc_info:
+            verify_chain()
+        assert not isinstance(exc_info.value, WarrantForkError)
+
+    def test_orphan_warrant_detected(self):
+        """A warrant whose previous_warrant_hash points to a
+        self_hash that doesn't exist must be caught by the orphan
+        invariant."""
+        from divineos.core._ledger_base import get_connection
+
+        w1 = issue_warrant("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+
+        # Craft an orphan — previous points to nothing.
+        import time as _t
+
+        orphan_issued_at = _t.time()
+        orphan_self_hash = GnosisWarrant._compute_self_hash(
+            "c-orphan",
+            Tier.OUTCOME,
+            ClaimMagnitude.NORMAL,
+            6,
+            0,
+            orphan_issued_at,
+            "0" * 64,  # fake previous
+        )
+        conn = get_connection()
+        try:
+            conn.execute(
+                "INSERT INTO gnosis_warrants (warrant_id, claim_id, tier, "
+                "magnitude, corroboration_count, council_count, issued_at, "
+                "previous_warrant_hash, self_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    "warrant-orphan00",
+                    "c-orphan",
+                    Tier.OUTCOME.value,
+                    ClaimMagnitude.NORMAL.value,
+                    6,
+                    0,
+                    orphan_issued_at,
+                    "0" * 64,
+                    orphan_self_hash,
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        with pytest.raises(WarrantChainError, match="Orphan"):
+            verify_chain()
+        assert w1.previous_warrant_hash is None
+
+    def test_clean_chain_after_fix_still_passes(self):
+        """Regression: the happy path still works after the
+        implementation rewrite."""
+        issue_warrant("c1", Tier.FALSIFIABLE, ClaimMagnitude.NORMAL, 4)
+        issue_warrant("c2", Tier.OUTCOME, ClaimMagnitude.NORMAL, 6)
+        issue_warrant("c3", Tier.PATTERN, ClaimMagnitude.NORMAL, 8)
+        verify_chain()  # no raise
 
 
 class TestRouting:

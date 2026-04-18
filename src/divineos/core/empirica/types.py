@@ -109,6 +109,29 @@ class WarrantChainError(RuntimeError):
     """
 
 
+class WarrantForkError(WarrantChainError):
+    """Raised when warrant chain verification detects a fork.
+
+    A fork is two or more warrants sharing a ``previous_warrant_hash``,
+    OR two or more genesis warrants (previous=None). Forks are
+    almost always the product of concurrent writers racing on the
+    same "latest warrant" snapshot — they are NOT tamper events
+    and should be distinguished from them.
+
+    Raised 2026-04-17 per Dijkstra's audit finding find-0ea12ad4b5d0:
+    the previous verify_chain sorted by ``issued_at`` and reported
+    concurrent-writer races as "previous_warrant_hash does not match"
+    — i.e. tamper-shaped false positives on honest concurrency.
+    The new traversal follows hash-pointer edges from genesis and
+    reports forks explicitly so operators can tell "someone raced"
+    from "someone tampered."
+
+    Subclasses ``WarrantChainError`` so existing callers catching the
+    parent keep working. New callers that want to distinguish the
+    two can catch ``WarrantForkError`` separately.
+    """
+
+
 @dataclass(frozen=True)
 class GnosisWarrant:
     """Durable record of what a claim survived.
@@ -256,4 +279,5 @@ __all__ = [
     "GnosisWarrant",
     "Tier",
     "WarrantChainError",
+    "WarrantForkError",
 ]

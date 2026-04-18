@@ -49,6 +49,7 @@ from divineos.core.empirica.types import (
     GnosisWarrant,
     Tier,
     WarrantChainError,
+    WarrantForkError,
 )
 
 
@@ -230,21 +231,44 @@ def get_warrants_for_claim(claim_id: str) -> list[GnosisWarrant]:
 
 
 def verify_chain() -> None:
-    """Walk the entire warrant chain and verify integrity.
+    """Walk the warrant chain by HASH POINTERS and verify integrity.
 
-    Checks two invariants for every warrant:
+    Traversal is a forest walk starting from genesis warrants (those
+    with ``previous_warrant_hash = None``). We do NOT sort by
+    ``issued_at`` — that was the bug Dijkstra flagged in audit
+    finding find-0ea12ad4b5d0. In a Merkle chain, hashes define
+    order; order does not define which hashes must match. Reversing
+    that dependency turned honest concurrent-writer races into
+    tamper-shaped false positives.
 
-    1. ``self_hash`` matches the recomputed hash of the warrant's
-       current field values (no mid-flight tampering).
-    2. ``previous_warrant_hash`` matches the ``self_hash`` of the
-       warrant immediately before this one in the chronological
-       ordering. Genesis warrant (first ever) is allowed to have
-       ``previous_warrant_hash = None``.
+    Invariants checked (in order):
 
-    Raises ``WarrantChainError`` on the first integrity failure,
-    with a message naming the specific warrant and failure mode.
-    Keeps silent on success — the callee doesn't need data back,
-    just "did it hold."
+    1. Every warrant's ``self_hash`` recomputes from its current
+       field values (no content tampering).
+    2. Every ``self_hash`` is unique in the store.
+    3. Exactly one genesis warrant exists. Two or more is a fork
+       at the root — usually concurrent writers on an empty store.
+    4. Walking from genesis following ``self_hash →
+       previous_warrant_hash`` edges, every node has exactly one
+       child. Two or more children is a fork at that position —
+       usually concurrent writers racing on the same latest-warrant
+       snapshot. Zero children is end-of-chain.
+    5. The traversal reaches every warrant in the store. Any
+       warrant not reached is orphaned — its
+       ``previous_warrant_hash`` points to a hash that doesn't
+       exist in the store (stale or tampered reference).
+    6. No cycles — a warrant whose traversal revisits a hash
+       already in the chain.
+
+    Raises:
+
+    * ``WarrantForkError`` (subclass of ``WarrantChainError``)
+      when invariants 3 or 4 fail — distinguishes honest
+      concurrent-writer forks from tamper events so operators
+      can diagnose correctly.
+    * ``WarrantChainError`` when invariants 1, 2, 5, or 6 fail.
+
+    Silent on success.
     """
     init_warrant_table()
     conn = _get_ledger_conn()
@@ -252,12 +276,18 @@ def verify_chain() -> None:
         rows = conn.execute(
             "SELECT warrant_id, claim_id, tier, magnitude, corroboration_count, "
             "council_count, issued_at, previous_warrant_hash, self_hash "
-            "FROM gnosis_warrants ORDER BY issued_at ASC"
+            "FROM gnosis_warrants"
         ).fetchall()
     finally:
         conn.close()
 
-    previous_self_hash: str | None = None
+    if not rows:
+        return  # empty store is valid
+
+    # Invariants 1 + 2: verify every warrant's self_hash, build
+    # by_self_hash index, build children_of adjacency.
+    by_self_hash: dict[str, GnosisWarrant] = {}
+    children_of: dict[str | None, list[GnosisWarrant]] = {}
     for r in rows:
         warrant = GnosisWarrant(
             warrant_id=r[0],
@@ -275,15 +305,75 @@ def verify_chain() -> None:
                 f"Warrant {warrant.warrant_id}: self_hash mismatch — "
                 f"content fields have been tampered since issue."
             )
-        if warrant.previous_warrant_hash != previous_self_hash:
+        if warrant.self_hash in by_self_hash:
+            prior = by_self_hash[warrant.self_hash]
             raise WarrantChainError(
-                f"Warrant {warrant.warrant_id}: previous_warrant_hash "
-                f"({warrant.previous_warrant_hash}) does not match the "
-                f"self_hash of the prior warrant ({previous_self_hash}). "
-                f"Chain has been broken — either a warrant was inserted "
-                f"out of order or an earlier warrant was tampered with."
+                f"Duplicate self_hash {warrant.self_hash[:16]}... appears "
+                f"on warrants {prior.warrant_id} and {warrant.warrant_id}. "
+                f"Hash collisions should not occur for this field set."
             )
-        previous_self_hash = warrant.self_hash
+        by_self_hash[warrant.self_hash] = warrant
+        children_of.setdefault(warrant.previous_warrant_hash, []).append(warrant)
+
+    # Invariant 3: exactly one genesis warrant.
+    genesis = children_of.get(None, [])
+    if not genesis:
+        raise WarrantChainError(
+            "No genesis warrant found (every warrant has a "
+            "previous_warrant_hash). Chain has no root — all previous "
+            "links must eventually terminate at a genesis warrant."
+        )
+    if len(genesis) > 1:
+        ids = ", ".join(w.warrant_id for w in genesis)
+        raise WarrantForkError(
+            f"Multiple genesis warrants found ({len(genesis)}): {ids}. "
+            f"Chain has forked at the root — likely concurrent writers "
+            f"on an empty store. Each genesis warrant is valid on its "
+            f"own; the fork needs operator intervention to pick the "
+            f"canonical history."
+        )
+
+    # Invariant 4 + 6: walk forward from genesis, one child per node,
+    # no cycles.
+    current = genesis[0]
+    visited: set[str] = {current.self_hash}
+    while True:
+        kids = children_of.get(current.self_hash, [])
+        if len(kids) == 0:
+            break
+        if len(kids) > 1:
+            ids = ", ".join(w.warrant_id for w in kids)
+            raise WarrantForkError(
+                f"Fork at warrant {current.warrant_id} "
+                f"({current.self_hash[:16]}...): {len(kids)} warrants "
+                f"chain to its self_hash: {ids}. Likely concurrent "
+                f"writers racing on the same latest-warrant snapshot. "
+                f"Investigate the race and consider adding a write-side "
+                f"lock or compare-and-swap on the previous hash."
+            )
+        current = kids[0]
+        if current.self_hash in visited:
+            raise WarrantChainError(
+                f"Cycle detected at warrant {current.warrant_id}: "
+                f"traversal revisits self_hash already in the chain. "
+                f"This should be structurally impossible unless a "
+                f"warrant was manually inserted with a crafted hash."
+            )
+        visited.add(current.self_hash)
+
+    # Invariant 5: every warrant reached from the genesis walk.
+    unvisited = set(by_self_hash.keys()) - visited
+    if unvisited:
+        orphans = sorted(by_self_hash[h].warrant_id for h in unvisited)
+        sample = ", ".join(orphans[:5])
+        suffix = f" (and {len(orphans) - 5} more)" if len(orphans) > 5 else ""
+        raise WarrantChainError(
+            f"Orphan warrants not reached from genesis traversal: "
+            f"{sample}{suffix}. Their previous_warrant_hash references "
+            f"point to self_hashes that do not exist in the store — "
+            f"either stale (a prior warrant was deleted) or tampered "
+            f"(a previous_warrant_hash was edited to a fake value)."
+        )
 
 
 __all__ = [
