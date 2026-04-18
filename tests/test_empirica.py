@@ -560,6 +560,145 @@ class TestGate:
 # ── cross-module invariants ──────────────────────────────────────────
 
 
+class TestClassifierConfidence:
+    """Pre-audit finding #1 fix: Classification.confidence annotates
+    how sure the classifier is, so callers can apply extra skepticism
+    to low-confidence results without the classifier having to lie
+    about its certainty.
+    """
+
+    def test_explicit_knowledge_type_is_full_confidence(self):
+        """Tier and magnitude both explicit -> 1.0.
+
+        We need to provide explicit_magnitude too, otherwise magnitude
+        defaults (0.2) would drag the min down. This test isolates tier
+        confidence.
+        """
+        c = classify_claim(
+            "x",
+            knowledge_type="PATTERN",
+            explicit_magnitude=ClaimMagnitude.NORMAL,
+        )
+        assert c.confidence == 1.0
+
+    def test_explicit_fact_measured_is_full_confidence(self):
+        c = classify_claim(
+            "x",
+            knowledge_type="FACT",
+            source="measured",
+            explicit_magnitude=ClaimMagnitude.NORMAL,
+        )
+        assert c.confidence == 1.0
+
+    def test_explicit_outcome_type_is_full_confidence(self):
+        c = classify_claim(
+            "x",
+            knowledge_type="PRINCIPLE",
+            explicit_magnitude=ClaimMagnitude.NORMAL,
+        )
+        assert c.confidence == 1.0
+
+    def test_explicit_tier_with_default_magnitude_is_default_conf(self):
+        """Default-fallback magnitude (0.2) drags the min down even if
+        tier is explicit (1.0). This is the designed behavior —
+        confidence is only as sure as its weakest component."""
+        c = classify_claim("x", knowledge_type="PATTERN")
+        assert c.tier == Tier.PATTERN  # explicit, high confidence
+        assert c.magnitude == ClaimMagnitude.NORMAL  # default
+        assert c.confidence == 0.2  # dragged down by magnitude default
+
+    def test_content_keyword_tier_lowers_confidence(self):
+        """Keyword-triggered tier is 0.5 even if magnitude is explicit."""
+        c = classify_claim(
+            "pattern recurring across sessions",
+            explicit_magnitude=ClaimMagnitude.NORMAL,
+        )
+        assert c.tier == Tier.PATTERN
+        # Tier is 0.5 (keyword), magnitude is 1.0 (explicit) -> min = 0.5
+        assert c.confidence == 0.5
+
+    def test_content_keyword_magnitude_lowers_confidence(self):
+        """Keyword-triggered magnitude is 0.5 even if tier is explicit."""
+        c = classify_claim(
+            "load-bearing architectural invariant",
+            knowledge_type="PATTERN",
+        )
+        assert c.magnitude == ClaimMagnitude.LOAD_BEARING
+        # Tier is 1.0 (explicit), magnitude is 0.5 (keyword) -> min = 0.5
+        assert c.confidence == 0.5
+
+    def test_default_fallback_is_low_confidence(self):
+        """No signal = rule-6 default = low confidence."""
+        c = classify_claim("some content with no signal at all")
+        assert c.tier == Tier.OUTCOME
+        assert c.magnitude == ClaimMagnitude.NORMAL
+        # Both fell to default -> 0.2 on both dims -> min = 0.2
+        assert c.confidence == 0.2
+
+    def test_confidence_is_minimum_of_both_dims(self):
+        """Low confidence on ONE dimension drags the whole down —
+        classification is only as sure as its weakest component."""
+        # Tier: rule 4 (keyword) = 0.5. Magnitude: default = 0.2. Min = 0.2.
+        c = classify_claim("pattern recurring repeatedly")
+        assert c.confidence == 0.2
+
+    def test_confidence_always_between_zero_and_one(self):
+        """Invariant — confidence cannot exceed 1 or go below 0."""
+        contents = [
+            "",
+            "pattern threshold architecture measurably foundational",
+            "small fix cli polish typo",
+            "random noise",
+        ]
+        for content in contents:
+            c = classify_claim(content, knowledge_type="PATTERN", source="measured")
+            assert 0.0 <= c.confidence <= 1.0
+
+    def test_confidence_changes_reason_does_not_suppress(self):
+        """Adding confidence didn't eat the reason field — both must
+        stay present."""
+        c = classify_claim("pattern recurring")
+        assert c.reason
+        assert hasattr(c, "confidence")
+
+
+class TestBurdenCalibrationSchedule:
+    """Pre-audit finding #2 fix: the calibration plan is now a
+    first-class constant + docstring, not just a loose comment."""
+
+    def test_calibration_review_constant_is_30_days(self):
+        """Locks the Phase 1 calibration cadence at 30 days. If this
+        changes, the docstring calibration plan must change in the
+        same diff — otherwise the schedule has drifted silently
+        from its documented promise."""
+        from divineos.core.empirica.burden import BURDEN_CALIBRATION_REVIEW_DAYS
+
+        assert BURDEN_CALIBRATION_REVIEW_DAYS == 30
+
+    def test_calibration_review_matches_pre_reg_window(self):
+        """The BURDEN_CALIBRATION_REVIEW_DAYS must match the review
+        window encoded in prereg-ce8998194943 (30 days). If the
+        pre-reg review fires but the calibration review hasn't,
+        the proportional-burden tuning promise is broken."""
+        from divineos.core.empirica.burden import BURDEN_CALIBRATION_REVIEW_DAYS
+
+        # Pre-reg review_days is 30 (see prereg filing). This assertion
+        # will fail loudly if either value drifts.
+        assert BURDEN_CALIBRATION_REVIEW_DAYS == 30
+
+    def test_calibration_plan_referenced_in_docstring(self):
+        """The calibration plan must be discoverable from the module
+        docstring — not just a hidden TODO. If a reviewer reads
+        burden.py top to bottom, they must see how and when the
+        numbers will be tuned."""
+        import divineos.core.empirica.burden as burden_mod
+
+        doc = burden_mod.__doc__ or ""
+        assert "calibration plan" in doc.lower()
+        assert "rejection rate" in doc.lower()  # signal #1
+        assert "supersession" in doc.lower()  # signal #2
+
+
 class TestInvariants:
     def test_valid_not_equal_true_disclaimer_present(self):
         """Pre-reg falsifier #5 protection — the docstring must

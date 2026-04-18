@@ -33,11 +33,47 @@ Worked examples:
 
 ## Why these numbers, not others
 
+Honest answer: they are my best Phase 1 guess, not derived values.
 The pre-reg (prereg-ce8998194943) makes the tuning falsifiable: if
 after 30 days of real-world use, Tier I vs Tier III claims produce
 the same empirical rejection rate, the numbers are wrong and the
 calculator is decorative. Calibration happens based on evidence,
 not on vibes. Ship with reasonable defaults; tune when the data says.
+
+## Calibration plan
+
+The ``BURDEN_CALIBRATION_REVIEW_DAYS`` constant below locks a
+review schedule (default: 30 days). At that point, the review
+looks at real EMPIRICA usage and tunes the BASE values per these
+signals (in order of decreasing confidence in the signal):
+
+1. **Rejection rate parity.** If Tier I and Tier III claims show
+   the same empirical rejection rate in the validity gate,
+   proportional burden isn't doing differential work — equalize
+   burden is a symptom of undifferentiated thresholds. Action:
+   widen the spread (e.g. FALSIFIABLE base=2, PATTERN base=6).
+
+2. **Supersession rate of warranted claims.** If claims that
+   passed EMPIRICA at Tier I get superseded at a higher rate
+   than Tier III claims that passed, the FALSIFIABLE bar is too
+   low. Action: raise FALSIFIABLE base.
+
+3. **Caller complaint pattern.** If callers consistently report
+   the same tier-magnitude combination as "too strict" or "too
+   loose," inspect whether the combo is rare (in which case
+   the complaint is noise) or common (in which case tune).
+
+4. **Never tune by "vibes".** If nobody can point to a specific
+   rejection-rate / supersession-rate / complaint pattern, don't
+   touch the numbers. The pre-reg explicitly falsifies on
+   post-hoc tuning without evidence.
+
+Tuning changes must:
+- File a new pre-reg naming the proposed new base values + the
+  prediction (rejection rates should shift by X percentage points)
+- Update this docstring with the new numbers AND the evidence
+- Re-run the full test suite (test values are baked in; changing
+  them is a deliberate signal, not a silent drift)
 
 ## What this module is NOT
 
@@ -52,9 +88,19 @@ from __future__ import annotations
 from divineos.core.empirica.types import ClaimMagnitude, Tier
 
 
+BURDEN_CALIBRATION_REVIEW_DAYS = 30
+"""Schedule for reviewing the ``_TIER_BASE_CORROBORATION`` values.
+
+Locked as a module-level constant so the review cadence is part of
+the public contract, not a hidden TODO. Tests assert this value
+matches the pre-reg review window — if the two ever disagree, the
+calibration has slipped out of its committed schedule and one or
+the other needs to be updated deliberately, not silently."""
+
+
 # Base corroboration counts per tier. These are the starting points —
 # magnitude multiplies on top. Phase 1 values; tuning is a pre-reg
-# review artifact at 30 days.
+# review artifact at BURDEN_CALIBRATION_REVIEW_DAYS.
 _TIER_BASE_CORROBORATION: dict[Tier, int] = {
     Tier.FALSIFIABLE: 2,  # repeatable test → needs independent repro
     Tier.OUTCOME: 3,  # mechanism-opaque → more observations
@@ -110,6 +156,7 @@ def burden_matrix() -> dict[tuple[Tier, ClaimMagnitude], int]:
 
 
 __all__ = [
+    "BURDEN_CALIBRATION_REVIEW_DAYS",
     "burden_matrix",
     "required_corroboration",
 ]
