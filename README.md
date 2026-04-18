@@ -460,6 +460,7 @@ src/divineos/
       letters.py               Handoff letter channel + append-only response layer + length nudge
       reject_clause.py         Phase 1b operator: composition rule — content must match source_tag promise
       sycophancy_detector.py   Phase 1b operator: pain-side algedonic — catches drift-toward-agreement at write time
+      costly_disagreement.py   Phase 1b operator: pleasure-side algedonic — rewards disagreement held across pushback
     empirica/                  Evidence ledger with tiered burden routing (prereg-ce8998194943)
       types.py                 Tier enum (FALSIFIABLE/OUTCOME/PATTERN/ADVERSARIAL), ClaimMagnitude, EvidenceReceipt with Merkle self-hash
       burden.py                required_corroboration(tier, magnitude) — proportional burden calculator
