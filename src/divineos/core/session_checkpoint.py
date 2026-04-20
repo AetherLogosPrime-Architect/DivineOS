@@ -126,8 +126,10 @@ def reset_write_count() -> None:
 # ─── Write-Count Threshold for Auto-Consolidation ─────────────────────
 #
 # Starting guess: 40 writes since last consolidation triggers auto-run.
-# This is a guess. Pre-registered for review in 7 days — see the PR #2
-# pre-registration for the structured-review checklist.
+# This is a guess. Pre-registered for review in 7 days as
+# prereg-52a15cfab7f1 — see that entry for the structured 4-point
+# review checklist (fire-count, dead-trigger detection, operator
+# correlation, ephemerality-bug-closure verification).
 #
 # Definition of "write" (per Claude 4.7 audit, pinned pre-registration):
 #   - 1 ledger event emission (log_event call) = 1 write
