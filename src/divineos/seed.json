@@ -111,7 +111,7 @@
       "type": "DIRECTIVE"
     },
     {
-      "content": "[session-lifecycle]\n  1. Every session begins with a briefing. Load context before acting.\n  2. During the session, events are captured. Every action is recorded.\n  3. At session end, emit SESSION_END. This triggers knowledge extraction.\n  4. Extraction finds corrections, preferences, decisions, and encouragements.\n  5. What is extracted becomes knowledge. Knowledge shapes future briefings.\n  6. The cycle is: brief, work, record, extract, learn. Then repeat.",
+      "content": "[session-lifecycle]\n  1. Every session begins with a briefing. Load context before acting.\n  2. During the session, events are captured. Every action is recorded.\n  3. At consolidation points, run `divineos extract` (formerly `emit SESSION_END`). This triggers knowledge extraction.\n  4. Extraction finds corrections, preferences, decisions, and encouragements.\n  5. What is extracted becomes knowledge. Knowledge shapes future briefings.\n  6. The cycle is: brief, work, record, extract, learn. Then repeat.",
       "confidence": 1.0,
       "maturity": "CONFIRMED",
       "tags": [

@@ -49,7 +49,7 @@ Also: outcome measurement (rework, churn, health scoring), quality trends (impro
 ### Self-Model
 The agent's coherent picture of itself, computed from evidence — not self-reported.
 
-- **Moral Compass** — Virtue ethics on 10 spectrums (Aristotle's golden mean). Auto-reflects at SESSION_END.
+- **Moral Compass** — Virtue ethics on 10 spectrums (Aristotle's golden mean). Auto-reflects during extraction (formerly SESSION_END).
 - **Decision Journal** — Captures the WHY behind choices. Reasoning, alternatives rejected, emotional weight. FTS-searchable.
 - **Self-Critique** — Craft quality assessment across 5 spectrums: elegance, thoroughness, autonomy, proportionality, communication.
 - **Opinion Store** — First-class opinions with evidence tracking, confidence evolution, and supersession history.
@@ -115,7 +115,7 @@ divineos briefing            # Start here — context, lessons, memory (--deep, 
 divineos preflight           # Confirm you're ready to work
 divineos hud                 # Full heads-up display
 divineos hud --brief         # Condensed view (~6 essential slots)
-divineos emit SESSION_END    # End-of-session analysis and knowledge extraction
+divineos extract             # Learning checkpoint: analyze session, extract knowledge, update lessons
 divineos checkpoint          # Lightweight mid-session save
 divineos context-status      # Edit count, tool calls, context level
 ```
@@ -276,7 +276,7 @@ src/divineos/
     __init__.py                Entry point and command registration
     _helpers.py                Shared CLI utilities
     _wrappers.py               Output formatting wrappers
-    session_pipeline.py        SESSION_END orchestrator (calls phases)
+    session_pipeline.py        Extraction pipeline orchestrator (formerly SESSION_END, calls phases)
     pipeline_gates.py          Enforcement gates (quality, briefing, engagement)
     pipeline_phases.py         Heavy-lifting phases (feedback, scoring, finalization)
     knowledge_commands.py      learn, ask, briefing, forget, lessons
