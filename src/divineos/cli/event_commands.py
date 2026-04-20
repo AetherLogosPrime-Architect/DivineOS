@@ -254,6 +254,16 @@ def register(cli: click.Group) -> None:
             except OSError as e:
                 logger.debug(f"Could not write consolidation marker: {e}")
 
+            # Reset the write-count trigger. The next consolidation cycle is
+            # measured from this point forward; writes that preceded this
+            # extract shouldn't count toward the next threshold crossing.
+            try:
+                from divineos.core.session_checkpoint import reset_write_count
+
+                reset_write_count()
+            except Exception as e:  # noqa: BLE001 — counter is best-effort
+                logger.debug(f"Could not reset write counter: {e}")
+
         except _EC_ERRORS as e:
             click.secho(f"[-] Error running extraction: {e}", fg="red")
             logger.exception("Session extraction failed")
