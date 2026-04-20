@@ -103,7 +103,7 @@ def get_session_start_time() -> float | None:
         try:
             row = conn.execute(
                 "SELECT timestamp FROM system_events "
-                "WHERE event_type = 'SESSION_END' "
+                "WHERE event_type IN ('SESSION_END', 'CONSOLIDATION_CHECKPOINT') "
                 "ORDER BY timestamp DESC LIMIT 1"
             ).fetchone()
             if row:

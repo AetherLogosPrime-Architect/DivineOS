@@ -153,3 +153,49 @@ class TestEmitFunctions:
         )
         assert event_id
         assert isinstance(event_id, str)
+
+
+class TestGetEventsAcceptsCollection:
+    """Commit 2: get_events(event_type=...) now accepts a single string OR a
+    collection (list/set/frozenset) and expands collections into SQL IN."""
+
+    def test_single_string_still_works(self):
+        from divineos.core.ledger import get_events
+
+        # Backward compat — existing callers continue to pass a string.
+        events = get_events(event_type="SESSION_END", limit=5)
+        assert isinstance(events, list)
+
+    def test_frozenset_accepted(self):
+        from divineos.core.ledger import get_events
+        from divineos.event.event_capture import CONSOLIDATION_EVENT_TYPES
+
+        events = get_events(event_type=CONSOLIDATION_EVENT_TYPES, limit=5)
+        assert isinstance(events, list)
+        # All returned events should have an event_type in the union.
+        for e in events:
+            assert e["event_type"] in CONSOLIDATION_EVENT_TYPES
+
+    def test_list_accepted(self):
+        from divineos.core.ledger import get_events
+
+        events = get_events(
+            event_type=["SESSION_END", "CONSOLIDATION_CHECKPOINT"],
+            limit=5,
+        )
+        assert isinstance(events, list)
+        for e in events:
+            assert e["event_type"] in ("SESSION_END", "CONSOLIDATION_CHECKPOINT")
+
+    def test_empty_collection_returns_all(self):
+        # Empty collection is falsy, so it's equivalent to no filter.
+        from divineos.core.ledger import get_events
+
+        events = get_events(event_type=[], limit=5)
+        assert isinstance(events, list)
+
+    def test_none_returns_all(self):
+        from divineos.core.ledger import get_events
+
+        events = get_events(event_type=None, limit=5)
+        assert isinstance(events, list)
