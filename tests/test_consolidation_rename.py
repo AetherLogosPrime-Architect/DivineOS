@@ -12,7 +12,8 @@ Locked invariants:
 4. validate_event_payload and normalize_event_payload route both event types
    to the same SessionEndPayload dataclass (identical schema).
 5. emit_consolidation_checkpoint emits events with the new event_type label.
-   emit_session_end still works (not yet deprecated) and emits the old label.
+   emit_session_end was removed in commit 3 of this PR (no alias; historical
+   data in the ledger still carries the old label, but no new writes do).
 6. event_validation.EventValidator.validate_payload accepts both event_type
    strings and routes both to the same validator.
 """
@@ -123,9 +124,9 @@ class TestEventValidatorAcceptsBoth:
 
 
 class TestEmitFunctions:
-    """Both emit functions should work; they differ only in the event_type
-    label they write. Uses real ledger (no mocks) — the test just checks that
-    calls complete and return an event_id."""
+    """emit_consolidation_checkpoint writes events under the new label.
+    emit_session_end was removed in commit 3; the historical label lives on
+    only in old ledger rows (which the compat union still matches)."""
 
     def test_emit_consolidation_checkpoint_returns_event_id(self):
         from divineos.event.event_emission import emit_consolidation_checkpoint
@@ -140,19 +141,13 @@ class TestEmitFunctions:
         assert event_id
         assert isinstance(event_id, str)
 
-    def test_emit_session_end_still_works(self):
-        # Historical function not yet deprecated (removed in commit 3).
-        from divineos.event.event_emission import emit_session_end
+    def test_emit_session_end_no_longer_exported(self):
+        # After commit 3, the old function is gone. Importing it should fail.
+        import divineos.event.event_emission as ee
 
-        event_id = emit_session_end(
-            session_id="rename-test-old",
-            message_count=0,
-            tool_call_count=0,
-            tool_result_count=0,
-            duration_seconds=0.0,
+        assert not hasattr(ee, "emit_session_end"), (
+            "emit_session_end should be removed in commit 3/7 of the rename"
         )
-        assert event_id
-        assert isinstance(event_id, str)
 
 
 class TestGetEventsAcceptsCollection:

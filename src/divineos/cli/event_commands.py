@@ -59,8 +59,8 @@ def register(cli: click.Group) -> None:
         import json
 
         from divineos.event.event_emission import (
+            emit_consolidation_checkpoint,
             emit_event,
-            emit_session_end,
             emit_tool_call,
             emit_tool_result,
             emit_user_input,
@@ -134,7 +134,7 @@ def register(cli: click.Group) -> None:
                 except (ImportError, OSError):
                     pass
 
-                event_id = emit_session_end(session_id=session_id or None)
+                event_id = emit_consolidation_checkpoint(session_id=session_id or None)
                 click.secho("[+] Event emitted: SESSION_END", fg="green")
                 click.secho(f"    Event ID: {event_id}", fg="cyan")
 
