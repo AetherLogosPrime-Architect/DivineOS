@@ -1,7 +1,8 @@
 """Event Capture Infrastructure — Core data structures and validation for IDE events.
 
 This module provides:
-- Event type enums (USER_INPUT, TOOL_CALL, TOOL_RESULT, SESSION_END)
+- Event type enums (USER_INPUT, TOOL_CALL, TOOL_RESULT, CONSOLIDATION_CHECKPOINT,
+  SESSION_END for historical compat)
 - Payload schemas for each event type
 - Validation functions for event payloads
 - Event normalization and enrichment

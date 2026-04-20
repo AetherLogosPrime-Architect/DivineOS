@@ -3,7 +3,7 @@
 This module provides functions to manage the session lifecycle:
 - Initialize sessions and generate/retrieve session IDs
 - Persist session IDs to files and environment variables
-- End sessions and emit SESSION_END events
+- End sessions and emit CONSOLIDATION_CHECKPOINT events (formerly SESSION_END)
 - Clear session state
 - Track session duration
 - Provide session tracker for backward compatibility

@@ -181,20 +181,20 @@ def format_context_warning(state: dict[str, Any]) -> str | None:
     if level == "warn":
         return (
             f"{base}\n"
-            "Context usage ~50%. Consider running 'divineos emit SESSION_END' "
+            "Context usage ~50%. Consider running 'divineos extract' "
             "to save knowledge before compaction."
         )
     if level == "urgent":
         return (
             f"{base}\n"
-            "CONTEXT USAGE HIGH (~80%). Run 'divineos emit SESSION_END' NOW "
+            "CONTEXT USAGE HIGH (~80%). Run 'divineos extract' NOW "
             "to extract knowledge. Session will compact soon."
         )
     if level == "critical":
         return (
             f"{base}\n"
             "CRITICAL: Context nearly full (~90%). "
-            "Run 'divineos emit SESSION_END' IMMEDIATELY. "
+            "Run 'divineos extract' IMMEDIATELY. "
             "Context compaction is imminent — unsaved work will be summarized away."
         )
     return None

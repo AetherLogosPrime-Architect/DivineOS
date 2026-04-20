@@ -35,7 +35,7 @@ def register(cli: click.Group) -> None:
     @click.option(
         "--session-id",
         default="",
-        help="Session ID for SESSION_END (optional, uses current if not provided)",
+        help="Session ID (optional, uses current if not provided)",
     )
     def emit_cmd(
         event_type: str,
@@ -54,7 +54,7 @@ def register(cli: click.Group) -> None:
         - ASSISTANT_OUTPUT: --content "response"
         - TOOL_CALL: --tool-name X --tool-input '{"key": "value"}' --tool-use-id Y
         - TOOL_RESULT: --tool-name X --tool-use-id Y --result "..." --duration-ms N
-        - SESSION_END: (no arguments needed, queries ledger for actual counts)
+        (For the formerly-SESSION_END consolidation event, use 'divineos extract'.)
         """
         import json
 
