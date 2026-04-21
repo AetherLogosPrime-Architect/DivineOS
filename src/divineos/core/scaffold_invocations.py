@@ -10,7 +10,7 @@ aren't used regularly fall out of working memory, and briefing never surfaced
 them.
 
 This module mirrors the pattern of corrections.format_for_briefing,
-presence_memory.format_for_briefing, and watchmen.cadence.format_cadence_warning:
+presence_memory.format_for_briefing, and watchmen.drift_state.format_for_briefing:
 a plain formatter that emits a named block when there is something to surface.
 
 Design (per real council consultation 2026-04-20):

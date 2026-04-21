@@ -458,13 +458,13 @@ src/divineos/
     convergence_detector.py    Circuit 3: compass-critique convergent measurement
     resonant_truth.py          RT protocol load/invoke/verify/deactivate with gate
     pull_detection.py          Toward/pull-back divergence detector (fabrication markers)
-    watchmen/                  External validation (audit findings, routing)
-      _schema.py               audit_rounds and audit_findings tables
-      types.py                 Severity, FindingCategory, Finding dataclasses
-      store.py                 CRUD with actor validation (self-trigger prevention)
+    watchmen/                  External validation (audit findings, routing, drift state)
+      _schema.py               audit_rounds and audit_findings tables (tier + review-chain columns)
+      types.py                 Severity, FindingCategory, Tier, ReviewStance, Finding dataclasses
+      store.py                 CRUD with actor validation + review chains + chain-tier computation
       router.py                Route findings to knowledge/claims/lessons
       summary.py               Analytics, HUD integration, unresolved tracking
-      cadence.py               Auto-scheduled external-audit cadence (overdue detection, briefing warning)
+      drift_state.py           Data-as-metric surface: ops-count dimensions since last MEDIUM+ audit (replaces cadence.py 2026-04-21)
     pre_registrations/         Goodhart prevention (predictions with falsifiers, scheduled reviews)
       _schema.py               pre_registrations table
       types.py                 Outcome enum, PreRegistration dataclass
