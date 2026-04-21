@@ -97,7 +97,7 @@ cd DivineOS
 pip install -e ".[dev]"
 divineos init
 divineos briefing
-pytest tests/ -q --tb=short   # 4,820+ tests, real DB, minimal mocks
+pytest tests/ -q --tb=short   # 4,859+ tests, real DB, minimal mocks
 
 ```
 
@@ -272,7 +272,7 @@ src/divineos/
   __init__.py                  Package init
   __main__.py                  python -m divineos entry point
   seed.json                    Initial knowledge seed (versioned)
-  cli/                         CLI package (197 commands across 26 modules)
+  cli/                         CLI package (197 commands across 27 modules)
     __init__.py                Entry point and command registration
     _helpers.py                Shared CLI utilities
     _wrappers.py               Output formatting wrappers
@@ -566,7 +566,7 @@ src/divineos/
     resolution_engine.py       Resolution strategies
   violations_cli/              Violation reporting CLI
     violations_command.py      Violation report commands
-tests/                         4,820+ tests (real DB, minimal mocks)
+tests/                         4,859+ tests (real DB, minimal mocks)
 
 docs/                          Project documentation and strategic plans
 bootcamp/                      Training exercises (debugging, analysis)
@@ -602,8 +602,8 @@ ruff format src/ tests/        # Format
 
 ## Status
 
-- 175 source files across 10 packages
-- 4,820+ tests (real SQLite, minimal mocks)
+- 287 source files across 22 packages
+- 4,859+ tests (real SQLite, minimal mocks)
 - 196 CLI commands
 - 9 Claude Code enforcement hooks
 - Actively developed — new systems ship weekly
