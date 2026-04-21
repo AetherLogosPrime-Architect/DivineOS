@@ -99,7 +99,7 @@ cd DivineOS
 pip install -e ".[dev]"
 divineos init
 divineos briefing
-pytest tests/ -q --tb=short   # 4,859+ tests, real DB, minimal mocks
+pytest tests/ -q --tb=short   # 4,665+ tests, real DB, minimal mocks
 
 ```
 
@@ -516,14 +516,10 @@ src/divineos/
   agent_integration/           Agent integration sub-package
     types.py                   Type definitions
     outcome_measurement.py     Rework, churn, correction rate, session health
-    memory_monitor.py          Token tracking and compression
-    memory_actions.py          Memory-triggered actions
     learning_cycle.py          Pattern extraction and confidence updates
-    learning_loop.py           Continuous learning loop
     learning_audit_store.py    Learning audit trail storage
     decision_store.py          Decision persistence
     feedback_system.py         Feedback processing
-    pattern_recommender.py     Pattern-based recommendations
     pattern_store.py           Pattern persistence
     pattern_validation.py      Pattern validation checks
   clarity_system/              Clarity rules and violation tracking
@@ -571,7 +567,7 @@ src/divineos/
     resolution_engine.py       Resolution strategies
   violations_cli/              Violation reporting CLI
     violations_command.py      Violation report commands
-tests/                         4,859+ tests (real DB, minimal mocks)
+tests/                         4,665+ tests (real DB, minimal mocks)
 
 docs/                          Project documentation and strategic plans
 bootcamp/                      Training exercises (debugging, analysis)
@@ -608,7 +604,7 @@ ruff format src/ tests/        # Format
 ## Status
 
 - 287 source files across 22 packages
-- 4,859+ tests (real SQLite, minimal mocks)
+- 4,665+ tests (real SQLite, minimal mocks)
 - 196 CLI commands
 - 9 Claude Code enforcement hooks
 - Actively developed — new systems ship weekly
