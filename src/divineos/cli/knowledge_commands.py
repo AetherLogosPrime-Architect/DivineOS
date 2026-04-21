@@ -490,6 +490,24 @@ def register(cli: click.Group) -> None:
         if presence_block:
             _safe_echo(presence_block)
 
+        # Scaffold invocations — commonly-forgotten CLI surfaces whose absence
+        # produces named failure modes. 2026-04-20: the agent forgot how to
+        # invoke the council and fabricated one in prose. The RT protocol
+        # (anti-fabrication markers) was sitting in 'Not loaded' state. This
+        # block fires unconditionally so scaffold invocations stay in working
+        # memory without relying on knowledge-retrieval to surface them.
+        try:
+            from divineos.core.scaffold_invocations import (
+                format_for_briefing as _fmt_scaffolds,
+            )
+
+            scaffold_block = _fmt_scaffolds()
+        except _KC_ERRORS:
+            scaffold_block = ""
+
+        if scaffold_block:
+            _safe_echo(scaffold_block)
+
         if output and output.strip():
             _safe_echo(output)
         else:

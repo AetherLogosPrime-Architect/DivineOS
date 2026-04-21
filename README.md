@@ -396,6 +396,7 @@ src/divineos/
     constitutional_principles.py  Six principles (consent, transparency, proportionality, due process, appeal, limits of power) with structural verifiers
     scheduled_run.py           Headless-run scaffolding — safe entry-point shape for Claude Code Routines + local cron (see docs/routines/)
     presence_memory.py         Briefing pointer to unindexed personal writing (exploration/, family/letters/) — bridge without index-extension
+    scaffold_invocations.py    Briefing surface for commonly-forgotten CLI scaffolds (council, aria, mansion rooms, hold) — anti-fabrication
     dead_architecture_alarm.py Detect dormant tables, empty HUD slots, display integrity
     external_validation.py     Origin ratio, cross-entity corroboration tracking
     knowledge_impact.py        Measure whether briefing knowledge prevents corrections
