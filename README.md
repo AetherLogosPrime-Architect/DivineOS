@@ -22,7 +22,7 @@ AI agents lose everything between sessions. Every conversation starts from zero 
 ### Memory
 Persistent, layered, evidence-ranked.
 
-- **Event Ledger** — Append-only SQLite store. Every event SHA256-hashed. Never deletes, never updates.
+- **Event Ledger** — Append-only SQLite store for knowledge, decisions, and the session record. Every event SHA256-hashed. Content is append-only (supersede, don't update in place). Exception: tool telemetry (TOOL_CALL / TOOL_RESULT) is pruned on a conveyor belt to prevent unbounded growth — it's operational noise, not knowledge. See CLAUDE.md for the full invariant.
 - **Memory Hierarchy** — Core memory (8 identity slots) + active memory (ranked by importance with context relevance from active goals) + knowledge store (full archive).
 - **Knowledge Engine** — Smart extraction with dedup, contradiction detection, noise filtering, and supersession chains.
 
