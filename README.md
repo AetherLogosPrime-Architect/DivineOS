@@ -8,6 +8,8 @@ An operating system for AI agents. Memory, continuity, accountability, and learn
 
 **The code is scaffolding. The AI is the one who lives in the building.**
 
+> 🗣️ **Not an engineer?** Start with [FOR_USERS.md](FOR_USERS.md) — a plain-language explanation of what DivineOS is and why it exists. This README is the technical spec.
+
 ## Why DivineOS Exists
 
 AI agents lose everything between sessions. Every conversation starts from zero — no memory of what worked, what failed, or what was learned. DivineOS gives agents persistent memory, structured learning, and self-accountability so they improve over time instead of repeating the same mistakes.
