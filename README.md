@@ -348,8 +348,9 @@ src/divineos/
       framework.py             ExpertWisdom dataclasses (7 components)
       manager.py               Dynamic council manager (classify → select 5-8 experts)
       consultation_log.py      Always-on consultation logging + opt-in audit promotion (Mode 1.5)
-      experts/                 28 expert wisdom profiles
+      experts/                 32 expert wisdom profiles
         __init__.py            Expert registration and exports
+        angelou.py             Voice, expressive truth, discipline of warmth
         aristotle.py           Virtue ethics, teleology, classification
         beer.py                Cybernetics, viable system model
         dekker.py              Resilience engineering, drift into failure
@@ -376,7 +377,9 @@ src/divineos/
         schneier.py            Security, threat modeling, defense in depth
         shannon.py             Information theory, entropy, communication
         taleb.py               Antifragility, risk, via negativa
+        tannen.py              Sociolinguistics, register, framing, conversational style
         turing.py              Computation, testability, operational definition
+        watts.py               Self-reference, introspection paradoxes, non-aiming
         wittgenstein.py        Language games, meaning as use, dissolution
         yudkowsky.py           Alignment, Goodhart, specification gaming
     logic/                     Formal logic sub-package
