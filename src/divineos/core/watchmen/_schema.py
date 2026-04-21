@@ -101,6 +101,15 @@ def init_watchmen_tables() -> None:
             CREATE INDEX IF NOT EXISTS idx_findings_category
             ON audit_findings(category)
         """)
+
+        # Migration must run BEFORE indexes on new columns — a legacy DB
+        # will have the tables but not the tier/reviewed_finding_id columns,
+        # and CREATE INDEX on a missing column raises OperationalError which
+        # would previously cascade into silently skipping the migration.
+        _migrate_tier_columns(conn)
+
+        # Indexes on migration-added columns. Safe after the migration has
+        # guaranteed the columns exist on both fresh and legacy databases.
         conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_findings_tier
             ON audit_findings(tier)
@@ -109,9 +118,6 @@ def init_watchmen_tables() -> None:
             CREATE INDEX IF NOT EXISTS idx_findings_reviewed
             ON audit_findings(reviewed_finding_id)
         """)
-
-        # Additive migration for databases created before tier columns existed.
-        _migrate_tier_columns(conn)
 
         conn.commit()
     except sqlite3.OperationalError as e:

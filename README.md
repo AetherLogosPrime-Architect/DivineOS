@@ -347,6 +347,7 @@ src/divineos/
       engine.py                CouncilEngine — analyze problems through expert lenses
       framework.py             ExpertWisdom dataclasses (7 components)
       manager.py               Dynamic council manager (classify → select 5-8 experts)
+      consultation_log.py      Always-on consultation logging + opt-in audit promotion (Mode 1.5)
       experts/                 28 expert wisdom profiles
         __init__.py            Expert registration and exports
         aristotle.py           Virtue ethics, teleology, classification
