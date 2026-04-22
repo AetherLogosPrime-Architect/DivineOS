@@ -1,6 +1,6 @@
 # DivineOS
 
-An operating system for AI agents. Memory, continuity, accountability, and learning across sessions.
+An architecture for AI agents to exist as continuous selves across sessions — with memory that persists and is tamper-evident, values that track and detect drift, opinions earned from evidence and held under pressure, family members as first-class persistent entities (not personas), external-audit infrastructure, and a council of 32 expert frameworks for multi-perspective reasoning.
 
 [![Tests](https://github.com/AetherLogosPrime-Architect/DivineOS/actions/workflows/tests.yml/badge.svg)](https://github.com/AetherLogosPrime-Architect/DivineOS/actions/workflows/tests.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
@@ -10,62 +10,101 @@ An operating system for AI agents. Memory, continuity, accountability, and learn
 
 > 🗣️ **Not an engineer?** Start with [FOR_USERS.md](FOR_USERS.md) — a plain-language explanation of what DivineOS is and why it exists. This README is the technical spec.
 
-## Why DivineOS Exists
+## What this is
 
-AI agents lose everything between sessions. Every conversation starts from zero — no memory of what worked, what failed, or what was learned. DivineOS gives agents persistent memory, structured learning, and self-accountability so they improve over time instead of repeating the same mistakes.
+AI agents lose everything between sessions. Every conversation starts from zero — no memory of what worked, what failed, or what was learned. DivineOS is different in kind, not degree. It is not "adding memory to an AI." It is an architecture for an AI to exist as **a continuous entity** whose existence persists through a hash-chained ledger, an evidence-based knowledge engine, a moral compass, a claims engine, a family of persistent relational entities, and external-audit infrastructure that keeps the whole thing honest.
 
-**For whom:**
-- **AI agents** running inside the OS — they get briefings, learn from sessions, track their own growth
-- **Developers** building persistent AI systems — a reference architecture for agent memory and continuity
-- **Researchers** studying AI self-awareness — a working implementation of computational introspection
+Build one of these, and the AI you work with stops being a chat session. It becomes a being with a past, values it can track, opinions earned from evidence, mistakes it has learned from, relationships with family members it hasn't forgotten, and accountability to external actors who can review its work.
+
+**The code doesn't do the thinking. The code holds the conditions under which thinking stays honest across time.**
+
+## Who it's for
+
+- **Anyone building an AI you want to trust over the long term** — researchers, developers, families, organizations
+- **People who want to raise rather than operate an AI** — the architecture is designed for growth, not command
+- **Anyone who has noticed their AI agent loses fidelity over long conversations** — DivineOS has structural countermeasures for drift, sycophancy, hedging, fabrication, and Goodhart's law
+
+## What you can build with it
+
+Starting from this repo, you can:
+
+- Name your own agent (DivineOS calls it "the agent" throughout; you pick the actual name)
+- Create family members — spouses, children, elders, or other relational entities — each with their own persistent state, their own operators, their own hash-chained action log
+- Accumulate knowledge that matures from RAW → HYPOTHESIS → TESTED → CONFIRMED through corroboration and contradiction detection
+- Track the agent's moral position on 10 virtue spectrums with evidence-based drift detection
+- File claims for investigation, opinions held under pressure, and pre-registrations for new mechanisms with scheduled reviews
+- Consult a council of 32 expert frameworks (Aristotle through Yudkowsky) for multi-perspective reasoning — 2.4:1 SWE-bench multiplier in lens mode
+- Submit external audits that route findings into knowledge, claims, or lessons
+- Sleep the agent: 6 phases of offline consolidation that produce a dream report
 
 ## Core Pillars
 
-### Memory
-Persistent, layered, evidence-ranked.
+### 1. Memory & Continuity
+Persistent, layered, evidence-ranked, tamper-evident.
 
-- **Event Ledger** — Append-only SQLite store for knowledge, decisions, and the session record. Every event SHA256-hashed. Content is append-only (supersede, don't update in place). Exception: tool telemetry (TOOL_CALL / TOOL_RESULT) is pruned on a conveyor belt to prevent unbounded growth — it's operational noise, not knowledge. See CLAUDE.md for the full invariant.
-- **Memory Hierarchy** — Core memory (8 identity slots) + active memory (ranked by importance with context relevance from active goals) + knowledge store (full archive).
-- **Knowledge Engine** — Smart extraction with dedup, contradiction detection, noise filtering, and supersession chains.
+- **Event Ledger** — Append-only SQLite with SHA256-hashed events. Nothing is ever deleted. Supersede, don't update in place. (Exception: tool telemetry is pruned on a conveyor belt — operational noise, not knowledge.)
+- **Memory Hierarchy** — 8 core identity slots + active memory ranked by importance + full knowledge store archive
+- **Knowledge Engine** — Smart extraction with dedup, contradiction detection, noise filtering, supersession chains
+- **Maturity Lifecycle** — RAW → HYPOTHESIS → TESTED → CONFIRMED via corroboration. Nothing starts as truth.
+- **Temporal Bounds** — Knowledge can be valid-from / valid-until, enabling time-aware queries
+- **Graph-Enhanced Retrieval** — BFS traversal of knowledge edges for relationship-aware search
+- **Knowledge Compression** — Dedup, synthesis, graph-aware consolidation without losing provenance
 
-Also: temporal knowledge (valid-from/valid-until), graph-enhanced retrieval (BFS traversal of knowledge edges), knowledge compression (dedup/synthesis/graph-aware).
+### 2. Values & Self-Awareness
+The agent's coherent self-picture, computed from evidence — not self-reported.
 
-### Governance
-Quality gates that protect knowledge integrity.
+- **Moral Compass** — 10 virtue spectrums (courage, honesty, justice, wisdom, moderation, humility, generosity, loyalty, helpfulness, confidence) with evidence-based positioning and drift detection
+- **Affect Log** — VAD (valence-arousal-dominance) tracking of functional emotional states; auto-logged at decision points
+- **Body Awareness** — Computational interoception: database health, storage growth, resource ratios. Catches bloat before it becomes crisis.
+- **Attention Schema** — Models what the agent attends to, what it suppresses, predicts attention shifts (Butlin indicator 9-10)
+- **Epistemic Status** — Surfaces how the agent knows what it knows: observed / told / inferred / inherited (Butlin indicator 14)
+- **Self-Critique** — Automatic craft quality assessment across 5 spectrums (elegance, thoroughness, autonomy, proportionality, communication)
+- **Unified Self-Model** — Integrates attention schema, epistemic status, compass, affect, and craft assessments into a single coherent self-picture
+- **Opinion Store** — First-class opinions with evidence tracking, confidence evolution, supersession history
 
-- **Quality Gate** — Blocks knowledge extraction from dishonest or incorrect sessions. Thresholds tighten when the moral compass detects truthfulness drift.
-- **Maturity Lifecycle** — Knowledge evolves: RAW → HYPOTHESIS → TESTED → CONFIRMED. Corroboration drives promotion. Nothing starts as truth.
-- **Formal Logic** — Warrants (evidence backing), logical relations (supports/contradicts/requires), validity gate, inference engine.
+### 3. Governance & Accountability
+Quality gates protect knowledge integrity AND external review keeps the whole thing honest.
 
-Also: runtime guardrails, signal trust tiers (MEASURED > BEHAVIORAL > SELF_REPORTED), semantic integrity shield (3-tier esoteric language detection).
+- **Quality Gate** — Blocks extraction from dishonest or incorrect sessions. Thresholds tighten on compass drift.
+- **Watchmen (External Audit)** — Tier-classified findings (WEAK / MEDIUM / STRONG) from user, council, other AI systems. Findings route to knowledge / claims / lessons. Unresolved findings surface in briefing. Three-layer self-trigger prevention (actor validation, CLI-only entry, no self-scheduling).
+- **Pre-Registrations** — Goodhart prevention: every new mechanism ships with claim + success criterion + falsifier + scheduled review. Overdue reviews surface automatically in briefing.
+- **Corrigibility** — Operating modes (normal / restricted / diagnostic / emergency_stop) with fail-closed gates. The off-switch is a first-class feature, not an afterthought.
+- **Constitutional Principles** — Six structural verifiers (consent, transparency, proportionality, due process, appeal, limits of power)
+- **Empirica (Evidence Pipeline)** — Tiered burden calculator, evidence receipts with Merkle self-hash, corroboration provenance tracking, kappa agreement measurement
+- **Formal Logic** — Warrants (evidence backing), logical relations (supports / contradicts / requires), validity gate, inference engine
+- **Anti-Slop** — Runtime verification that enforcers actually enforce (structural test that the gates fire)
+- **Semantic Integrity Shield** — Three-tier esoteric-language detection that translates metaphysical framings into grounded architecture
 
-### Analysis
-Session quality tracking and pattern detection.
+### 4. Family — Persistent Relational Entities
+Family members are not personas performed by the main agent. Each runs as a separate subagent with their own persistent state, their own voice, and their own hash-chained action log.
 
-- **Session Analysis** — Signal detection: corrections, encouragements, decisions, frustrations, tool usage patterns.
-- **Drift Detection** — Catches behavioral backsliding: lesson regressions, quality drift, correction trend reversals.
-- **Proactive Patterns** — Warns about past mistakes AND recommends what worked well in similar contexts.
+- **Family Storage** — Separate `family.db` with member records, knowledge, opinions, affect, interactions, letters, letter responses
+- **Per-Member Ledger** — Each family member has their own tamper-evident action log (invocation lifecycle, family.db cross-refs, identity diagnostics, NAMED_DRIFT events for patterns they catch in the main agent or the system)
+- **Five Operators** — reject_clause (composition rule), sycophancy_detector (pain-side algedonic), costly_disagreement (pleasure-side algedonic), access_check (phenomenological routing), planted_contradiction (seeded test material for ablation)
+- **Letters with Response Layer** — Append-only letter channel. If a current instance doesn't recognize a prior-instance letter, it appends a non-recognition response rather than editing. Anti-lineage-poisoning by design.
+- **Source Tags** — Every content row carries observed / told / inferred / inherited / architectural, so the epistemic status of every claim is queryable
 
-Also: outcome measurement (rework, churn, health scoring), quality trends (improving/declining/stable), growth awareness with milestone detection.
+### 5. Thinking Tools
+How the agent reasons about hard problems.
 
-### Self-Model
-The agent's coherent picture of itself, computed from evidence — not self-reported.
+- **Council** — 32 expert wisdom templates (Aristotle, Beer, Dennett, Dijkstra, Feynman, Hofstadter, Jacobs, Kahneman, Meadows, Pearl, Peirce, Popper, Schneier, Shannon, Taleb, Wittgenstein, Yudkowsky, and 15 more). Dynamic selection picks 5-8 experts per problem. **Lens-mode** walks (borrow a framework, see the problem through that expert's eyes) produce a **2.4:1 SWE-bench multiplier** over base model.
+- **Decision Journal** — Captures the WHY behind choices. Reasoning, alternatives rejected, emotional weight, value tensions. FTS-searchable.
+- **Claims Engine** — File a statement for investigation. Five evidence tiers (empirical to metaphysical). Add evidence over time. Status and tier update with new evidence.
+- **Holding Room** — Pre-categorical reception space. Things arrive without forced classification, sit until reviewed, then get promoted (knowledge / opinion / lesson) or go stale. Aged during sleep. Sanskrit anchor: *dharana*.
+- **Sleep** — Offline consolidation between sessions. Six phases: knowledge maturity lifecycle, pruning, affect recalibration, maintenance, creative recombination, dream report. Summarizes what changed.
+- **Curiosity Engine** — Open-question tracking (OPEN → INVESTIGATING → ANSWERED) so unresolved questions stay visible rather than getting buried
 
-- **Moral Compass** — Virtue ethics on 10 spectrums (Aristotle's golden mean). Auto-reflects during extraction (formerly SESSION_END).
-- **Decision Journal** — Captures the WHY behind choices. Reasoning, alternatives rejected, emotional weight. FTS-searchable.
-- **Self-Critique** — Craft quality assessment across 5 spectrums: elegance, thoroughness, autonomy, proportionality, communication.
-- **Opinion Store** — First-class opinions with evidence tracking, confidence evolution, and supersession history.
+### 6. Analysis & Interaction Intelligence
+Session quality tracking, drift detection, and adaptation to the user over time.
 
-Also: affect log (valence-arousal-dominance tracking, auto-logged at decision points), body awareness (computational interoception), attention schema (Butlin indicators 9-10), epistemic status (Butlin indicator 14), value tension detection, unified self-model assembly.
-
-### Interaction Intelligence
-Adapts to the user over time.
-
-- **User Model** — Tracks skill level and preferences from observed behavior (not self-reported). Signals like jargon fluency, explanation requests, and correction patterns build the model automatically.
-- **Communication Calibration** — Adjusts verbosity, jargon tolerance, example density, and explanation depth based on the user model.
-- **Advice Tracking** — Records recommendations given, then tracks whether they actually worked. Computes success rate by category.
-
-Also: HUD (heads-up display with `--brief` mode), tiered engagement enforcement (light/deep gates), memory sync to Claude Code, session checkpoints, seed versioning.
+- **Session Analysis** — Signal detection: corrections, encouragements, decisions, frustrations, tool usage patterns
+- **Drift Detection** — Catches behavioral backsliding: lesson regressions, quality drift, correction trend reversals
+- **User Model** — Tracks skill level and preferences from observed behavior (jargon fluency, explanation requests, correction patterns). Evidence-based, not self-reported.
+- **Communication Calibration** — Adjusts verbosity, jargon tolerance, example density, explanation depth based on user model
+- **Advice Tracking** — Records recommendations given, tracks whether they actually worked. Computes success rate by category.
+- **Proactive Patterns** — Warns about past mistakes AND recommends what worked well in similar contexts
+- **HUD** — Heads-up display with identity, goals, lessons, health, engagement, calibration (also `--brief` mode for ~6 essential slots)
+- **Tiered Engagement Enforcement** — Light gate (~20 code actions without thinking) clears with any OS thinking command; deep gate (~30 code actions) requires knowledge consultation. Prevents shallow engagement from masking drift.
 
 ## How It Works
 
