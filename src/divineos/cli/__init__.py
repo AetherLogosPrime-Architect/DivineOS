@@ -44,6 +44,7 @@ _BYPASS_COMMANDS = frozenset(
         "rt",
         "hold",
         "mansion",
+        "my-state",
         "prereg",
         # Corrections must always be loggable in the moment — gating the
         # rep behind a thinking-command requirement defeats the rep.
@@ -191,6 +192,7 @@ from divineos.cli import (  # noqa: E402
     knowledge_health_commands,
     ledger_commands,
     memory_commands,
+    backup_commands,
     prereg_commands,
     family_member_commands,
     progress_commands,
@@ -226,6 +228,7 @@ empirica_commands.register(cli)
 family_member_commands.register(cli)
 corrigibility_commands.register(cli)
 scheduled_commands.register(cli)
+backup_commands.register(cli)
 
 # Mansion — functional internal space (optional, personal)
 try:
