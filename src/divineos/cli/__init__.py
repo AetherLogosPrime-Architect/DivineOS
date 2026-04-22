@@ -11,6 +11,21 @@ import click
 from divineos.cli._wrappers import _ensure_db
 from divineos.core.enforcement import capture_user_input, setup_cli_enforcement
 
+# Make stdout/stderr tolerant of Unicode characters that the underlying
+# console can't render. On Windows the default cp1252 console codec
+# crashes on emojis (e.g. "💬" used in the session rating prompt),
+# bubbling up as UnicodeEncodeError — we saw this as spurious
+# "Auto-scan failed" messages during extract. Reconfiguring with
+# errors="replace" substitutes an unsupported character with "?" instead
+# of raising. No-op on platforms whose streams are already UTF-8.
+# Runs at import time so it is in effect before any CLI command writes
+# to stdout/stderr.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    except (AttributeError, OSError, ValueError):
+        pass
+
 # Commands that work without briefing loaded — the minimum to bootstrap.
 _BYPASS_COMMANDS = frozenset(
     {

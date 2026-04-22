@@ -13,7 +13,17 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from divineos.core import install_check
+
+
+@pytest.fixture(autouse=True)
+def _reset_install_check_cache():
+    """Each test sees a fresh cache — per-process cache must not leak."""
+    install_check._reset_cache_for_tests()
+    yield
+    install_check._reset_cache_for_tests()
 
 
 class TestSuppressionEnv:
@@ -75,3 +85,22 @@ class TestDivergenceDetection:
             patch.object(install_check, "_installed_package_root", return_value=None),
         ):
             assert install_check.check_install_divergence() is None
+
+
+class TestCaching:
+    def test_second_call_skips_subprocess(self, monkeypatch) -> None:
+        """Per-process cache: first call computes, subsequent calls reuse."""
+        monkeypatch.delenv("DIVINEOS_SUPPRESS_INSTALL_WARNING", raising=False)
+        with (
+            patch.object(install_check, "_git_toplevel") as mock_top,
+            patch.object(
+                install_check, "_installed_package_root", return_value=Path("/repo/src/divineos")
+            ),
+        ):
+            mock_top.return_value = Path("/repo")
+            install_check.check_install_divergence()
+            install_check.check_install_divergence()
+            install_check.check_install_divergence()
+            # Called twice during first computation (cwd + pkg); second/third
+            # invocations hit cache and don't call at all.
+            assert mock_top.call_count == 2

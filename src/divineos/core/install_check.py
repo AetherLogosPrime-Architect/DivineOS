@@ -61,6 +61,21 @@ def _installed_package_root() -> Path | None:
         return None
 
 
+# Per-process cache. cwd and installed-package location don't change
+# mid-process, so the divergence verdict is stable for the life of a
+# single CLI invocation. Without caching, every divineos command paid
+# two `git rev-parse` subprocess calls (~50-100ms on Windows). Sentinel
+# object distinguishes "not computed" from "computed, result was None".
+_CACHE_SENTINEL = object()
+_cached_result: object = _CACHE_SENTINEL
+
+
+def _reset_cache_for_tests() -> None:
+    """Test-only helper to reset the per-process cache between cases."""
+    global _cached_result
+    _cached_result = _CACHE_SENTINEL
+
+
 def check_install_divergence() -> str | None:
     """Return a one-line warning if install location diverges from cwd repo.
 
@@ -71,22 +86,32 @@ def check_install_divergence() -> str | None:
       - Installed package is a descendant of the current git repo.
 
     The fast-path (suppression env var) is checked first so this function
-    imposes near-zero overhead in CI / bulk-command contexts.
+    imposes near-zero overhead in CI / bulk-command contexts. Results are
+    cached per-process after the first call (cwd and install location are
+    stable within a process).
     """
+    global _cached_result
+    if _cached_result is not _CACHE_SENTINEL:
+        return _cached_result  # type: ignore[return-value]
+
     if os.environ.get("DIVINEOS_SUPPRESS_INSTALL_WARNING"):
+        _cached_result = None
         return None
 
     try:
         cwd = Path.cwd().resolve()
     except (OSError, RuntimeError):
+        _cached_result = None
         return None
 
     toplevel = _git_toplevel(cwd)
     if toplevel is None:
+        _cached_result = None
         return None  # not a git tree, no expectation to check
 
     pkg_root = _installed_package_root()
     if pkg_root is None:
+        _cached_result = None
         return None
 
     # Compare the git toplevel of the installed package against the cwd's
@@ -96,16 +121,20 @@ def check_install_divergence() -> str | None:
     # worktree" from "cwd is in worktree A, install points at worktree B".
     pkg_toplevel = _git_toplevel(pkg_root)
     if pkg_toplevel is None:
+        _cached_result = None
         return None  # pkg not in any git tree — e.g. pip wheel install
     if pkg_toplevel == toplevel:
+        _cached_result = None
         return None  # same worktree: fine
 
-    return (
+    msg = (
         f"[install warning] divineos installed from {pkg_toplevel} "
         f"but cwd is {toplevel}. "
         f"New files here will not be seen by the CLI until you run: "
         f"pip install -e ."
     )
+    _cached_result = msg
+    return msg
 
 
 def emit_install_warning() -> None:
