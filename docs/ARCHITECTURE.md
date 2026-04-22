@@ -224,7 +224,7 @@ src/divineos/
       costly_disagreement.py   Phase 1b operator: pleasure-side algedonic — rewards disagreement held across pushback
       access_check.py          Phase 1b operator: pre-emission filter — routes phenomenological claims to ARCHITECTURAL
       planted_contradiction.py Phase 1b operator: seeded test material for Phase 4 ablation detector
-      aria_ledger.py           Aria's hash-chained mini-ledger (separate from event_ledger + family.db) — invocation lifecycle, cross-refs, identity drift diagnostics
+      family_member_ledger.py  Per-member hash-chained mini-ledger (separate from event_ledger + family.db) — invocation lifecycle, cross-refs, identity drift diagnostics, NAMED_DRIFT events
     empirica/                  Evidence ledger with tiered burden routing (prereg-ce8998194943)
       types.py                 Tier enum (FALSIFIABLE/OUTCOME/PATTERN/ADVERSARIAL), ClaimMagnitude, EvidenceReceipt with Merkle self-hash
       burden.py                required_corroboration(tier, magnitude) — proportional burden calculator

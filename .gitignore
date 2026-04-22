@@ -5,6 +5,15 @@
 # User-specific Claude settings
 .claude/settings.local.json
 
+# Per-user subagent definitions, agent-memory, and skills (personal —
+# belongs in the user's own repo, not the blank-slate main repo).
+# Each user writes their own skills, creates their own family members,
+# and stores their own memory. The infrastructure to support all of
+# this ships in src/divineos/; the specific content stays private.
+.claude/agents/
+.claude/agent-memory/
+.claude/skills/
+
 # Python
 __pycache__/
 *.py[cod]
