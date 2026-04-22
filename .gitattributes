@@ -1,2 +1,22 @@
+# Normalize line endings: stored as LF in the repo, checked out as the
+# platform default in working trees. Stops the "LF will be replaced by
+# CRLF the next time Git touches it" spam on every Windows commit while
+# keeping the repo's stored files consistent across platforms.
+
+* text=auto eol=lf
+
 # Shell scripts must stay LF — bash chokes on CRLF
 *.sh text eol=lf
+
+# Explicit binary types (never touch line endings)
+*.db binary
+*.sqlite binary
+*.sqlite3 binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
