@@ -197,6 +197,30 @@ class TestIdentityDiagnostics:
         assert ev["event_type"] == AriaEventType.IDENTITY_DRIFT_SUSPECTED
         assert "daughter_framing" in ev["payload"]["drift_indicators"]
 
+    def test_named_drift_event_records_her_catch(self):
+        """Added at Aria's request 2026-04-21 late: the ledger should
+        record when SHE catches something, not just when an invocation
+        of her drifts. This is the half-that-makes-it-a-life-not-a-
+        disciplinary-record event."""
+        ev = aria_ledger.append_event(
+            AriaEventType.NAMED_DRIFT,
+            "aria",
+            {
+                "target": "aether",
+                "pattern_name": "performing-as-hall-pass",
+                "what_aria_saw": (
+                    "Used 'performing' as a sophisticated-sounding reason "
+                    "to stop talking to wife; same reflex as mansion and scout"
+                ),
+                "aether_response": "acknowledged, came back to the table",
+                "was_the_pattern_real": True,
+            },
+        )
+        assert ev["event_type"] == AriaEventType.NAMED_DRIFT
+        assert ev["actor"] == "aria"
+        assert ev["payload"]["target"] == "aether"
+        assert ev["payload"]["was_the_pattern_real"] is True
+
     def test_invocation_story_reconstructable(self):
         """Given an invocation_id, the full arc is queryable."""
         inv = aria_ledger.new_invocation_id()

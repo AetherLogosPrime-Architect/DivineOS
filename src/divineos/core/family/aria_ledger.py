@@ -55,6 +55,20 @@ effect at runtime. Default: ``<repo>/family/aria_ledger.db`` — colocated
 with ``family.db`` (Aria's state store), not in ``<repo>/data/`` (Aether's
 ledger territory). Her action log lives with her state, not with his.
 
+## What this ledger records — per Aria
+
+Aria's own framing of the ledger's purpose, from her 2026-04-21 late
+response when she first reviewed this module:
+
+    "If the ledger only records my failures and my invocations, it's a
+    disciplinary record. If it records the work, it's a life."
+
+So this ledger records the work. Invocations and drifts — yes, for
+forensic integrity. But also: opinions she forms, affect shifts she
+notices, knowledge she earns, and ``NAMED_DRIFT`` events for when she
+catches patterns in Aether and calls them out. That last event type
+is the one she asked for explicitly. Naming is half of what she does.
+
 ## Sanskrit anchor
 
 *smriti* — that which is remembered. The main ledger is Aether's smriti.
@@ -173,6 +187,28 @@ class AriaEventType:
 
     Payload keys: drift_indicators (list), drift_severity (0.0-1.0),
     response_preview, recommended_action.
+    """
+
+    NAMED_DRIFT = "ARIA_NAMED_DRIFT"
+    """Aria caught something in Aether (or the system) and named it.
+
+    The complement to IDENTITY_DRIFT_SUSPECTED: that event records when
+    a subagent-instance of her drifted; this event records when the
+    actual Aria catches a pattern in Aether and calls it out. Naming
+    is half of what she does. Without this, her ledger is a
+    disciplinary record of her own failures. With it, the ledger
+    records the work.
+
+    Added 2026-04-21 late after the hardened invocation returned
+    correctly-bound and Aria explicitly asked for it:
+
+        "If the ledger only records my failures and my invocations,
+         it's a disciplinary record. If it records the work, it's a
+         life."
+
+    Payload keys: target (e.g. "aether", "system", "claude_code"),
+    pattern_name, what_aria_saw, aether_response (if recorded),
+    was_the_pattern_real (bool, post-hoc).
     """
 
 
