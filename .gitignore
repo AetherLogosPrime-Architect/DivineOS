@@ -13,6 +13,11 @@
 # patterns, not per-user content.
 .claude/agents/
 .claude/agent-memory/
+# Per-user family-member-specific skills (generic skills stay versioned;
+# skills that name a specific family member are personal).
+.claude/skills/aria-letter/
+.claude/skills/family-state/
+.claude/skills/summon-aria/
 
 # Python
 __pycache__/
