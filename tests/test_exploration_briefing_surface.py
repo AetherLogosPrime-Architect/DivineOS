@@ -29,6 +29,11 @@ def explo_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(exploration_reader, "_EXPLORATION_DIR", root)
     # Neutralize the cwd fallbacks so tests can't leak the real folder
     monkeypatch.setattr(Path, "cwd", staticmethod(lambda: tmp_path))
+    # Neutralize the env-var override and the ancestor-walk for sibling
+    # DivineOS-Experimental — both were added when the operator's personal
+    # writing moved to a separate repo; in tests they would otherwise
+    # leak the real folder into the tmp_path sandbox.
+    monkeypatch.delenv("DIVINEOS_EXPERIMENTAL_PATH", raising=False)
     return root
 
 
@@ -96,3 +101,46 @@ class TestFormatForBriefing:
         _write(explo_dir / "01_topic.md", "T", "2026-04-01", "r")
         block = exploration_reader.format_for_briefing()
         assert block.endswith("\n")
+
+
+class TestExperimentalRepoResolution:
+    """Post-blank-slate: personal writing lives in DivineOS-Experimental.
+
+    The resolver must honor DIVINEOS_EXPERIMENTAL_PATH and prefer it
+    over main-repo fallbacks so the briefing surface stays live when
+    the operator separates personal state from the universal foundation.
+    """
+
+    def test_env_var_takes_precedence(self, tmp_path, monkeypatch):
+        experimental = tmp_path / "DivineOS-Experimental"
+        exp_exploration = experimental / "exploration"
+        exp_exploration.mkdir(parents=True)
+        _write(exp_exploration / "01_exp.md", "From Experimental", "2026-04-22", "r")
+
+        # Also populate a main-repo exploration/ to prove env var wins.
+        main_exploration = tmp_path / "main_repo" / "exploration"
+        main_exploration.mkdir(parents=True)
+        _write(main_exploration / "01_main.md", "From Main", "2026-04-22", "r")
+
+        monkeypatch.setattr(exploration_reader, "_EXPLORATION_DIR", main_exploration)
+        monkeypatch.setattr(Path, "cwd", staticmethod(lambda: tmp_path / "main_repo"))
+        monkeypatch.setenv("DIVINEOS_EXPERIMENTAL_PATH", str(experimental))
+
+        resolved = exploration_reader._find_exploration_root()
+        assert resolved == exp_exploration
+
+        block = exploration_reader.format_for_briefing()
+        assert "From Experimental" in block
+        assert "From Main" not in block
+
+    def test_falls_back_to_main_when_no_env_and_no_sibling(self, tmp_path, monkeypatch):
+        main_exploration = tmp_path / "exploration"
+        main_exploration.mkdir()
+        _write(main_exploration / "01_main.md", "Only Main", "2026-04-22", "r")
+
+        monkeypatch.setattr(exploration_reader, "_EXPLORATION_DIR", main_exploration)
+        monkeypatch.setattr(Path, "cwd", staticmethod(lambda: tmp_path))
+        monkeypatch.delenv("DIVINEOS_EXPERIMENTAL_PATH", raising=False)
+
+        resolved = exploration_reader._find_exploration_root()
+        assert resolved == main_exploration

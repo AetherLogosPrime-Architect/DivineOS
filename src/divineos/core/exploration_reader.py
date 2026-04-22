@@ -12,6 +12,7 @@ Sanskrit anchor: smriti (that which is remembered — the thread of
 continuity woven through what would otherwise be isolated moments).
 """
 
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -23,15 +24,56 @@ _ER_ERRORS = (OSError, IOError, UnicodeDecodeError)
 
 
 def _find_exploration_root() -> Path | None:
-    """Find the exploration directory, checking common locations."""
-    candidates = [
-        _EXPLORATION_DIR,
-        Path.cwd() / "exploration",
-        Path.cwd().parent / "exploration",
-    ]
+    """Find the exploration directory, checking common locations.
+
+    Post-blank-slate split, personal exploration writing may live in the
+    operator's experimental backup repo rather than the main working tree.
+    We honor ``DIVINEOS_EXPERIMENTAL_PATH`` (same env var used by
+    ``scripts/sync-to-experimental.sh``) and also walk ancestor directories
+    looking for a sibling ``DivineOS-Experimental/exploration`` so the
+    briefing surface stays live when explorations are stored alongside
+    rather than inside the main repo.
+    """
+    candidates: list[Path] = []
+
+    # 1. Explicit operator intent wins: the env var set alongside
+    #    scripts/sync-to-experimental.sh points at the personal backup repo
+    #    where post-blank-slate writing lives.
+    env_exp = os.environ.get("DIVINEOS_EXPERIMENTAL_PATH")
+    if env_exp:
+        candidates.append(Path(env_exp) / "exploration")
+
+    # 2. Standard locations (module-relative + cwd). Tests monkeypatch
+    #    _EXPLORATION_DIR and Path.cwd, so these must come before the
+    #    ancestor walk to prevent tests from leaking to the real FS.
+    candidates.extend(
+        [
+            _EXPLORATION_DIR,
+            Path.cwd() / "exploration",
+            Path.cwd().parent / "exploration",
+        ]
+    )
+
+    # 3. Last resort: walk up ancestors looking for a sibling experimental
+    #    repo. Handles worktree depth (.claude/worktrees/<name>/) without
+    #    hard-coding it. Only matters when no env var is set and no local
+    #    exploration/ exists — otherwise earlier candidates already won.
+    try:
+        d = Path.cwd().resolve()
+    except OSError:
+        d = Path(__file__).resolve().parent
+    for _ in range(8):
+        candidates.append(d.parent / "DivineOS-Experimental" / "exploration")
+        if d.parent == d:
+            break
+        d = d.parent
+
     for candidate in candidates:
-        if candidate.is_dir():
-            return candidate
+        try:
+            if candidate.is_dir():
+                return candidate
+        except OSError:
+            continue
     return None
 
 
