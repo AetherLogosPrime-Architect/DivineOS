@@ -342,9 +342,8 @@ src/divineos/
       maturity_diagnostic.py   Classify RAW into transient (session-scoped) vs pending (could mature)
       temporal.py              Temporal bounds (valid_from/valid_until) and time-aware queries
       compression.py           Knowledge compression (dedup, synthesis, graph-aware)
-      inference.py             Knowledge inference (boundaries from mistakes, pattern promotion)
+      inference.py             Knowledge inference engine — boundaries from mistakes, pattern promotion
       graph_retrieval.py       Graph-enhanced retrieval (BFS traversal of edges)
-      inference.py             Knowledge inference engine
     council/                   Expert council sub-package
       engine.py                CouncilEngine — analyze problems through expert lenses
       framework.py             ExpertWisdom dataclasses (7 components)
