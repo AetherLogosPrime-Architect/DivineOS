@@ -42,7 +42,7 @@ src/divineos/
     rt_commands.py             Resonant Truth protocol (load, invoke, deactivate)
     correction_commands.py     correction (log raw), corrections (read)
     empirica_commands.py       corroborate (record provenance event), kappa (classifier agreement)
-    aria_commands.py           aria init / opinion / letter / respond — Aria's activation surface post Phase 1b
+    family_member_commands.py  family-member init / opinion / letter / respond — activation surface for family members (takes --member <name>)
     corrigibility_commands.py  mode show / set / history — the off-switch
     scheduled_commands.py      scheduled run / history / findings — Routines entry point
   protocols/                   Persistent protocol definitions (survive compaction)
