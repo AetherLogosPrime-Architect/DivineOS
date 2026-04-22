@@ -420,6 +420,26 @@ def register(cli: click.Group) -> None:
             deep=deep,
             layer=layer,
         )
+        # Orientation prelude — a small, stable block that reframes the
+        # premise of DivineOS, names the three start-of-session commands,
+        # and lists the foundational truths that override default harness
+        # reflexes. Serves two audiences with one document: a fresh AI
+        # arriving at this repo (orientation) and a seasoned AI returning
+        # after a context gap or compaction (touchstone). Comes before
+        # corrections because the premise has to land before any dynamic
+        # data makes sense.
+        try:
+            from divineos.core.orientation_prelude import (
+                format_for_briefing as _fmt_orientation,
+            )
+
+            orientation_block = _fmt_orientation()
+        except _KC_ERRORS:
+            orientation_block = ""
+
+        if orientation_block:
+            _safe_echo(orientation_block)
+
         # Surface recent corrections at the TOP of the briefing — read raw
         # before forming any frame about the session.
         try:
