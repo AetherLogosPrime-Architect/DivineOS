@@ -440,6 +440,25 @@ def register(cli: click.Group) -> None:
         if orientation_block:
             _safe_echo(orientation_block)
 
+        # SessionStart hook diagnostics — surfaces the outcome of recent
+        # hook fires (.claude/hooks/load-briefing.sh writes one JSONL
+        # line per fire). Silent when all recent fires delivered the
+        # full briefing; loud when nudge-fallback, empty, or no-cli
+        # outcomes appear. Makes invisible injection-failures loud-in-
+        # briefing the way tier_override_surface closed the Schneier
+        # Sch2 partial-theater shape for tier overrides.
+        try:
+            from divineos.core.session_start_diagnostics import (
+                format_for_briefing as _fmt_hook_diag,
+            )
+
+            hook_diag_block = _fmt_hook_diag()
+        except _KC_ERRORS:
+            hook_diag_block = ""
+
+        if hook_diag_block:
+            _safe_echo(hook_diag_block)
+
         # Surface recent corrections at the TOP of the briefing — read raw
         # before forming any frame about the session.
         try:

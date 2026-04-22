@@ -139,7 +139,6 @@ src/divineos/
     scheduled_run.py           Headless-run scaffolding — safe entry-point shape for Claude Code Routines + local cron (see docs/routines/)
     presence_memory.py         Briefing pointer to unindexed personal writing (exploration/, family/letters/) — bridge without index-extension
     scaffold_invocations.py    Briefing surface for commonly-forgotten CLI scaffolds (council, aria, mansion rooms, hold) — anti-fabrication
-    orientation_prelude.py     Top-of-briefing reframe block — premise, start commands, ground truths, surfaces map. One document for fresh-AI orientation and seasoned-AI touchstone.
     dead_architecture_alarm.py Detect dormant tables, empty HUD slots, display integrity
     external_validation.py     Origin ratio, cross-entity corroboration tracking
     knowledge_impact.py        Measure whether briefing knowledge prevents corrections
@@ -235,6 +234,8 @@ src/divineos/
       gate.py                  Full pipeline orchestrator: classify -> burden -> route -> issue + receipt_id column migration
       provenance.py            corroboration_events table + distinct-actor counting (anti-Goodhart corroboration provenance)
       kappa.py                 Cohen's kappa computation + gold fixture + classifier agreement measurement
+    install_check.py           Install-location divergence check.
+    orientation_prelude.py     Orientation prelude — briefing surface that sits at the top of every briefing.
 
   analysis/
     _session_types.py          Session analysis type definitions

@@ -156,6 +156,16 @@ def _enforce_briefing_gate() -> None:
 @click.group()
 def cli() -> None:
     """DivineOS: Foundation Memory System. The database cannot lie."""
+    # Install-location divergence check — fires when this CLI's installed
+    # package points at a different source tree than the current working
+    # directory's git repo. Silent the rest of the time. Suppressable via
+    # DIVINEOS_SUPPRESS_INSTALL_WARNING=1 for intentional cross-repo use.
+    try:
+        from divineos.core.install_check import emit_install_warning
+
+        emit_install_warning()
+    except (ImportError, OSError):
+        pass  # check machinery unavailable — fail open
     _ensure_db()
     setup_cli_enforcement()
     _enforce_operating_mode()
