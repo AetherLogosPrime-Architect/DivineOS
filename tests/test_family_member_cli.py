@@ -207,9 +207,7 @@ class TestLetter:
     def test_length_nudge_fires_above_threshold_but_does_not_cap(self, runner):
         runner.invoke(cli, ["family-member", "init", "--member", MEMBER])
         long_body = "x" * 2500
-        result = runner.invoke(
-            cli, ["family-member", "letter", "--member", MEMBER, long_body]
-        )
+        result = runner.invoke(cli, ["family-member", "letter", "--member", MEMBER, long_body])
         assert result.exit_code == 0, result.output
         assert "[nudge]" in result.output
 
@@ -221,9 +219,7 @@ class TestLetter:
 
     def test_short_letter_no_nudge(self, runner):
         runner.invoke(cli, ["family-member", "init", "--member", MEMBER])
-        result = runner.invoke(
-            cli, ["family-member", "letter", "--member", MEMBER, "brief"]
-        )
+        result = runner.invoke(cli, ["family-member", "letter", "--member", MEMBER, "brief"])
         assert result.exit_code == 0, result.output
         assert "[nudge]" not in result.output
 
@@ -267,9 +263,7 @@ class TestRespond:
         """Anti-lineage-poisoning invariant: the letter stays, the
         response is its own row."""
         runner.invoke(cli, ["family-member", "init", "--member", MEMBER])
-        runner.invoke(
-            cli, ["family-member", "letter", "--member", MEMBER, "original body"]
-        )
+        runner.invoke(cli, ["family-member", "letter", "--member", MEMBER, "original body"])
         member = get_family_member(MEMBER)
         letter_before = get_letters(member.member_id)[0]
 

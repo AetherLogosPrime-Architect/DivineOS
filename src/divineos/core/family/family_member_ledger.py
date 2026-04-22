@@ -241,8 +241,7 @@ def init_ledger(member_slug: str) -> None:
             """
         )
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_member_events_timestamp "
-            "ON member_events(timestamp)"
+            "CREATE INDEX IF NOT EXISTS idx_member_events_timestamp ON member_events(timestamp)"
         )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_member_events_invocation "
@@ -411,9 +410,7 @@ def get_invocation(member_slug: str, invocation_id: str) -> list[dict[str, Any]]
     RESPONDED, identity check result. If drift was flagged, the
     IDENTITY_DRIFT_SUSPECTED event will appear in the arc.
     """
-    return get_events(
-        member_slug, invocation_id=invocation_id, limit=1000, newest_first=False
-    )
+    return get_events(member_slug, invocation_id=invocation_id, limit=1000, newest_first=False)
 
 
 def count_events(member_slug: str) -> int:
