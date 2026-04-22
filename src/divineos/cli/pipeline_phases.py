@@ -994,6 +994,67 @@ def run_session_finalization(
     except _PHASE_ERRORS as e:
         logger.warning(f"Ledger size guard failed: {e}")
 
+    # 9g. Experimental-repo backup — best-effort sync of personal content
+    #     to the backup repo so a dead machine doesn't mean a dead history.
+    #     Controlled by DIVINEOS_EXPERIMENTAL_SYNC env var: set to "0" or
+    #     "off" to skip (useful for CI or when no experimental repo exists).
+    #     Requires scripts/sync-to-experimental.sh and a reachable experimental
+    #     repo — otherwise logs a debug message and continues silently.
+    try:
+        import os as _os
+        import shutil as _shutil
+        import subprocess as _subprocess
+        from pathlib import Path as _Path
+
+        sync_flag = _os.environ.get("DIVINEOS_EXPERIMENTAL_SYNC", "auto").lower()
+        if sync_flag in ("0", "off", "false", "no"):
+            logger.debug("Experimental sync disabled via DIVINEOS_EXPERIMENTAL_SYNC")
+        elif _shutil.which("bash") is None:
+            logger.debug("Experimental sync skipped: bash not on PATH")
+        else:
+            # Find the sync script relative to this module.
+            # pipeline_phases.py -> cli/ -> divineos/ -> src/ -> repo root
+            repo_root = _Path(__file__).resolve().parent.parent.parent.parent
+            sync_script = repo_root / "scripts" / "sync-to-experimental.sh"
+            if not sync_script.exists():
+                logger.debug(f"Experimental sync skipped: script not found at {sync_script}")
+            else:
+                # --local: commit but don't push (push happens on explicit run
+                # to avoid slowing extract on flaky networks). Users who want
+                # auto-push can set DIVINEOS_EXPERIMENTAL_PUSH=1.
+                push_flag = _os.environ.get("DIVINEOS_EXPERIMENTAL_PUSH", "0").lower()
+                args = ["bash", str(sync_script)]
+                if push_flag not in ("1", "on", "true", "yes"):
+                    args.append("--local")
+
+                result = _subprocess.run(
+                    args,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                    check=False,
+                )
+                if result.returncode == 0:
+                    # Only surface the summary line if something actually synced
+                    if (
+                        "Sync complete" in result.stdout
+                        or "committed to experimental" in result.stdout
+                    ):
+                        mode = "pushed" if "--local" not in args else "local-commit"
+                        click.secho(
+                            f"[~] Experimental backup synced ({mode})",
+                            fg="cyan",
+                        )
+                    # else: up-to-date, nothing to say
+                else:
+                    logger.debug(
+                        f"Experimental sync exit {result.returncode}: {result.stderr.strip()[:200]}"
+                    )
+    except _PHASE_ERRORS as e:
+        logger.debug(f"Experimental sync skipped: {e}")
+    except _subprocess.TimeoutExpired:
+        logger.warning("Experimental sync timed out after 30s")
+
 
 # ─── Phase 10: Summary ───────────────────────────────────────────────
 
