@@ -100,7 +100,7 @@ def extract_documented_counts(path: Path) -> list[tuple[str, int, str]]:
 # ── Architecture tree verification ─────────────────────────────────────
 
 
-def _extract_tree_paths(readme_path: Path) -> list[str]:
+def _extract_tree_paths(readme_path: Path, arch_doc_path: Path | None = None) -> list[str]:
     """Extract .py file paths from the architecture code block.
 
     Prefers ``docs/ARCHITECTURE.md`` (where the tree lives as of 2026-04-22).
@@ -110,11 +110,16 @@ def _extract_tree_paths(readme_path: Path) -> list[str]:
     Parses lines like '    ledger.py   Append-only event store' and
     reconstructs relative paths from indentation. Returns paths relative to
     src/divineos/ (e.g. 'cli/__init__.py').
+
+    ``arch_doc_path`` is optional; defaults to ``<repo>/docs/ARCHITECTURE.md``.
+    Tests pass an explicit non-existent path to force fallback to the README.
     """
+    if arch_doc_path is None:
+        arch_doc_path = ROOT / "docs" / "ARCHITECTURE.md"
+
     # Prefer the dedicated architecture doc.
-    arch_doc = ROOT / "docs" / "ARCHITECTURE.md"
-    if arch_doc.exists():
-        text = arch_doc.read_text(encoding="utf-8", errors="replace")
+    if arch_doc_path.exists():
+        text = arch_doc_path.read_text(encoding="utf-8", errors="replace")
         # Architecture doc has the tree in a top-level ``` code block after "## The tree"
         arch_match = re.search(r"## The tree\s*\n\s*```\s*\n(.*?)```", text, re.DOTALL)
         if arch_match:
@@ -184,15 +189,20 @@ def _get_actual_py_files() -> set[str]:
     return result
 
 
-def check_architecture_tree(readme_path: Path) -> list[str]:
-    """Verify README architecture tree against actual files.
+def check_architecture_tree(readme_path: Path, arch_doc_path: Path | None = None) -> list[str]:
+    """Verify architecture tree against actual files.
 
-    Returns list of error strings (empty = all good).
+    Reads the tree from ``docs/ARCHITECTURE.md`` (preferred) or the
+    README's legacy inline tree (fallback). Returns list of error
+    strings (empty = all good).
+
+    ``arch_doc_path`` is optional; tests pass an explicit non-existent
+    path to force fallback to the README.
     """
     if not readme_path.exists():
         return []
 
-    tree_paths = _extract_tree_paths(readme_path)
+    tree_paths = _extract_tree_paths(readme_path, arch_doc_path=arch_doc_path)
     if not tree_paths:
         return ["Could not parse architecture tree from README.md"]
 
