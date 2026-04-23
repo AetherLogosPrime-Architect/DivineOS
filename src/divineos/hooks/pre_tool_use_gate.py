@@ -150,6 +150,27 @@ def _check_gates() -> dict[str, Any] | None:
     except (ImportError, OSError, AttributeError):
         pass  # fail open — gate machinery unavailable
 
+    # Gate 1.4: compass-staleness.
+    # Closes ChatGPT audit claim-a7370b (compass observation is an intent,
+    # not enforced). After N code actions without a compass observation,
+    # the gate blocks non-bypass tools until `divineos compass-ops observe`
+    # is run. Reset is structural — the observe command clears the counter.
+    try:
+        from divineos.core.hud_handoff import compass_staleness_status
+
+        cs = compass_staleness_status()
+        if cs.get("stale"):
+            return _make_deny(
+                f"BLOCKED: {cs.get('actions_since', '?')} code actions since "
+                f"the last compass observation (threshold "
+                f"{cs.get('threshold', '?')}). Run: divineos compass-ops "
+                f'observe <spectrum> -p <position> -e "<evidence>" — '
+                f"virtue drift is not tracked by the system if you never "
+                f"observe your own position."
+            )
+    except (ImportError, OSError, AttributeError):
+        pass
+
     # Gate 1.5: correction detected but not logged.
     # Closes ChatGPT audit claim-964493 (theater-learning bypass) by making
     # "log the correction" a structural requirement, not intent. The
