@@ -171,6 +171,21 @@ def _check_gates() -> dict[str, Any] | None:
     except (ImportError, OSError, AttributeError):
         pass
 
+    # Gate 1.45: hedge-unresolved. Closes the hedge-claim enforcement gap —
+    # when my last assistant output had >= 2 hedge flags (detected by the
+    # Stop hook), a claim must be filed before further tool use. Hedge
+    # without claim is floating doubt; claim discharges it into the
+    # investigation queue.
+    try:
+        from divineos.core.hedge_marker import format_gate_message as _hm_msg
+        from divineos.core.hedge_marker import read_marker as _hm_read
+
+        h = _hm_read()
+        if h is not None:
+            return _make_deny(_hm_msg(h))
+    except (ImportError, OSError, AttributeError):
+        pass
+
     # Gate 1.5: correction detected but not logged.
     # Closes ChatGPT audit claim-964493 (theater-learning bypass) by making
     # "log the correction" a structural requirement, not intent. The
