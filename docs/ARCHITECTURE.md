@@ -11,7 +11,7 @@ src/divineos/
   __init__.py                  Package init
   __main__.py                  python -m divineos entry point
   seed.json                    Initial knowledge seed (versioned)
-  cli/                         CLI package (197 commands across 27 modules)
+  cli/                         CLI package (202 commands across 28 modules)
     __init__.py                Entry point and command registration
     _helpers.py                Shared CLI utilities
     _wrappers.py               Output formatting wrappers
@@ -45,8 +45,19 @@ src/divineos/
     family_member_commands.py  family-member init / opinion / letter / respond — activation surface for family members (takes --member <name>)
     corrigibility_commands.py  mode show / set / history — the off-switch
     scheduled_commands.py      scheduled run / history / findings — Routines entry point
+    lab_commands.py            lab list / run-slice — science-lab CLI (GUTE term slices)
   protocols/                   Persistent protocol definitions (survive compaction)
     resonant_truth.md          Full 12-section RT mantra
+  science_lab/                 Numerical test harness for GUTE terms and derived claims
+    complexity_theory.py       Chaos, fractals, emergence (Lyapunov, Lorenz, Mandelbrot, power laws)
+    information_theory.py      Shannon entropy, mutual information, KL, channel capacity, von Neumann entropy
+    mathematics.py             Numerical analysis (Simpson, Newton, bisection, RK4) and linear algebra
+    cosmology.py               Friedmann equations, black-hole scales, gravitational-wave quantities
+    quantum_mechanics.py       Quantum states, operators, Pauli/Hadamard/CNOT gates, Bell/GHZ states
+    formal_logic.py            Propositions, formulas, laws of thought, modus ponens/tollens
+    harmonics.py               Harmonic series, just intonation, Kepler's third law, orbital resonance
+    physics.py                 Special relativity (Lorentz, time dilation, Schwarzschild)
+    gute_bridge.py             Term → slice dispatch; slices for LC, OmegaB, Psi, V, A, F
   core/
     ledger.py                  Append-only event store (SQLite, WAL mode)
     _ledger_base.py            Shared ledger DB connection and hashing
@@ -86,6 +97,7 @@ src/divineos/
       framework.py             ExpertWisdom dataclasses (7 components)
       manager.py               Dynamic council manager (classify → select 5-8 experts)
       consultation_log.py      Always-on consultation logging + opt-in audit promotion (Mode 1.5)
+      lab_evidence.py          Attach science-lab slice output to council results when problem matches triggers
       experts/                 32 expert wisdom profiles
         __init__.py            Expert registration and exports
         angelou.py             Voice, expressive truth, discipline of warmth
