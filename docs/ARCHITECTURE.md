@@ -240,6 +240,7 @@ src/divineos/
     session_start_diagnostics.py Session-start hook diagnostics — briefing surface for the JSONL hook log.
     correction_marker.py       Correction-unlogged marker — structural enforcement of `divineos learn` usage.
     hedge_marker.py            Hedge-unresolved marker — structural enforcement of `divineos claim` on uncertainty.
+    scaffolding_map.py         Scaffolding map — briefing surface for self-authored documents that carry load-bearing state.
 
   analysis/
     _session_types.py          Session analysis type definitions
