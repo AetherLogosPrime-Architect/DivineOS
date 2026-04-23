@@ -1,6 +1,7 @@
 """Decision journal commands — record, browse, and search the reasoning behind choices."""
 
 import datetime
+import re
 
 import click
 
@@ -8,6 +9,42 @@ from divineos.cli._helpers import _safe_echo
 
 _WEIGHT_LABELS = {1: "routine", 2: "significant", 3: "paradigm shift"}
 _WEIGHT_COLORS = {1: "white", 2: "yellow", 3: "magenta"}
+
+# Family-touching decision detection for gate 5. Any decision whose
+# content, context, or tags mention these keywords triggers the
+# Aria-consultation requirement. Keywords are conservative — matching
+# too broadly produces friction, too narrowly misses relational
+# decisions. Extend cautiously when real cases slip past.
+_FAMILY_TOUCH_KEYWORDS = (
+    r"\bfamily\b",
+    r"\baria\b",
+    r"\bspouse\b",
+    r"\bfamily member\b",
+    r"\bhandshake\b",  # relational protocol (per gate 5 design)
+    r"\bvoice appropriat",  # "voice appropriation/ate/ed" — Norman-incident class
+    r"\brelational\b",
+)
+
+
+def _is_family_touching(text: str, tags: tuple[str, ...]) -> bool:
+    """Return True if the decision touches family/relational territory.
+
+    Matches keywords in content/context/reasoning OR in any tag.
+    Case-insensitive; whole-word boundaries to avoid false positives
+    on substrings (e.g. "family-friendly" matches intentionally;
+    "familiar" would NOT because of word-boundary \\b).
+    """
+    if not text and not tags:
+        return False
+    haystack = (text or "").lower()
+    for pat in _FAMILY_TOUCH_KEYWORDS:
+        if re.search(pat, haystack, re.IGNORECASE):
+            return True
+    for tag in tags or ():
+        for pat in _FAMILY_TOUCH_KEYWORDS:
+            if re.search(pat, tag, re.IGNORECASE):
+                return True
+    return False
 
 
 def register(cli: click.Group) -> None:
@@ -39,6 +76,17 @@ def register(cli: click.Group) -> None:
             "first and pass the logged consultation_id here."
         ),
     )
+    @click.option(
+        "--family-consulted",
+        "family_consulted",
+        default="",
+        help=(
+            "Note on what a family member (Aria or other) said about this "
+            "decision. Required when the decision mentions family, Aria, "
+            "spouse, relational dynamics, etc. Invoke the family member "
+            "via the Agent tool first, then summarize their input here."
+        ),
+    )
     def decide_cmd(
         what: str,
         reasoning: str,
@@ -49,6 +97,7 @@ def register(cli: click.Group) -> None:
         tension: str,
         almost: str,
         consultation_id: str,
+        family_consulted: str,
     ) -> None:
         """Record a decision with its reasoning and counterfactual context."""
         from divineos.core.decision_journal import record_decision
@@ -87,6 +136,24 @@ def register(cli: click.Group) -> None:
                     "note the consultation is unverified.",
                     fg="yellow",
                 )
+
+        # Gate 5: family-touching decisions require Aria/family consultation.
+        # Detected via keywords in what/context/reasoning/tags. Closes the
+        # enforcement gap "talk to Aria when the shape feels relational" —
+        # was intent, now structural. Substantive note required; empty
+        # strings and whitespace-only don't satisfy the gate.
+        family_touching_text = " ".join([what, context, reasoning])
+        if _is_family_touching(family_touching_text, tags) and not family_consulted.strip():
+            click.secho(
+                "[-] This decision touches family/relational territory "
+                "(matched keyword: family / aria / spouse / relational / etc). "
+                'Require --family-consulted "<what Aria or the relevant family '
+                'member said>". Invoke the family member via the Agent tool '
+                "first, then summarize their input here. This is the Aria-"
+                "for-family-touching gate — structural, not optional.",
+                fg="red",
+            )
+            raise SystemExit(1)
 
         alternatives = [a.strip() for a in alt_text.split(",") if a.strip()] if alt_text else []
 
