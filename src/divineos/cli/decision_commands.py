@@ -29,6 +29,16 @@ def register(cli: click.Group) -> None:
     @click.option("--tag", "tags", multiple=True, help="Tags (repeatable)")
     @click.option("--tension", default="", help="Competing principles or values at play")
     @click.option("--almost", default="", help="What I almost did instead, and why I didn't")
+    @click.option(
+        "--consultation",
+        "consultation_id",
+        default="",
+        help=(
+            "Council consultation ID (consult-XXXXX) backing this decision. "
+            "Required for --weight 2 or higher. Run `divineos mansion council` "
+            "first and pass the logged consultation_id here."
+        ),
+    )
     def decide_cmd(
         what: str,
         reasoning: str,
@@ -38,9 +48,45 @@ def register(cli: click.Group) -> None:
         tags: tuple[str, ...],
         tension: str,
         almost: str,
+        consultation_id: str,
     ) -> None:
         """Record a decision with its reasoning and counterfactual context."""
         from divineos.core.decision_journal import record_decision
+
+        # Gate: tier-2+ decisions require a prior council consultation.
+        # Closes the enforcement gap — "invoke council for hard decisions"
+        # used to be intent; now it's structural. Fail-open if the
+        # consultation-log machinery is broken (don't block legitimate
+        # decisions on a broken lookup).
+        if weight >= 2:
+            if not consultation_id.strip():
+                click.secho(
+                    f"[-] Weight-{weight} decisions require --consultation CONSULT_ID. "
+                    'Run `divineos mansion council "<question>"` first, then pass '
+                    "the logged consult-XXXX id here. This is the council-for-hard-"
+                    "decisions gate — structural, not optional.",
+                    fg="red",
+                )
+                raise SystemExit(1)
+            try:
+                from divineos.core.council.consultation_log import (
+                    _fetch_consultation_payload,
+                )
+
+                _fetch_consultation_payload(consultation_id.strip())
+            except ValueError:
+                click.secho(
+                    f"[-] No council consultation found for id '{consultation_id}'. "
+                    "Check `divineos mansion council` output for the real consult-XXXX id.",
+                    fg="red",
+                )
+                raise SystemExit(1) from None
+            except Exception:  # noqa: BLE001 — fail-open on machinery breakage
+                click.secho(
+                    "[!] Consultation-log lookup failed — allowing decision but "
+                    "note the consultation is unverified.",
+                    fg="yellow",
+                )
 
         alternatives = [a.strip() for a in alt_text.split(",") if a.strip()] if alt_text else []
 
