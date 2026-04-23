@@ -150,6 +150,21 @@ def _check_gates() -> dict[str, Any] | None:
     except (ImportError, OSError, AttributeError):
         pass  # fail open — gate machinery unavailable
 
+    # Gate 1.5: correction detected but not logged.
+    # Closes ChatGPT audit claim-964493 (theater-learning bypass) by making
+    # "log the correction" a structural requirement, not intent. The
+    # UserPromptSubmit hook (detect-correction.sh) sets the marker when a
+    # user message matches CORRECTION_PATTERNS; `divineos learn` and
+    # `divineos correction` clear it. Fail open on missing machinery.
+    try:
+        from divineos.core.correction_marker import format_gate_message, read_marker
+
+        marker = read_marker()
+        if marker is not None:
+            return _make_deny(format_gate_message(marker))
+    except (ImportError, OSError, AttributeError):
+        pass
+
     # Gate 2: session-fresh goal
     try:
         from divineos.core.hud_state import has_session_fresh_goal
