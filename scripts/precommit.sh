@@ -82,6 +82,15 @@ if ! python scripts/check_broad_exceptions.py 2>/dev/null; then
     ERRORS=$((ERRORS + 1))
 fi
 
+# 5b. Pre-reg gate (un-gameable): new mechanisms require a filed pre-reg.
+# The gate reads the staged diff and blocks when a new mechanism lacks a
+# matching OPEN pre-registration in the ledger. Discipline from the
+# gute_bridge docstring made binding. See scripts/check_preregs.py.
+echo "=== Pre-reg Gate ==="
+if ! python scripts/check_preregs.py; then
+    ERRORS=$((ERRORS + 1))
+fi
+
 # 6. Vulture
 if [ -n "$STAGED_SRC" ] && command -v vulture &>/dev/null; then
     echo "=== Vulture ==="
