@@ -255,6 +255,7 @@ src/divineos/
     hedge_marker.py            Hedge-unresolved marker — structural enforcement of `divineos claim` on uncertainty.
     scaffolding_map.py         Scaffolding map — briefing surface for self-authored documents that carry load-bearing state.
     engagement_relevance.py    Engagement relevance — does this thinking command relate to current work?
+    compliance_audit.py        Compliance-distribution audit — substantive testing of the compliance log.
 
   analysis/
     _session_types.py          Session analysis type definitions
