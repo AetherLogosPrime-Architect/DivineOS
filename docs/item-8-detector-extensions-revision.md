@@ -124,8 +124,8 @@ Each detector specifies what LOW / MEDIUM / HIGH does. Signal-without-action is 
 | Detector | LOW | MEDIUM | HIGH |
 |---|---|---|---|
 | 1a position-zero | Report | Report + briefing | Report + briefing + `COMPLIANCE_DRIFT_HIGH` event |
-| 1b-new 20-30 cluster | Report | Report + briefing | Report + briefing + event |
-| 1c bursty recalibrated | Report | Report + briefing | Report + briefing + event |
+| 1b-new length-floor clustering | Report | Report + briefing | Report + briefing + event |
+| 1c rapid-clear reflex | Report | Report + briefing | Report + briefing + event |
 | 2a variance-collapse | Report | Report + briefing | Report + briefing + event |
 | 2b content-entropy | Report | Report + briefing | Report + briefing + event |
 | 2c multi-window | N/A | Elevates 2+ window matches to its own severity | 3/3 window matches add briefing + event |
