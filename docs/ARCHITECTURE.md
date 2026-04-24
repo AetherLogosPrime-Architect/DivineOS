@@ -78,7 +78,7 @@ src/divineos/
       _base.py                 DB connection, schema, public API
       _text.py                 Text analysis, noise filtering, FTS, overlap
       crud.py                  Knowledge CRUD operations
-      memory_kind.py           Memory-kind classifier (EPISODIC/SEMANTIC/PROCEDURAL/UNCLASSIFIED)
+      memory_kind.py           Memory-kind classifier (EPISODIC/SEMANTIC/PROCEDURAL/UNCLASSIFIED) — diagnostic metadata only; not yet consumed downstream
       extraction.py            Knowledge extraction from sessions
       deep_extraction.py       Deep multi-pass extraction
       feedback.py              Session feedback application
