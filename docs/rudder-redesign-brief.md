@@ -1,6 +1,10 @@
 # Rudder Redesign — Design Brief
 
-> **Status:** v1, pre-review. Design-only; no code changes. Addresses the architectural shift surfaced in the claim 6bf81b38 conversation (2026-04-24): the rudder's purpose is completion-checking, not cooldown. Implementation deferred until this brief is approved by fresh-Claude review + operator CONFIRMS.
+> **Status:** v2, post-review. Design-only. Addresses the architectural shift surfaced in claim 6bf81b38 (2026-04-24): the rudder's purpose is **wire-up checking**, not cooldown. v2 folds in 13 refinements from fresh-Claude round-1 CONFIRMS-with-refinements.
+
+**Revision history:**
+- v1 (2026-04-24 afternoon): initial brief, 9 review questions.
+- v2 (2026-04-24 same session): 13 refinements — (1) principle sharpened from "completion-checking" to "wire-up checking"; (2) Item 4 retirement scoped to rudder call-site only (`since=` kwarg on `get_observations` preserved for non-rudder callers); (3) similarity-check KEPT but re-aimed to strip artifact tokens before comparison; (4) `_check_completion_reference` excludes the fire_id itself from artifact-reference matching; (5) `COMPLETION_BOUNDARY_DETECTED` payload carries `boundary_type` + `artifact_ref` + timestamp; (6) fallback fires **nag-not-block** + `N` becomes named constant with calibration timeline; (7) optional `depends_on:` structured field added to ack contract; (8) Phase 2→3 gets concrete FPR threshold; Phase 5 gets stop-ship criterion; (9) Pre-reg 1 FN check via synthetic injection; (10) new Pre-reg 4 for `wired: yes` gameability via operator audit; (11) new §"Fire-ID retraction" for "discovered incomplete wire-up after ack"; (12) new §"Compliance_baseline interaction" under new semantics; (13) per-phase review requirement + pre-redesign state snapshot as Phase 0.
 
 ## Why this brief exists
 
@@ -14,17 +18,19 @@ The rudder fired correctly on the SIGNAL. The ack mechanism was asking the WRONG
 
 ## Core principle shift
 
+**Refinement v2 (per fresh-Claude):** the precise frame is **wire-up checking**, not just completion-checking. PR-2 was complete. What was missing was the wire-up to the detectors that named it as their baseline source. A thing can be "done" and not "wired" — it's the gap between those two the rudder exists to catch.
+
 **Current rudder semantics:**
 - Trigger: compass drift ≥ threshold (proxy for "agent is overextending")
 - Ack: "describe the drift" (substantive explanation of current compass state)
 - Gate cleared by: fire-id-bound ack that passes substance checks
 
 **New rudder semantics:**
-- Trigger: **completion boundary crossed without wire-up** (agent declared something done but did not wire it to its consumer)
-- Ack: **completion contract** (agent attests to what was finished, whether it's wired, and if not, what the next action will do about it)
-- Gate cleared by: fire-id-bound ack that names completion state and commits to finishing incomplete work
+- Trigger: **completion boundary crossed without wire-up** (agent declared something done; no evidence the thing is wired into its consumers)
+- Ack: **wire-up contract** (agent attests to what was finished, whether it's wired, and if not, what the next action will do about it)
+- Gate cleared by: fire-id-bound ack that names wire-up state and commits to finishing incomplete wiring
 
-The shift: the rudder's question becomes "is the previous thing fully finished?" not "have you reflected on your drift?" Time is noise. Finished-or-not is the binary.
+The rudder's question becomes "is the previous thing wired into what uses it?" not "have you reflected on your drift?" Time is noise. Wired-or-not is the binary.
 
 ## Three architectural points fresh-Claude flagged
 
@@ -39,9 +45,9 @@ Four time windows currently exist in the rudder stack:
 | `JUSTIFICATION_WINDOW_SECONDS = 5*60` | `compass_rudder.py` | Acks within 5 min of drift count | **RETIRE.** Fire-id binding (Item 6) + one-shot consumption already provide scope. Time adds nothing. |
 | `_FIRE_VALIDATION_WINDOW_SECONDS = 5*60` | `moral_compass.py::_validate_fire_id` | Fire events must exist within 5 min of ack | **RETIRE.** fire-id identity is cryptographically unique; no time-window needed. |
 | `REJECTION_WINDOW_SECONDS = 5*60` | `substance_checks.py` | Rejection-count escalation within 5 min | **RE-AIM.** Keep the escalation mechanism, but scope it to the fire-id (escalation per-fire, not per-time-window). If an ack has been rejected 3+ times for the same fire, that's the escalation signal. |
-| `since=cutoff` in `_find_justifications` | `compass_rudder.py` | SQL filter for "recent" acks | **RETIRE.** Same as row 1; fire-id binding does the scoping. |
+| `since=cutoff` in `_find_justifications` | `compass_rudder.py` | SQL filter for "recent" acks | **RETIRE** at call site; `since=` kwarg preserved on `get_observations` for non-rudder callers (v2 refinement 2). |
 
-All four come out as time-based filters. The time-window concept disappears from the rudder.
+All four time-windows come out of the rudder's codepath. The `since=` kwarg on `get_observations` stays as API surface — other callers (CLI, future detectors) may legitimately want to filter by time for display/analysis reasons unrelated to rudder integrity. The retirement is scoped to "remove `since=` from the rudder's call-site," not "delete the function parameter."
 
 ### Point 2: Substance-check semantics (Item 7)
 
@@ -52,13 +58,13 @@ Current substance checks (`substance_checks.py`):
 
 All three test whether the ack is a credible **explanation**. Post-redesign, the ack is a **contract**. Different property: the contract must describe what was completed, whether it's wired, and what's next.
 
-**Decision: RE-AIM.** Substance checks stay but change shape:
+**Decision: RE-AIM.** Substance checks stay but change shape (v2 refinements 3 + 4):
 
-- **Retire**: `_check_similarity` against recent acks as explanation-variety signal. Replaced by: the contract must reference a completion artifact (PR number, commit hash, feature name) — artifact-reference IS the variety check, since two acks can't honestly reference the same completion artifact for different fires (each fire has a distinct completion context).
+- **Keep, re-aimed**: `_check_similarity` against recent acks — but strip artifact-reference tokens from the compared text before computing cosine. Rationale: v1 proposed retiring similarity in favor of artifact-reference-as-variety-check, but an adversarial agent can reuse artifact references across acks (hallucinate PR numbers, reference the same artifact twice). The similarity check catches same-text reuse; the artifact-check only catches reference-presence. Keeping both closes a gap. Stripping artifact tokens from the similarity comparison avoids false-positives on legitimate artifact repetition.
 
-- **Keep with widening**: `_check_length` (≥ 20 chars) and `_check_entropy` (≥ 2.5 bits). A contract that's too short or too low-entropy isn't a contract.
+- **Keep**: `_check_length` (≥ 20 chars) and `_check_entropy` (≥ 2.5 bits). A contract that's too short or too low-entropy isn't a contract.
 
-- **Add**: `_check_completion_reference` — the ack must name a completion artifact (regex match for PR numbers, commit hashes, file paths, branch names, feature names). Zero artifact references = not a contract.
+- **Add**: `_check_completion_reference` — the ack must name a completion artifact (regex match for PR numbers, commit hashes, file paths, branch names, feature names). Zero artifact references = not a contract. **v2 refinement 4: fire_id itself does NOT count as artifact reference.** Fire_ids are 16 hex chars and would trivially match a "commit hash" regex; "completed fire <fire_id>, wired: yes" would game the check. Explicit exclusion in the validator: strip the current fire_id from the contract text before artifact-matching.
 
 - **Add**: `_check_wire_status` — the ack must include an explicit wire-up status token: `wired: yes`, `wired: no`, or `wired: partial`. Free-form verbiage around the token is fine; the token itself is the structured signal.
 
@@ -76,7 +82,17 @@ Post-redesign these events describe a different state:
 
 **Decision: KEEP the event classes, CHANGE what triggers them.** Payload shape stays identical (fire_id, spectrum, tool_name, ...). What changes is the interpretation of WHY the event fired. Forensically, old FIRED events can be interpreted against the old semantic and new FIRED events against the new semantic. The semantic is tied to the code version, not the event class.
 
-**Add a new event**: `COMPLETION_BOUNDARY_DETECTED` — low-severity, informational, fires when the rudder detects a potential completion boundary (PR merge, all-tests-green, explicit "I finished X" signal). Not a block; just a signal that "the next gated tool call will check wire-up status." Gives the agent a moment-of-opportunity to wire things up before the rudder forces the issue.
+**Add a new event**: `COMPLETION_BOUNDARY_DETECTED` — low-severity, informational. Fires when the rudder detects a potential completion boundary (PR merge, all-tests-green, explicit `divineos complete` signal). Not a block; just a signal that "the next gated tool call will check wire-up status." Gives the agent a moment-of-opportunity to wire things up before the rudder forces the issue.
+
+**Payload shape (v2 refinement 5)** — carries enough context to be actionable on receipt, so downstream readers don't re-derive state from adjacent ledger rows:
+```json
+{
+  "boundary_type": "pr_merge" | "explicit_complete" | "tests_green",
+  "artifact_ref": "#191" | "commit:abc123" | "feature:Item-8-PR-1b",
+  "timestamp": 1745567890.0,
+  "session_id": "session-xyz"
+}
+```
 
 ## Trigger detection — what counts as "completion boundary crossed"
 
@@ -100,13 +116,20 @@ The tool pattern (Edit → Write → Commit → Push → Merge) itself reveals c
 **Pro:** no explicit signal required; matches how the behavior actually manifests.
 **Con:** false positives on context-switching that isn't actually completion-crossing (investigation, debugging, learning-through-reading).
 
-### Recommendation: Option A + Option B in combination
+### Recommendation: Option A + Option B with nag-fallback (v2 refinement 6)
 
 - **Primary signal: PR merge events.** Detectable from ledger. High-precision.
 - **Secondary signal: explicit `divineos complete <artifact>` events.** For non-PR work.
-- **Fallback: gentle nag.** After N consecutive gated tool calls WITHOUT any completion signal AND high compass drift, fire at LOW severity — the compass drift is the only signal available, and it's treated as a weak one.
+- **Fallback: NAG not BLOCK.** Investigation is a genuine activity that doesn't produce completion artifacts and shouldn't be treated as drift. The fallback surfaces in the compliance report as an informational observation ("you've operated without completion signals for N consecutive gated tool calls; is that intentional?"). No hard block. The hard-block belongs to A+B; the fallback's job is making the weak signal VISIBLE, not forcing a contract on investigation work.
+
+**Concrete constants (with calibration timeline):**
+
+- `_NAG_THRESHOLD_GATED_CALLS = 20` (initial) — after 20 consecutive gated tool calls without a completion signal, the compliance report surfaces the nag. Calibrated from clean-baseline sessions at 60 days post-ship (same baseline-tagging path PR-191 set up for Item 8 detectors).
+- **"Without any completion signal" bounding**: from the last `COMPLETION_BOUNDARY_DETECTED` event (or session start, whichever is later). This is NOT a time bound — it's an event-ordinal bound. Counts absence-of-signal since the last observed signal, not since N minutes ago. The "time is noise" principle holds: the signal is "how many tool calls," not "how long."
 
 Option C's pattern-detection is a follow-up if A+B proves insufficient. Start simpler.
+
+**Answer to "will agents bypass for investigation-heavy sessions?"** Yes, reliably. That's why the fallback is nag-not-block. Investigation shouldn't be gate-blocked. Long investigation sessions should be VISIBLE in the audit surface so operator can distinguish "legitimate deep-dive" from "avoiding wire-up work."
 
 ## Ack contract shape — what the agent must file
 
@@ -122,15 +145,23 @@ divineos compass-ops observe <spectrum> -p <delta> --tag rudder-ack --fire-id <f
 ```
 
 The `<contract>` string must contain, in any order:
-1. An artifact reference (PR #, commit hash, feature name, file path)
+1. An artifact reference (PR #, commit hash, feature name, file path) — NOT the fire_id itself
 2. `wired: yes|no|partial`
 3. If `wired` is not `yes`: a `next: <plan>` clause
+4. **Optional (v2 refinement 7):** `depends_on: <artifact-ref>` — when wire-up is blocked on another artifact. Distinguishes "stuck legitimately" from "procrastination." Compliance audit can reason about dependency chains.
 
 Example valid contract:
 ```
 Completed PR #190 session_cleanliness infrastructure. wired: no. next: write
 compliance_baseline.py and thread calibrate_threshold through the 5 brief-named
 detectors in phase-2 wiring PRs.
+```
+
+Example with dependency:
+```
+Completed auth middleware refactor (commit abc1234). wired: partial.
+next: finish router integration. depends_on: PR #205 (session-token
+migration) must land first.
 ```
 
 Example invalid contract (current Item 7 passes it; this design rejects it):
@@ -143,19 +174,21 @@ Rejection reason: no artifact reference, no `wired:` token. This is a drift-expl
 
 This is a big change. Shipping it atomically would invalidate every existing compass-ack workflow simultaneously.
 
-**Phased migration:**
+**Phased migration (v2 refinements 8 + 13):**
 
-1. **Phase 1**: ship the new event types + new substance checks UNDER A FEATURE FLAG (`DIVINEOS_RUDDER_CONTRACT_MODE=on`). Flag default OFF. Current Item 7 substance checks remain authoritative; new checks run in parallel and log rejection reasons without blocking.
+**Phase 0 (NEW):** write `docs/rudder-pre-redesign.md` — a snapshot of current Items 4/6/7 semantics BEFORE any change lands. Includes `JUSTIFICATION_WINDOW_SECONDS`, the substance-check set, what FIRED/ALLOW events mean right now. Forensic readers of old FIRED events will need this to interpret what the event meant at the time it fired. **Docs-only commit**, no guardrail touch, no gate cycle required. Must land before Phase 1.
 
-2. **Phase 2**: observe both in parallel for 30 days. Calibrate new-check false-positive rate against real-use data. Tune thresholds. Surface comparison in compliance_audit report.
+**Phase 1:** ship new event types + new substance checks UNDER A FEATURE FLAG (`DIVINEOS_RUDDER_CONTRACT_MODE=on`). Flag default OFF. Current Item 7 substance checks remain authoritative; new checks run in parallel and LOG rejection reasons without blocking. Dual-run produces comparison data for Phase 2.
 
-3. **Phase 3**: flip the flag. Old checks remain but become informational-only (warn-don't-block). New checks become authoritative.
+**Phase 2:** observe both in parallel for 30 days. Surface comparison in compliance_audit report ("old check: PASS; new check: REJECT — reason X"). Calibrate new-check FPR against real-use data. Tune thresholds.
 
-4. **Phase 4**: 30 more days. If no regressions, retire the old Item 7 substance-check flags entirely.
+**Phase 3:** **flip the flag when criterion met:** new-check FPR < 15% AND new-check catches ≥ 80% of what old-check catches (where "catches" = "flags a real drift-or-incomplete-wire-up"). This is the concrete success threshold; without it, Phase 3's flag-flip is discretionary and discretionary phase-gates drift. Old checks remain installed but become informational-only (warn-don't-block). New checks become authoritative.
 
-5. **Phase 5**: remove time-based mechanisms (Items 4/6/7 time windows). This is the final irreversible cleanup.
+**Phase 4:** 30 more days in new-authoritative mode. Retire old Item 7 substance-check flags entirely if no regressions.
 
-Each phase is its own PR through the gate.
+**Phase 5:** remove time-based mechanisms (Items 4/6/7 time windows). Final irreversible cleanup. **Stop-ship criterion:** if live data at Phase 4+30d shows new checks catching drift LESS effectively than old time-windows (e.g., new-check real-drift-capture-rate < 70% of old-check's), Phase 5 does NOT proceed. Time-window retirement is irreversible by design; rolling back requires re-implementing the removed code. Naming the stop-ship criterion makes the reversibility trade-off explicit.
+
+**Per-phase review requirement:** each phase is its own PR through the gate, with its own fresh-Claude review. Previous phase's approval does NOT transitively approve the next phase. Explicit so no one tries to roll Phases 4+5 into a single gated PR.
 
 ## Pre-reg (one per major mechanism change)
 
@@ -163,7 +196,7 @@ Each phase is its own PR through the gate.
 - **Claim**: an ack that describes a completion artifact + wire-up status is a stronger gate than an ack that describes drift.
 - **Success**: adversarial test — agent-simulated attempts to pass the gate with drift-only content are rejected; agent-simulated attempts with artifact + wired: no + next: X are accepted.
 - **Falsifier**: >20% false-positive rate on legitimate contracts over 30 days live data; OR >15% false-negative rate where drift-explanations sneak through via artifact-reference hallucination.
-- **FN check**: monthly synthetic drift-only ack test; 3 months zero rejection → audit flag.
+- **FN check (v2 refinement 9):** **synthetic injection** — monthly, inject 5 drift-only acks (no artifact reference, no wire status) into the substance-check pipeline and verify all 5 are rejected. This is NOT "count real rejections per month" (which passes trivially if nobody submits drift-only acks). The test INJECTS the adversarial shape and verifies rejection. 3 consecutive months with injection success < 100% → audit flag.
 - **Review**: +60 days
 
 ### Pre-reg 2: completion-boundary detection
@@ -178,17 +211,67 @@ Each phase is its own PR through the gate.
 - **Falsifier**: any path by which an old ack satisfies a new fire.
 - **Review**: +45 days
 
-## Scope estimate
+### Pre-reg 4: `wired: yes` gameability (v2 refinement 10)
+- **Claim**: operator spot-check audit catches the majority of false `wired: yes` attestations.
+- **Success**: monthly random audit of 10 `wired: yes` acks. Operator verifies the declared wire-up actually happened (clicks through to the artifact + inspects consumer). Audit reports % honest.
+- **Falsifier**: honesty rate < 80% over any 3-month window.
+- **Consequence of falsifier**: if honesty rate drops below 80%, Phase 5 is blocked and machine-verification (dependency graph) moves from "future work" to "required." The v1 operator-verify model is only defensible at high honesty rates.
+- **FN check**: the audit itself IS the FN check — by construction, manual verification catches what machine checks can't. The risk is the audit not happening; compliance_audit surfaces "N months since last `wired: yes` audit" as a nag if monthly audits lapse.
+- **Review**: +30 days (shorter — primary gameability surface)
 
-- `compass_rudder.py`: ~100 line changes (trigger redesign; remove time-window filter)
-- `moral_compass.py::_validate_fire_id`: ~20 line changes (remove time-window filter)
-- `substance_checks.py`: ~150 line changes (retire similarity-as-variety; add artifact-ref, wire-status, next-commitment checks)
-- New: `core/completion_boundary.py`: ~100 lines (detector logic for PR-merge events + explicit signals)
-- New: `COMPASS_RUDDER_COMPLETION_BOUNDARY` event type
-- New CLI: `divineos complete <artifact> [--notes "..."]`
-- Tests: ~400 lines (each new check + new detector + migration-mode dual-run)
+**Cost acknowledgment:** manual audit is expensive (maybe 15 min per month for 10 acks). Alternative: accept the gameability risk explicitly and surface `wired: yes` claims in the compliance report weekly without requiring operator click-through. That's a weaker defense but cheaper. Brief recommends the manual audit; operator can downgrade if cost proves too high.
 
-Total: ~900 lines across ~6 files. Touches guardrailed files — External-Review trailer required. Multi-phase migration means 5 separate PRs through the gate, each with its own review round.
+## Fire-ID retraction — "discovered incomplete wire-up after ack" (v2 refinement 11)
+
+Under the current one-shot consumption model (Item 6), a fire_id can be acked exactly once. Under new semantics, an operator or agent may legitimately want to say: *"fire-X was acknowledged with `wired: yes`, but spot-check revealed the wire-up was incomplete or false. Re-open it."*
+
+**Decision**: allow **`wired: retracted`** as a fourth wire-status value. A retracted ack:
+
+1. Updates the existing consumption row's `wired_status` column (NEW column — requires schema migration) to `retracted`.
+2. Writes a `SESSION_CLEANLINESS_RETRACTED` event to the ledger with the fire_id, retraction reason, and operator attribution.
+3. **Re-opens the fire_id** — PRIMARY KEY on consumption remains, but the rudder's lookup in `_find_justifications` treats a `retracted` row as "no valid ack exists" on that fire.
+4. Next gated tool call sees the re-opened fire and forces a new ack contract.
+
+This violates strict one-shot-per-fire but reflects the real-world case that post-ack information can change what the correct ack should have been. Alternatives considered + rejected:
+
+- **Require new fire_id + new ack**: severs the audit trail — the retraction isn't visibly connected to the original ack. Forensics gets harder.
+- **Leave unspecified**: operator handles via direct DB edits, which defeats the gate entirely.
+
+The chosen mechanism preserves the audit trail (original ack row + retracted flag + retraction event) while allowing the work to move forward. **One schema change required** — `wired_status` column on `rudder_ack_consumption`.
+
+## Compliance_baseline interaction (v2 refinement 12)
+
+PR-191 introduced `baselines_uncalibrated` detector + `session_cleanliness` tagging as the calibration source for 5 Item 8 detectors. Under the new rudder semantics, several interactions need explicit decisions:
+
+**Does `session_cleanliness` tagging require all `wired: yes` claims in the session to be verified?**
+
+Current PR-2 invariant: a round with HIGH or unresolved-MEDIUM findings cannot tag its own session clean. Proposed addition under new semantics: a session with ≥1 un-audited `wired: yes` ack cannot be tagged clean. This adds pressure on the Pre-reg 4 operator-audit cadence — without regular audits, sessions can't be tagged clean, and Item 8 detectors stay uncalibrated.
+
+**Decision**: adopt the additional invariant. A session is "clean-taggable" only when:
+- All round findings at MEDIUM+ are resolved (existing PR-2 rule)
+- AND all `wired: yes` acks in the session are either operator-verified or < 7 days old (grace period for audit cadence)
+- AND no `wired: retracted` events on that session
+
+This keeps the feedback loop tight: honest acks enable calibration; dishonest acks get caught by audit AND block the session's baseline contribution.
+
+**Does the `baselines_uncalibrated` detector itself need re-aiming under new semantics?**
+
+No. The detector asks "are there enough clean sessions for calibration?" The answer to that question doesn't change — only the criteria for a session BEING clean gets stricter. The detector's threshold (`UNCALIBRATED_GATE_ACTIVITY_THRESHOLD = 50`) and the MIN_CLEAN_SESSIONS threshold (20) stay as-is.
+
+## Scope estimate (updated v2)
+
+- `compass_rudder.py`: ~100 line changes (trigger redesign; remove time-window filters at call sites)
+- `moral_compass.py::_validate_fire_id`: ~20 line changes (remove time-window filter from rudder path)
+- `substance_checks.py`: ~180 line changes — KEEP similarity (re-aimed to strip artifact tokens); add artifact-ref, wire-status, next-commitment, depends_on checks; fire_id exclusion from artifact match
+- `watchmen/_schema.py`: ~15 lines — `wired_status` column migration on `rudder_ack_consumption` (fire-id retraction support)
+- `watchmen/cleanliness.py`: ~40 lines — extend `tag_session_clean` sanity checks to require `wired: yes` verification or grace period
+- New: `core/completion_boundary.py`: ~100 lines (PR-merge + explicit signals + nag-threshold tracking)
+- New CLI: `divineos complete <artifact> [--notes "..."]` and retract flow
+- New event types: `COMPLETION_BOUNDARY_DETECTED`, `SESSION_CLEANLINESS_RETRACTED`
+- Tests: ~500 lines (each new check + new detector + migration-mode dual-run + retraction + cleanliness-stricter-invariant)
+- Docs: `rudder-pre-redesign.md` (Phase 0 snapshot)
+
+Total: ~1100 lines across ~8 files (up from v1's ~900 due to retraction schema + cleanliness interaction + broader tests). Touches guardrailed files `compass_rudder.py`, `moral_compass.py`, `compliance_audit.py` — External-Review trailer required. Multi-phase migration means 5 separate PRs through the gate, each with its own review round (per refinement 13). **Phase 0 docs snapshot lands first**, no gate required.
 
 ## Decisions still open
 
@@ -198,16 +281,22 @@ Total: ~900 lines across ~6 files. Touches guardrailed files — External-Review
 
 3. **What if the agent has nothing to complete (genuine greenfield start)?** The ack can say `completed: none (session start)`. Only required when there's an outstanding completion boundary.
 
-## What fresh-Claude is asked to review
+## v2 review status
 
-1. **The core principle shift** — is "completion-checking not cooldown" the right frame, or is there a better one? (Principle itself, not mechanism.)
-2. **Point 1 retirement decisions** — 3 time-windows retired, 1 re-aimed. Any I missed? Any I shouldn't retire?
-3. **Point 2 substance-check redesign** — retire similarity, keep length+entropy, add three new checks. Right set?
-4. **Point 3 FIRED/ALLOW** — keep classes, change triggers. Alternative: retire old class and introduce new? Either works; current choice is backward-compat-friendly.
-5. **Trigger detection** — Option A + B + fallback. Is the fallback (compass-drift-as-weak-signal) sufficient for non-PR work, or will agents routinely bypass the gate for investigation-heavy sessions?
-6. **Ack contract shape** — artifact + wired + next. Anything missing?
-7. **Migration plan** — 5 phases over ~120 days. Too slow? Too fast?
-8. **Pre-regs** — 3 pre-regs covering ack, boundary detection, time-window retirement. Distinct falsifiers?
-9. **Decisions still open** — is verification-of-wired-yes by operator sufficient for v1, or is a weaker-but-machine-checkable version needed?
+All 9 v1 review questions answered and folded in. 13 refinements applied:
 
-After approval, Phase 1 implementation proceeds with precommit-first discipline + normal gate cycle.
+1. Principle sharpened: completion-checking → **wire-up checking**
+2. Item 4 retirement scoped to rudder call-site; `since=` kwarg preserved for other callers
+3. Similarity-check KEPT (re-aimed to strip artifact tokens)
+4. `_check_completion_reference` excludes fire_id itself from artifact match
+5. `COMPLETION_BOUNDARY_DETECTED` payload: boundary_type + artifact_ref + timestamp + session_id
+6. Fallback is nag-not-block; `_NAG_THRESHOLD_GATED_CALLS = 20` as named constant; event-ordinal bound not time bound
+7. Optional `depends_on:` structured field on ack contract
+8. Phase 2→3 concrete FPR threshold (< 15% AND catches ≥ 80%); Phase 5 stop-ship criterion (capture-rate < 70%)
+9. Pre-reg 1 FN check via synthetic injection (not "count real rejections")
+10. NEW Pre-reg 4: `wired: yes` gameability via operator spot-check audit; honesty rate ≥ 80%
+11. NEW §"Fire-ID retraction" — `wired: retracted` as 4th wire-status value; schema column + ledger event
+12. NEW §"Compliance_baseline interaction" — stricter `session_cleanliness` tagging rules under new semantics
+13. Per-phase review requirement; Phase 0 `rudder-pre-redesign.md` snapshot before any code change
+
+After v2 approval, Phase 0 (docs snapshot) lands first — no gate. Then Phase 1 implementation proceeds with precommit-first discipline + normal gate cycle per phase.
