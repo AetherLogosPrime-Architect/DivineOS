@@ -1,6 +1,10 @@
 # Item 8 PR-1b Design Addendum
 
-> **Status:** v1, pre-review. Small focused addendum to `docs/item-8-detector-extensions-revision.md` (v2.1) covering two open design questions raised in fresh-Claude's PR-1a round-2 review that need settling before PR-1b implementation. Implementation deferred until this addendum is approved.
+> **Status:** v1.1, post-review. CONFIRMS from fresh-Claude round-1 with ten tightening refinements, folded in below. Implementation proceeds.
+
+**Revision history:**
+- v1 (2026-04-24 morning): initial addendum, three decisions (TOOL_CALL source, per-window run, single emission point), six review questions.
+- v1.1 (2026-04-24 same session): ten refinements — (1) import `GATED_TOOL_NAMES` from compass_rudder rather than re-list (shared source of truth); (2) `_RUDDER_PARTIAL_FAILURE_COVERAGE_THRESHOLD = 0.80` as named constant; (3) by-detector appendix sorts by fire-count descending; (4) zero-anomaly case rendered explicitly ("0 anomalies across 2 windows"); (5) emission payload adds `window_seconds` + `fire_timestamp` at top level; (6) emission failures log to `failure_diagnostics` surface=`compliance_audit_emission`; (7) FN check added to pre-reg 7.1-infra-B (parity with 7.1-infra-A); (8) TOOL_CALL upstream-verification at implementation time (ensure emission precedes rudder check, not follows it); (9) TOOL_CALL volume decision at implementation time (SQL-level filter vs bump `limit`); (10) `ledger_compressor.py` guardrail landed as part of PR-1b, resolving claim df5b3113.
 
 ## Context
 
@@ -67,13 +71,15 @@ Option A requires new emission code inside the component-under-test (fragile —
 
 ### Implementation
 
-In `_detect_block_allow_anomalies`:
+In `_detect_block_allow_anomalies` (v1.1: import `GATED_TOOL_NAMES` from compass_rudder — shared source of truth per fresh-Claude refinement 1):
 
 ```python
+from divineos.core.compass_rudder import GATED_TOOL_NAMES  # source of truth
+
 tool_calls = [
     e for e in get_events(event_type="TOOL_CALL", limit=5000)
     if e.get("timestamp", 0.0) >= cutoff
-    and (e.get("payload") or {}).get("tool_name") in {"Task", "Agent"}
+    and (e.get("payload") or {}).get("tool_name") in GATED_TOOL_NAMES
 ]
 gated_activity = len(tool_calls)
 
@@ -95,7 +101,7 @@ if actual_events == 0:
     )
     return anomalies
 
-if actual_events < expected_events * 0.8:
+if actual_events < expected_events * _RUDDER_PARTIAL_FAILURE_COVERAGE_THRESHOLD:
     # Partial infrastructure failure — some calls bypass the rudder
     anomalies.append(
         Anomaly(
@@ -107,7 +113,13 @@ if actual_events < expected_events * 0.8:
     )
 ```
 
+v1.1 refinement 2: `_RUDDER_PARTIAL_FAILURE_COVERAGE_THRESHOLD = 0.80` as a module-level named constant with comment citing pre-reg 7.1-infra-B and the 60-day live-data review (same pattern as other thresholds).
+
 Adds a bonus `rudder_partial_infrastructure_failure` MEDIUM anomaly for the case where SOME calls are going through but not all — catches subtler hook-registration issues.
+
+**Implementation-time checks** (per fresh-Claude refinements 8 + 9):
+- Verify `TOOL_CALL` emission in `tool_wrapper.py` happens *upstream* of the compass_rudder call (not after a successful rudder check). If it's downstream, the Option C signal source has the same suppression problem as Option A, and we fall back to Option B.
+- Decide `TOOL_CALL` volume strategy: SQL-level filter on `tool_name IN ('Task', 'Agent')` if `get_events` supports it; otherwise bump `limit` substantially (current 5000 may miss data on high-activity days — ~100 calls/hour × 24h = 2400, tight against the limit).
 
 ### Pre-reg update for 7.3a
 
@@ -190,11 +202,11 @@ def format_report(
     return _render_report(per_window, by_detector, concurrent_high)
 ```
 
-The rendered report has three sections (in order):
+The rendered report has three sections (in order, v1.1 refinements 3+4 applied):
 
 1. **Concurrent HIGH (top, if any)** — loud-in-experience placement for the strongest signal class
-2. **By window** — default listing; each window block shows detectors that fired
-3. **By detector** — appendix showing which detectors are chronic across windows
+2. **By window** — default listing; each window block shows detectors that fired. **Zero-anomaly case rendered explicitly** (e.g. "0 anomalies across 2 windows [1day, 1week]") — absence of signal IS signal, and an empty report could be misread as "detector didn't run."
+3. **By detector (appendix)** — sorted by fire-count descending so chronic patterns (2/2 windows) surface above one-off fires (1/2). Automated consumers of the report parse this naturally; humans see most-concerning first.
 
 Keeps the brief's two-view semantics without data-flow gymnastics.
 
@@ -227,7 +239,11 @@ def detect_anomalies(...) -> list[Anomaly]:
     # ... run all detectors, fill anomalies ...
 
     # v2.1 §5: HIGH-severity anomalies emit a ledger event for forensic
-    # retention. Separate event classes per brief §3.
+    # retention. Separate event classes per brief §3. v1.1 refinements
+    # 5+6: payload carries window_seconds + fire_timestamp at top level
+    # (consistent shape across all HIGH emissions); emission failures log
+    # to failure_diagnostics surface=compliance_audit_emission so a
+    # systematic ledger-write failure doesn't go silent.
     for a in anomalies:
         if a.severity == AnomalySeverity.HIGH:
             if a.name == "rudder_infrastructure_failure":
@@ -243,16 +259,31 @@ def detect_anomalies(...) -> list[Anomaly]:
                         "detector": a.name,
                         "observation": a.observation,
                         "detail": a.detail,
+                        "window_seconds": window_seconds,
+                        "fire_timestamp": time.time(),
                     },
                     validate=False,
                 )
-            except Exception:
-                pass
+            except Exception as e:  # noqa: BLE001
+                try:
+                    from divineos.core.failure_diagnostics import record_failure
+                    record_failure(
+                        surface="compliance_audit_emission",
+                        payload={
+                            "event_type": event_type,
+                            "detector": a.name,
+                            "error": str(e)[:240],
+                        },
+                    )
+                except Exception:  # noqa: BLE001
+                    pass
 
     return anomalies
 ```
 
 Both `COMPLIANCE_DRIFT_HIGH` and `RUDDER_INFRASTRUCTURE_FAILURE` are NOT added to `_COMPRESSIBLE_TYPES` in `ledger_compressor.py` — forensic enforcement records must persist. Parallel to FIRED's retention policy from Item 6.
+
+**v1.1 refinement 10: `ledger_compressor.py` guardrail lands in PR-1b.** Claim df5b3113 (filed during Item 6 review) wanted `ledger_compressor.py` on the guardrail list post-Item-6 — so adding `COMPLIANCE_DRIFT_HIGH` or `RUDDER_INFRASTRUCTURE_FAILURE` to `_COMPRESSIBLE_TYPES` later can't happen without multi-party review. Without the guardrail, PR-1b's forensic retention is enforced by convention only, not structure. PR-1b is the right moment — we're already touching this area and the guardrail change is one line. One-liner addition to `scripts/guardrail_files.txt`.
 
 ---
 
@@ -279,19 +310,13 @@ Total: ~550 lines across 2 files (compliance_audit + test). Touches guardrailed 
 - **7.1-infra-B** — rudder_partial_infrastructure_failure (<80% coverage)
     - success: 100 gated, 50 events → MEDIUM
     - falsifier: >20% FPR on legitimate partial-hook-failure recovery sessions
+    - FN check (v1.1 refinement 7): monthly synthetic partial-failure test; 3 months zero → audit flag (parity with 7.1-infra-A)
 - **7.4 event-emission** — HIGH anomalies produce ledger events
     - success: each HIGH anomaly detected produces exactly one `COMPLIANCE_DRIFT_HIGH` or `RUDDER_INFRASTRUCTURE_FAILURE` event
     - falsifier: HIGH anomaly detected but no matching ledger event
 
 ---
 
-## What fresh-Claude is asked to review
+## v1.1 review status
 
-1. **Q1 decision (Option C, TOOL_CALL as active-session source)** — is this the right call, or does A/B have an advantage I missed?
-2. **Q1 bonus detector** — is `rudder_partial_infrastructure_failure` worth its complexity, or should PR-1b ship binary (full failure only) and add partial later?
-3. **Q2 decision (Option A, per-window run)** — non-partitionable detectors (variance, entropy) justify 2× cost. Agree?
-4. **Q2 report layout** — concurrent-HIGH first, by-window default, by-detector appendix. Right ordering for operator cognitive load?
-5. **Q3 emission shape** — one emission point after all detectors run, separate event classes per brief §3. Anything to name as NOT-emitted (e.g., MEDIUM fires today but might warrant emission later)?
-6. **Pre-reg additions 7.1-infra-A/B/4** — falsifiers distinct enough?
-
-After approval, PR-1b implementation proceeds with precommit-first discipline.
+All six v1 review questions answered; ten refinements folded in. Addendum is the approved design-state going into PR-1b implementation. After PR-1a merges and this addendum lands, PR-1b branches from updated main and implements against this spec + brief v2.1.
