@@ -184,12 +184,25 @@ class TestConveneWithLab:
         engine.register(_toy_expert("B"))
         return engine
 
-    def test_convene_attaches_evidence_on_trigger(self) -> None:
+    def test_convene_attaches_evidence_when_explicitly_opted_in(self) -> None:
+        """use_lab=True is now opt-in (default is False per audit round 2
+        Finding 3 — keyword-triggered lab attachment produced theater of
+        quantitative grounding). When the caller explicitly opts in AND
+        the problem matches triggers, evidence IS attached."""
         engine = self._engine()
-        result = engine.convene("Analyze the chaos in this system")
+        result = engine.convene("Analyze the chaos in this system", use_lab=True)
         assert len(result.lab_evidence) == 1
         assert result.lab_evidence[0].term == "LC"
         assert "Lab evidence" in result.synthesis
+
+    def test_convene_default_does_not_attach_evidence_on_trigger(self) -> None:
+        """Default behavior: even when the problem contains trigger
+        keywords, NO evidence is attached. Slices are invoked deliberately
+        via the lab CLI, not keyword-triggered in council synthesis."""
+        engine = self._engine()
+        result = engine.convene("Analyze the chaos in this system")
+        assert result.lab_evidence == []
+        assert "Lab evidence" not in result.synthesis
 
     def test_convene_no_evidence_on_non_trigger(self) -> None:
         engine = self._engine()
@@ -203,9 +216,9 @@ class TestConveneWithLab:
         assert result.lab_evidence == []
         assert "Lab evidence" not in result.synthesis
 
-    def test_single_lens_still_gets_evidence(self) -> None:
+    def test_single_lens_with_opt_in_still_gets_evidence(self) -> None:
         engine = CouncilEngine()
         engine.register(_toy_expert("Solo"))
-        result = engine.convene("Bounded entropy discussion")
+        result = engine.convene("Bounded entropy discussion", use_lab=True)
         assert len(result.lab_evidence) == 1
         assert "Lab evidence" in result.synthesis
