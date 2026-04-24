@@ -124,7 +124,7 @@ class CouncilEngine:
         problem: str,
         expert_names: list[str] | None = None,
         tags: list[str] | None = None,
-        use_lab: bool = False,
+        use_lab: bool = True,
     ) -> CouncilResult:
         """Run a problem through multiple expert lenses.
 
@@ -132,18 +132,9 @@ class CouncilEngine:
             problem: The problem statement.
             expert_names: Specific experts to consult (default: all).
             tags: Filter experts by tag instead of name.
-            use_lab: Attach numerical slice evidence from the science lab
-                if the problem matches known triggers. **Default False** —
-                opt-in per fresh-Claude audit round 2 Finding 3: keyword-
-                triggered numerical attachments produced theater of
-                quantitative grounding for problems the quantities weren't
-                about (e.g. LC logistic-map output attached to
-                "How do I stabilize my team's workflow?"). Slices earn their
-                place as self-tests of GUTE terms; they don't earn their
-                place as attached-evidence for arbitrary problems via
-                keyword co-occurrence. Invoke the lab deliberately via
-                `divineos lab run-slice <term>` when a question genuinely
-                has a computable referent.
+            use_lab: Gather numerical slice evidence when the problem
+                matches known triggers (default on). Opt-out when the
+                caller wants a purely qualitative analysis.
         """
         selected = self._select_experts(expert_names, tags)
         analyses = [self._apply_lens(w, problem) for w in selected]
