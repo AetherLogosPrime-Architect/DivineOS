@@ -60,11 +60,12 @@ class TestCriticalPointersPresent:
 
 
 class TestLocationsExist:
-    """Source-file pointers must exist; data-file pointers (.db) are not
-    checked at all because their presence depends on which worktree the
-    code is running from and whether the DB has been initialized. A dead
-    pointer to source code is a bug; a missing .db on a fresh worktree
-    is expected.
+    """Source-file pointers must exist; data-file pointers (.db) and
+    user-specific subagent/memory files (``.claude/agents/``,
+    ``.claude/agent-memory/``) are skipped because their presence
+    depends on which worktree the code is running from. A dead pointer
+    to public source code is a bug; a missing .db on a fresh worktree
+    or a missing user-specific subagent file in CI is expected.
     """
 
     @pytest.mark.parametrize("pointer", list_pointers(), ids=lambda p: p.location)
@@ -74,6 +75,13 @@ class TestLocationsExist:
             pytest.skip(
                 "Database pointers aren't existence-checked: presence "
                 "depends on worktree and init state."
+            )
+        # User-specific subagent + agent-memory files live outside the
+        # public repo. They exist in personal worktrees but not in CI.
+        if path_part.startswith(".claude/agents/") or path_part.startswith(".claude/agent-memory/"):
+            pytest.skip(
+                "User-specific subagent/memory files are worktree-local; "
+                "not expected to exist in CI or a fresh clone."
             )
         path = REPO_ROOT / path_part
         assert path.exists(), (
