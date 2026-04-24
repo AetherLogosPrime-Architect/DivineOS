@@ -183,11 +183,26 @@ def _check_gates() -> dict[str, Any] | None:
     # investigation queue.
     try:
         from divineos.core.hedge_marker import format_gate_message as _hm_msg
+        from divineos.core.hedge_marker import marker_path as _hm_path
         from divineos.core.hedge_marker import read_marker as _hm_read
 
-        h = _hm_read()
-        if h is not None:
-            return _make_deny(_hm_msg(h))
+        # File-exists-at-path blocks regardless of readability.
+        # Fresh-Claude audit round 3 Mode 2: if marker is corrupted /
+        # unreadable, read_marker returns None and the gate used to
+        # silently pass. A race or adversarial corruption could defeat
+        # the gate without trace. Now: existence is enough to block.
+        if _hm_path().exists():
+            h = _hm_read()
+            if h is not None:
+                return _make_deny(_hm_msg(h))
+            return _make_deny(
+                "BLOCKED: hedge marker present at "
+                f"{_hm_path()} but unreadable. "
+                'Clear manually with `divineos claim "statement"` once the '
+                "underlying hedged uncertainty has been filed, or inspect "
+                "the file if you suspect corruption. Fail-closed by design: "
+                "a corrupted marker must not silently disable the gate."
+            )
     except (ImportError, OSError, AttributeError):
         pass
 
@@ -198,11 +213,26 @@ def _check_gates() -> dict[str, Any] | None:
     # user message matches CORRECTION_PATTERNS; `divineos learn` and
     # `divineos correction` clear it. Fail open on missing machinery.
     try:
-        from divineos.core.correction_marker import format_gate_message, read_marker
+        from divineos.core.correction_marker import (
+            format_gate_message,
+            marker_path,
+            read_marker,
+        )
 
-        marker = read_marker()
-        if marker is not None:
-            return _make_deny(format_gate_message(marker))
+        # Same fail-closed-on-unreadable pattern as the hedge gate above.
+        if marker_path().exists():
+            marker = read_marker()
+            if marker is not None:
+                return _make_deny(format_gate_message(marker))
+            return _make_deny(
+                "BLOCKED: correction marker present at "
+                f"{marker_path()} but unreadable. "
+                'Clear manually with `divineos learn "lesson"` or '
+                '`divineos correction "description"` once the correction '
+                "has been named, or inspect the file if you suspect "
+                "corruption. Fail-closed by design: a corrupted marker "
+                "must not silently disable the gate."
+            )
     except (ImportError, OSError, AttributeError):
         pass
 
