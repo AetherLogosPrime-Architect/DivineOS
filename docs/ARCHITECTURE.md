@@ -256,6 +256,7 @@ src/divineos/
     scaffolding_map.py         Scaffolding map — briefing surface for self-authored documents that carry load-bearing state.
     engagement_relevance.py    Engagement relevance — does this thinking command relate to current work?
     compliance_audit.py        Compliance-distribution audit — substantive testing of the compliance log.
+    failure_diagnostics.py     Shared record/read/briefing pattern for silent-fail-open events across enforcement surfaces
 
   analysis/
     _session_types.py          Session analysis type definitions

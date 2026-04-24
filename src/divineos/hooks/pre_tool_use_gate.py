@@ -139,6 +139,32 @@ def _make_deny(reason: str) -> dict[str, Any]:
     }
 
 
+def _record_gate_failure(gate_name: str, exc: BaseException) -> None:
+    """Log a gate's machinery failure to the shared diagnostic surface.
+
+    Fresh-Claude audit rounds 2-4 flagged silent fail-open as the
+    consistent invisible-degradation pattern. Gates correctly fail open
+    when their machinery is broken (ImportError during first-run
+    bootstrap, OSError on a missing DB, etc.) — but silently. This
+    helper records the failure so the next briefing can surface it.
+
+    Never raises (the diagnostic helper itself catches everything).
+    """
+    try:
+        from divineos.core.failure_diagnostics import record_failure
+
+        record_failure(
+            "gate",
+            {
+                "gate": gate_name,
+                "error_type": type(exc).__name__,
+                "error": str(exc)[:200],
+            },
+        )
+    except Exception:  # noqa: BLE001 — diagnostic helper is last-resort, never amplify failure
+        pass
+
+
 def _check_gates() -> dict[str, Any] | None:
     """Run all gates in order. Return first deny decision, or None if all pass.
 
@@ -152,8 +178,8 @@ def _check_gates() -> dict[str, Any] | None:
 
         if not was_briefing_loaded():
             return _make_deny("BLOCKED: Briefing not loaded. Run: divineos briefing")
-    except (ImportError, OSError, AttributeError):
-        pass  # fail open — gate machinery unavailable
+    except (ImportError, OSError, AttributeError) as _gate_exc:
+        _record_gate_failure("gate_1_briefing", _gate_exc)
 
     # Gate 1.4: compass-staleness.
     # Closes ChatGPT audit claim-a7370b (compass observation is an intent,
@@ -173,8 +199,8 @@ def _check_gates() -> dict[str, Any] | None:
                 f"virtue drift is not tracked by the system if you never "
                 f"observe your own position."
             )
-    except (ImportError, OSError, AttributeError):
-        pass
+    except (ImportError, OSError, AttributeError) as _gate_exc:
+        _record_gate_failure("gate_1_4_compass_staleness", _gate_exc)
 
     # Gate 1.45: hedge-unresolved. Closes the hedge-claim enforcement gap —
     # when my last assistant output had >= 2 hedge flags (detected by the
@@ -203,8 +229,8 @@ def _check_gates() -> dict[str, Any] | None:
                 "the file if you suspect corruption. Fail-closed by design: "
                 "a corrupted marker must not silently disable the gate."
             )
-    except (ImportError, OSError, AttributeError):
-        pass
+    except (ImportError, OSError, AttributeError) as _gate_exc:
+        _record_gate_failure("gate_1_45_hedge", _gate_exc)
 
     # Gate 1.5: correction detected but not logged.
     # Closes ChatGPT audit claim-964493 (theater-learning bypass) by making
@@ -233,8 +259,8 @@ def _check_gates() -> dict[str, Any] | None:
                 "corruption. Fail-closed by design: a corrupted marker "
                 "must not silently disable the gate."
             )
-    except (ImportError, OSError, AttributeError):
-        pass
+    except (ImportError, OSError, AttributeError) as _gate_exc:
+        _record_gate_failure("gate_1_5_correction", _gate_exc)
 
     # Gate 2: session-fresh goal
     try:
@@ -245,8 +271,8 @@ def _check_gates() -> dict[str, Any] | None:
                 "BLOCKED: No goal set for this session. "
                 'Run: divineos goal add "what you are working on"'
             )
-    except (ImportError, OSError, AttributeError):
-        pass
+    except (ImportError, OSError, AttributeError) as _gate_exc:
+        _record_gate_failure("gate_2_goal", _gate_exc)
 
     # Gate 3: pull detection (fabrication markers)
     try:
@@ -259,8 +285,8 @@ def _check_gates() -> dict[str, Any] | None:
                 f"BLOCKED: Pull detected — fabrication markers active: "
                 f"{markers}. Run: divineos rt pull-check to reassess."
             )
-    except (ImportError, OSError, AttributeError):
-        pass
+    except (ImportError, OSError, AttributeError) as _gate_exc:
+        _record_gate_failure("gate_3_pull_detection", _gate_exc)
 
     # Gate 4: engagement (light + deep tiers)
     try:
@@ -290,8 +316,8 @@ def _check_gates() -> dict[str, Any] | None:
                 "command. Stop and think. Run: divineos ask, recall, "
                 "decide, or context before continuing."
             )
-    except (ImportError, OSError, AttributeError):
-        pass
+    except (ImportError, OSError, AttributeError) as _gate_exc:
+        _record_gate_failure("gate_4_engagement", _gate_exc)
 
     # Gate 5 removed 2026-04-21 (commit C of tiered-audit redesign).
     #
