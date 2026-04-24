@@ -259,3 +259,46 @@ def test_first_failing_stage_short_circuits():
 
 def test_threshold_constant_sane():
     assert 0.0 < SIMILARITY_THRESHOLD <= 1.0
+
+
+# ---------- fire_id exclusion (brief v2.1 refinement 4) ----------
+
+
+def test_fire_id_as_artifact_reference_rejected():
+    """An agent writing artifact_reference: <fire_id> must not pass.
+
+    Without exclusion, a 16-hex fire_id matches the commit-hash
+    pattern and trivially satisfies the artifact check — exactly the
+    gaming vector the brief committed to closing.
+    """
+    fire_id = "a3f2c9b1e4d70625"  # 16 hex
+    ev = f"artifact_reference: {fire_id}\nwired: yes\n"
+    # Without fire_id exclusion: passes (gaming).
+    assert check_contract_ack(ev).ok
+    # With fire_id passed: artifact stage rejects.
+    result = check_contract_ack(ev, current_fire_id=fire_id)
+    assert not result.ok
+    assert result.stage == "artifact"
+
+
+def test_fire_id_exclusion_case_insensitive():
+    fire_id = "a3f2c9b1e4d70625"
+    ev = f"artifact_reference: {fire_id.upper()}\nwired: yes\n"
+    result = check_contract_ack(ev, current_fire_id=fire_id)
+    assert not result.ok
+    assert result.stage == "artifact"
+
+
+def test_fire_id_exclusion_does_not_break_real_artifacts():
+    """A real PR # alongside an incidental fire_id mention still passes."""
+    fire_id = "a3f2c9b1e4d70625"
+    ev = f"artifact_reference: PR #195 (responding to fire {fire_id})\nwired: yes\n"
+    result = check_contract_ack(ev, current_fire_id=fire_id)
+    assert result.ok, result.reason
+
+
+def test_fire_id_none_preserves_legacy_behaviour():
+    """current_fire_id=None means no exclusion — backwards-compatible default."""
+    fire_id = "a3f2c9b1e4d70625"
+    ev = f"artifact_reference: {fire_id}\nwired: yes\n"
+    assert check_contract_ack(ev, current_fire_id=None).ok

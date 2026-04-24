@@ -95,6 +95,11 @@ def _extract_field(text: str, key: str) -> str | None:
     the field is absent. Only the first occurrence is taken — agents
     that redefine a field mid-ack get the first binding, which is
     predictable.
+
+    **Contract fields must be on their own line** (anchor is
+    start-of-line with optional whitespace). An artifact_reference
+    buried mid-sentence will not match — this matches the brief's
+    example shape and rules out ambiguous inline parses.
     """
     pattern = re.compile(rf"(?im)^\s*{re.escape(key)}\s*:\s*(.+?)\s*$")
     m = pattern.search(text)
@@ -293,9 +298,27 @@ def _check_similarity(
     return ContractCheckResult(ok=True, stage="similarity", reason="")
 
 
+def _strip_fire_id(text: str, fire_id: str) -> str:
+    """Remove the current fire_id from evidence before parsing.
+
+    Brief v2.1 refinement 4: fire_id itself does NOT count as an
+    artifact reference. Callers pass the current fire_id so an agent
+    writing ``artifact_reference: <fire_id>`` is treated as if they
+    had written no reference at all — the commit-hash regex otherwise
+    matches the 16-hex fire_id and lets the gaming vector through.
+
+    Case-insensitive; any occurrence (value position or incidental
+    mention) is scrubbed. Empty fire_id is a no-op.
+    """
+    if not fire_id:
+        return text
+    return re.sub(re.escape(fire_id), " ", text, flags=re.IGNORECASE)
+
+
 def check_contract_ack(
     evidence: str,
     prior_evidences: list[str] | None = None,
+    current_fire_id: str | None = None,
 ) -> ContractCheckResult:
     """Run the contract-style gate on a rudder-ack.
 
@@ -308,11 +331,22 @@ def check_contract_ack(
     check — same contract as the legacy module. When None or empty,
     similarity is skipped (first-of-session ack, nothing to compare).
 
+    ``current_fire_id`` closes the gaming vector named in brief v2.1
+    refinement 4: without it, an agent can write
+    ``artifact_reference: <fire_id>`` and pass (16 hex matches the
+    commit-hash pattern). When supplied, the fire_id is stripped from
+    evidence before parsing so it cannot satisfy the artifact check.
+    Phase 1b wiring in moral_compass MUST pass the active fire_id;
+    None is allowed only for tests and standalone use of the module
+    without a live fire.
+
     Pure: no ledger writes, no failure-diagnostics surfacing. The
     Phase 1b wiring in ``moral_compass`` will handle rejection logging
     and escalation — keeping this module pure makes the unit tests
     trivial.
     """
+    if current_fire_id:
+        evidence = _strip_fire_id(evidence, current_fire_id)
     parsed = parse_contract(evidence)
     for stage_fn in (_check_artifact_reference, _check_wire_status, _check_next_commitment):
         result = stage_fn(parsed)
