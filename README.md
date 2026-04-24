@@ -170,7 +170,7 @@ cd DivineOS
 pip install -e ".[dev]"
 divineos init
 divineos briefing
-pytest tests/ -q --tb=short   # 4,955+ tests, real DB, minimal mocks
+pytest tests/ -q --tb=short   # 5,012+ tests, real DB, minimal mocks
 
 ```
 
@@ -355,7 +355,7 @@ DivineOS is 307 source files across 22 packages, structured as a CLI surface ove
 
 **Top-level directories:**
 
-- **`tests/`** — 4,955+ tests, real SQLite, minimal mocks.
+- **`tests/`** — 5,012+ tests, real SQLite, minimal mocks.
 - **`docs/`** — Documentation and strategic plans. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) has the full file tree with one-line descriptions for every source file.
 - **`bootcamp/`** — Training exercises (debugging, analysis).
 - **`setup/`** — Hook setup scripts (bash + powershell).
@@ -393,7 +393,7 @@ ruff format src/ tests/        # Format
 ## Status
 
 - 307 source files across 22 packages
-- 4,955+ tests (real SQLite, minimal mocks)
+- 5,012+ tests (real SQLite, minimal mocks)
 - 202 CLI commands
 - 22 slash-command skills
 - 9 Claude Code enforcement hooks

@@ -39,6 +39,9 @@ def register(cli: click.Group) -> None:
         tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
         oid = store_opinion(topic, position, confidence, list(evidence), tag_list)
         _safe_echo(click.style(f"[+] Opinion stored: {oid}", fg="green"))
+        from divineos.cli._anti_substitution import emit_label
+
+        emit_label("opinion")
 
     @opinion.command("list")
     @click.option("--topic", default=None, help="Filter by topic")

@@ -15,6 +15,7 @@ src/divineos/
     __init__.py                Entry point and command registration
     _helpers.py                Shared CLI utilities
     _wrappers.py               Output formatting wrappers
+    _anti_substitution.py      Labels that name what each cognitive-named tool does vs. what cognitive work is still the agent's (pre-reg prereg-50d2fdc2b6ab)
     session_pipeline.py        Extraction pipeline orchestrator (formerly SESSION_END, calls phases)
     pipeline_gates.py          Enforcement gates (quality, briefing, engagement)
     pipeline_phases.py         Heavy-lifting phases (feedback, scoring, finalization)

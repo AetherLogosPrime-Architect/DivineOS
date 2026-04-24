@@ -120,6 +120,9 @@ def register(cli: click.Group) -> None:
             click.secho(f"    from: {source_entity}", fg="bright_black")
         if related_to:
             click.secho(f"    related to: {related_to}", fg="bright_black")
+        from divineos.cli._anti_substitution import emit_label
+
+        emit_label("learn")
 
         # Clear correction-unlogged marker if present — `learn` is the
         # canonical way to discharge a correction the UserPromptSubmit
@@ -207,6 +210,9 @@ def register(cli: click.Group) -> None:
         from divineos.core.memory import get_core
 
         _log_os_query("ask", query)
+        from divineos.cli._anti_substitution import emit_label
+
+        emit_label("ask")
         results = search_knowledge(query, limit=limit)
 
         query_lower = query.lower()
