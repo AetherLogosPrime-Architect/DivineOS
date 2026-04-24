@@ -253,6 +253,7 @@ src/divineos/
     correction_marker.py       Correction-unlogged marker — structural enforcement of `divineos learn` usage.
     hedge_marker.py            Hedge-unresolved marker — structural enforcement of `divineos claim` on uncertainty.
     scaffolding_map.py         Scaffolding map — briefing surface for self-authored documents that carry load-bearing state.
+    engagement_relevance.py    Engagement relevance — does this thinking command relate to current work?
 
   analysis/
     _session_types.py          Session analysis type definitions
