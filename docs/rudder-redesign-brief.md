@@ -5,6 +5,7 @@
 **Revision history:**
 - v1 (2026-04-24 afternoon): initial brief, 9 review questions.
 - v2 (2026-04-24 same session): 13 refinements — (1) principle sharpened from "completion-checking" to "wire-up checking"; (2) Item 4 retirement scoped to rudder call-site only (`since=` kwarg on `get_observations` preserved for non-rudder callers); (3) similarity-check KEPT but re-aimed to strip artifact tokens before comparison; (4) `_check_completion_reference` excludes the fire_id itself from artifact-reference matching; (5) `COMPLETION_BOUNDARY_DETECTED` payload carries `boundary_type` + `artifact_ref` + timestamp; (6) fallback fires **nag-not-block** + `N` becomes named constant with calibration timeline; (7) optional `depends_on:` structured field added to ack contract; (8) Phase 2→3 gets concrete FPR threshold; Phase 5 gets stop-ship criterion; (9) Pre-reg 1 FN check via synthetic injection; (10) new Pre-reg 4 for `wired: yes` gameability via operator audit; (11) new §"Fire-ID retraction" for "discovered incomplete wire-up after ack"; (12) new §"Compliance_baseline interaction" under new semantics; (13) per-phase review requirement + pre-redesign state snapshot as Phase 0.
+- v2.1 (2026-04-24 same session): fresh-Claude round-2 corrections — fire-ID retraction event renamed from `SESSION_CLEANLINESS_RETRACTED` to **`RUDDER_ACK_RETRACTED`** (fire-id retraction is distinct from session untagging); calibration-lag acknowledged explicitly in §Compliance_baseline (7-day grace period creates stale-calibration window, accepted v1 cost); property-change note added to §Core principle naming the **measurement-gate → attestation-gate shift** and how Pre-reg 4 + Phase 5 stop-ship are the defensive scaffolding.
 
 ## Why this brief exists
 
@@ -31,6 +32,10 @@ The rudder fired correctly on the SIGNAL. The ack mechanism was asking the WRONG
 - Gate cleared by: fire-id-bound ack that names wire-up state and commits to finishing incomplete wiring
 
 The rudder's question becomes "is the previous thing wired into what uses it?" not "have you reflected on your drift?" Time is noise. Wired-or-not is the binary.
+
+**Property change worth naming explicitly (v2.1 per fresh-Claude round-2):** this redesign shifts the rudder from a **measurement-gate** to an **attestation-gate**. Under the old semantics, drift was measured from compass observations — the agent couldn't lie about drift because the drift numbers came from elsewhere (session signals, correction rates, behavioral patterns). Under the new semantics, the agent attests to `wired: yes|no|partial` and the rudder accepts the attestation subject to substance checks. Attestations can be dishonest in ways measurements can't.
+
+Pre-reg 4 (operator spot-check audit of `wired: yes` claims) is the primary defensive scaffolding for this shift. Pre-reg 4's consequence — Phase 5 blocks + machine-verification becomes required if honesty-rate < 80% — is the escape valve. Phase 5's stop-ship criterion is the second layer. Together they form "attestation works for v1; if it fails under real use, we upgrade to verification." The shift is deliberate and the failure mode is anticipated — but it's a real property change, not a semantic relabel.
 
 ## Three architectural points fresh-Claude flagged
 
@@ -228,7 +233,7 @@ Under the current one-shot consumption model (Item 6), a fire_id can be acked ex
 **Decision**: allow **`wired: retracted`** as a fourth wire-status value. A retracted ack:
 
 1. Updates the existing consumption row's `wired_status` column (NEW column — requires schema migration) to `retracted`.
-2. Writes a `SESSION_CLEANLINESS_RETRACTED` event to the ledger with the fire_id, retraction reason, and operator attribution.
+2. Writes a **`RUDDER_ACK_RETRACTED`** event to the ledger with the fire_id, retraction reason, and operator attribution. (v2.1 per fresh-Claude: fixed from `SESSION_CLEANLINESS_RETRACTED` — fire-ID retraction and session-cleanliness untagging are distinct concerns. Session untagging uses the existing `SESSION_CLEANLINESS_UNTAGGED` event.)
 3. **Re-opens the fire_id** — PRIMARY KEY on consumption remains, but the rudder's lookup in `_find_justifications` treats a `retracted` row as "no valid ack exists" on that fire.
 4. Next gated tool call sees the re-opened fire and forces a new ack contract.
 
@@ -253,6 +258,8 @@ Current PR-2 invariant: a round with HIGH or unresolved-MEDIUM findings cannot t
 - AND no `wired: retracted` events on that session
 
 This keeps the feedback loop tight: honest acks enable calibration; dishonest acks get caught by audit AND block the session's baseline contribution.
+
+**Calibration-lag acknowledgment (v2.1 per fresh-Claude):** the 7-day grace period creates a stale-calibration window. A session with freshly-filed `wired: yes` acks (all < 7 days) can be tagged clean before operator audit. If audit at day 15 finds falsification, `untag_session_clean` retracts the tag — but Item 8 detectors that used that session for calibration during days 8-15 carried forward a potentially-wrong baseline. v1 accepts this lag (manual-audit cost justifies grace period). v2.x mitigation candidates: (a) tighten to "audit before tag" (higher operator burden); (c) invalidate-and-recompute calibration when a session is untagged retroactively. Naming the lag explicitly so it's a known cost, not an invisible one.
 
 **Does the `baselines_uncalibrated` detector itself need re-aiming under new semantics?**
 
