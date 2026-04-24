@@ -97,16 +97,6 @@ def register(cli: click.Group) -> None:
         except Exception:  # noqa: BLE001 — best-effort reset
             pass
 
-        # Reset the compass-staleness counter in the engagement marker.
-        # Structural discharge of "virtue drift untracked" — see gate 1.4
-        # in pre_tool_use_gate.py.
-        try:
-            from divineos.core.hud_handoff import reset_compass_actions_counter
-
-            reset_compass_actions_counter()
-        except Exception:  # noqa: BLE001 — best-effort reset
-            pass
-
     @compass_group.command("history")
     @click.option("--spectrum", "-s", default=None, help="Filter by spectrum name")
     @click.option("--limit", "-n", default=20, help="Number of entries")
