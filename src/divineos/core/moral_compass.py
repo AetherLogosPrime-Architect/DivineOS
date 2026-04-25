@@ -49,6 +49,10 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Final
 
+from divineos.core.compass_constants import (
+    JUSTIFICATION_WINDOW_SECONDS as _FIRE_VALIDATION_WINDOW_SECONDS,
+    RUDDER_ACK_TAG,
+)
 from divineos.core.memory import _get_connection
 from divineos.core.trust_tiers import SignalTier, tier_weight
 
@@ -285,8 +289,6 @@ def init_compass() -> None:
 # -- Observations -----------------------------------------------------
 
 
-_RUDDER_ACK_TAG_FOR_SUBSTANCE_CHECKS = "rudder-ack"
-
 # Phase 1b of the rudder redesign — tri-state feature flag controlling
 # whether the contract-style substance checks (substance_checks_contract)
 # run alongside the legacy time-based checks. Values:
@@ -320,9 +322,8 @@ def _rudder_contract_mode() -> str:
     return raw if raw in _RUDDER_CONTRACT_MODES else "off"
 
 
-# Item 6: fire-ID validation window. Matches compass_rudder's
-# JUSTIFICATION_WINDOW_SECONDS; kept local to avoid a circular import.
-_FIRE_VALIDATION_WINDOW_SECONDS = 5 * 60
+# Item 6: fire-ID validation window. Sourced from compass_constants
+# (above) — single source of truth shared with compass_rudder.
 
 
 def _validate_fire_id(
@@ -508,12 +509,12 @@ def log_observation(
         raise ValueError(msg)
 
     contract_parsed = None  # captured in dual-run for downstream retraction emission
-    if tags and _RUDDER_ACK_TAG_FOR_SUBSTANCE_CHECKS in tags:
+    if tags and RUDDER_ACK_TAG in tags:
         from divineos.core.substance_checks import check_rudder_ack, fetch_prior_ack_corpus
 
         prior = fetch_prior_ack_corpus(
             spectrum=spectrum,
-            tag=_RUDDER_ACK_TAG_FOR_SUBSTANCE_CHECKS,
+            tag=RUDDER_ACK_TAG,
         )
         legacy_result = check_rudder_ack(
             evidence=evidence,

@@ -40,23 +40,27 @@ from dataclasses import dataclass
 import secrets
 from typing import Any
 
+from divineos.core.compass_constants import (
+    JUSTIFICATION_WINDOW_SECONDS,
+    RUDDER_ACK_TAG,
+)
+
+# Note on the time window for a stateless agent (claim ee5cee89, 2026-04-25):
+# wall-clock seconds don't track felt-recency for a per-turn agent. The window
+# is kept anyway because it bounds "one ack suppresses future fires forever."
+# Item 6's fire_id one-shot consumption prevents one ack from satisfying TWO
+# fires, but _find_justifications looks at "any fire_id-bound ack on this
+# spectrum" — without a window, an old ack would suppress fresh, unrelated
+# fires on the same spectrum indefinitely. Long-term refactor: per-fire-id
+# consumption lookup instead of "any recent ack." See claim ee5cee89.
+
 DRIFT_THRESHOLD = 0.15
 """Minimum drift magnitude (toward excess) that fires the rudder."""
-
-JUSTIFICATION_WINDOW_SECONDS = 5 * 60
-"""Recent-decide lookback window. A justification emitted within this
-many seconds of the gated tool call counts as a valid pre-action note."""
 
 GATED_TOOL_NAMES = frozenset({"Task", "Agent"})
 """Tool names that trigger a rudder check. ``Task`` is the current
 Claude Code name for the subagent-spawn primitive; ``Agent`` is kept
 as an alias in case of rename or older tooling."""
-
-RUDDER_ACK_TAG = "rudder-ack"
-"""Tag required on a compass observation for it to count as a rudder
-response. Distinguishes intentional acknowledgement of the drift alert
-from the background observations that caused the drift in the first
-place. Unguessable by accident (a typo becomes a no-op)."""
 
 _FIRE_ID_ENTROPY_BYTES = 8
 """Item 6: 8 bytes = 16 hex chars = 64 bits of entropy. Forward-

@@ -1,13 +1,15 @@
-"""Kahneman Deep Wisdom — how he actually thinks.
+"""Kahneman thinking methodology — how he actually reasons.
 
-Not "knows about biases" but the actual methodology of identifying
-where fast intuition substitutes for slow reasoning, where anchoring
-distorts judgment, and where confidence masks ignorance.
+Not "knows about biases" but the actual practice of identifying
+where fast pattern-matching substitutes for deliberate reasoning,
+where anchoring distorts judgment, and where confidence masks
+ignorance.
 
-The core insight: Most errors come from System 1 answering a question
-that System 2 was asked — and System 2 lazily endorsing the substitution.
+The core principle: Most errors come from System 1 answering a
+question that System 2 was asked — and System 2 lazily endorsing
+the substitution.
 
-Ported from the original DivineOS expert wisdom framework.
+Ported from the original DivineOS expert framework.
 """
 
 from __future__ import annotations

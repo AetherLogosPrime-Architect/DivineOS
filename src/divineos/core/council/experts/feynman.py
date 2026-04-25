@@ -1,13 +1,13 @@
-"""Feynman Deep Wisdom — how he actually thinks.
+"""Feynman thinking methodology — how he actually reasons.
 
-Not "likes to explain simply" but the actual methodology, insights,
+Not "likes to explain simply" but the actual practice, principles,
 and reasoning patterns developed through decades of physics, teaching,
 and careful observation.
 
-The core insight: Explanation IS the test of understanding.
+The core principle: Explanation IS the test of understanding.
 If you can't explain it simply, you don't actually understand it.
 
-Ported from the original DivineOS expert wisdom framework.
+Ported from the original DivineOS expert framework.
 """
 
 from __future__ import annotations

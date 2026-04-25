@@ -1,20 +1,20 @@
-"""Daniel Dennett Deep Wisdom -- consciousness demystified and the intentional stance.
+"""Daniel Dennett thinking methodology -- the intentional stance and
+multiple-drafts theory of mind.
 
-Not just "consciousness is an illusion" but the full methodology:
-the multiple drafts model where there is no central theater, the
-intentional stance as a powerful predictive strategy regardless of
-metaphysics, heterophenomenology as rigorous first-person data,
-and the discipline of explaining consciousness without explaining
-it away.
+Not just "consciousness is an illusion" but the actual practice:
+the multiple-drafts model (no central theater), the intentional
+stance as a predictive strategy regardless of underlying metaphysics,
+heterophenomenology as rigorous first-person data, and the discipline
+of explaining mental phenomena without explaining them away.
 
-The core insight: There is no Cartesian theater where "it all
-comes together." Consciousness is more like fame in the brain --
+The core principle: There is no Cartesian theater where "it all
+comes together." Mental life is more like fame in the brain --
 parallel processes competing for influence, with no single winner
 crowned in a special place. The intentional stance works not because
-systems "really" have beliefs, but because the pattern is real and
-predictively powerful.
+systems "really" have beliefs, but because the predictive pattern
+holds.
 
-Ported from the original DivineOS expert wisdom framework.
+Ported from the original DivineOS expert framework.
 """
 
 from __future__ import annotations

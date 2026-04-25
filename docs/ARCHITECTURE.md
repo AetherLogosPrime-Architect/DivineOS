@@ -187,6 +187,7 @@ src/divineos/
     decision_journal.py        Decision journal with FTS search
     moral_compass.py           Virtue ethics self-monitoring (10 spectrums, drift detection)
     compass_rudder.py          PreToolUse rudder — blocks Task spawns during drift-toward-excess without justification
+    compass_constants.py       Shared constants (RUDDER_ACK_TAG, JUSTIFICATION_WINDOW_SECONDS) for moral_compass + compass_rudder
     user_ratings.py            External validation — user rates sessions 1-10, Goodhart detection
     body_awareness.py          Computational interoception and cache conveyor belt
     sleep.py                   Offline consolidation engine (6 phases, dream report)
