@@ -252,19 +252,24 @@ def _find_justifications(
     justified: set[str] = set()
     for spectrum in spectrums:
         try:
-            # Fetch a small batch so we can skip unbound acks without
-            # making too many queries. 20 is well over the realistic
-            # ack-per-window count and keeps the SQL filter's precision
-            # property (Item 4).
+            # Push the fire_id-not-null predicate to SQL via
+            # require_fire_id=True (claim 2026-04-24 08:14 closure):
+            # before this refactor the function fetched limit=20 and
+            # filtered Python-side, which was correct but architecturally
+            # the exact shape Item 4 moved away from for tag-filtering.
+            # With require_fire_id pushed to SQL, limit=1 is sufficient:
+            # if any qualifying ack exists, we get it; if none do, we
+            # get an empty result. No Python-side filter needed.
             acks = get_observations(
                 spectrum=spectrum,
                 tag=RUDDER_ACK_TAG,
                 since=cutoff,
-                limit=20,
+                require_fire_id=True,
+                limit=1,
             )
         except Exception:  # noqa: BLE001
             continue
-        if any(a.get("fire_id") for a in acks):
+        if acks:
             justified.add(spectrum)
     return sorted(justified)
 

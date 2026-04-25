@@ -637,6 +637,7 @@ def get_observations(
     limit: int = 50,
     tag: str | None = None,
     since: float | None = None,
+    require_fire_id: bool = False,
 ) -> list[dict[str, Any]]:
     """Get compass observations, optionally filtered.
 
@@ -654,6 +655,11 @@ def get_observations(
             at or after this time are returned. Pairs with tag to make
             "did this actor ack this spectrum within the window" a
             precise SQL question.
+        require_fire_id — when True, filters to rows where fire_id IS
+            NOT NULL. Lets _find_justifications use limit=1 with the
+            same correctness as the previous Python-side filter at
+            limit=20 (claim 2026-04-24 08:14). Same pattern as tag/since:
+            push the predicate to SQL so the LIMIT clause is precise.
 
     Tag storage is JSON-blob (json.dumps(tags)). json_each() walks the
     blob and lets us filter on exact tag value without a LIKE pattern
@@ -675,6 +681,8 @@ def get_observations(
         if tag is not None:
             clauses.append("EXISTS (SELECT 1 FROM json_each(tags) WHERE value = ?)")
             params.append(tag)
+        if require_fire_id:
+            clauses.append("fire_id IS NOT NULL")
         where_sql = (" WHERE " + " AND ".join(clauses)) if clauses else ""
         params.append(limit)
         rows = conn.execute(
