@@ -154,3 +154,18 @@ class TestTwoAxisDetection:
         # Correction BEFORE the relay-introducer still counts.
         text = "no, that's wrong. here is the reply\n\nthey said something"
         assert should_mark(text) is True
+
+    def test_should_mark_strips_report_introducer(self) -> None:
+        """C-auditor follow-up: relay-introducers extended to cover
+        'here is the report' and similar — common in this user's
+        actual relay style."""
+        text = "here is the report\n\nI pulled the wrong branch"
+        assert should_mark(text) is False
+
+    def test_should_mark_strips_update_introducer(self) -> None:
+        text = "here is the update\n\nthat doesn't work as expected"
+        assert should_mark(text) is False
+
+    def test_should_mark_strips_review_introducer(self) -> None:
+        text = "here is the review\n\nthis is wrong, the approach failed"
+        assert should_mark(text) is False

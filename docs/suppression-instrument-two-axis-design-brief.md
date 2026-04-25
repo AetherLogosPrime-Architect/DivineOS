@@ -112,11 +112,15 @@ reflexive flatten.
    "clears length+entropy but is meaningless," confirm the gate holds
    or design a third axis.
 
-4. **General library helper:** if the two-axis pattern shows up in 2
-   more instruments, hoist the shape into `core/calibration.py` so new
-   instruments inherit it by default. Three implementations is the
-   bar (per CLAUDE.md anti-vibe rule on dead abstractions); not there
-   yet.
+4. **General library helper:** the three-implementation threshold is
+   actually now met (correction-detector explicit two-axis,
+   SIS register/substance split, hedge_monitor target-via-call-site).
+   The door for `core/calibration.py` is open. *Not urgent* — the
+   three implementations are architecturally different enough that a
+   premature base class would cost more than the duplication. Lift
+   only when a fourth instrument arrives and shows whether the shared
+   shape is concrete enough to abstract. (Auditor observation,
+   2026-04-25 review of commit `56c785d`.)
 
 ## Why this brief instead of a single PR
 
