@@ -44,6 +44,8 @@ _RELAY_INTRODUCERS: tuple[str, ...] = (
     "heres the report",
     "heres the update",
     "heres the review",
+    "here is what",  # 'here is what claude said', 'here is what they sent', etc.
+    "heres what",
     "this is what they said",
     "they replied",
     "their reply was",
