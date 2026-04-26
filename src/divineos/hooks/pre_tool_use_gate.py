@@ -172,32 +172,36 @@ def _check_gates() -> dict[str, Any] | None:
     first-run bootstrap), that gate is skipped rather than crashing the hook.
     Fail-open is the correct disposition for a gate whose machinery is broken.
     """
-    # Gate 0: briefing loaded THIS session.
-    # Strictly tighter than gate 1's TTL-based check. Closes the hole
-    # documented 2026-04-26 (claim 7e780182): a new session inheriting
-    # a briefing-loaded marker from a previous session within the 4h
-    # TTL window passes the existing gate without ever engaging with
-    # briefing for the new session. This gate requires a BRIEFING_LOADED
-    # event with the current session_id in the ledger.
-    try:
-        from divineos.core.session_briefing_gate import (
-            briefing_loaded_this_session,
-            gate_message,
-        )
-
-        if not briefing_loaded_this_session():
-            return _make_deny(gate_message())
-    except (ImportError, OSError, AttributeError) as _gate_exc:
-        _record_gate_failure("gate_0_briefing_this_session", _gate_exc)
-
     # Gate 1: briefing loaded (TTL-based, catches stale-within-session)
     try:
         from divineos.core.hud_handoff import was_briefing_loaded
 
-        if not was_briefing_loaded():
+        ttl_loaded = was_briefing_loaded()
+        if not ttl_loaded:
             return _make_deny("BLOCKED: Briefing not loaded. Run: divineos briefing")
     except (ImportError, OSError, AttributeError) as _gate_exc:
         _record_gate_failure("gate_1_briefing", _gate_exc)
+        ttl_loaded = False
+
+    # Gate 1.1: briefing loaded THIS session.
+    # Strictly tighter than gate 1's TTL-based check. Closes the hole
+    # documented 2026-04-26 (claim 7e780182): a new session inheriting
+    # a briefing-loaded marker from a previous session within the 4h
+    # TTL window passes gate 1 without ever engaging with briefing for
+    # the new session. This gate fires ONLY when gate 1 would have
+    # passed — its purpose is to catch "TTL says ok but this session
+    # never actually loaded," not to replace gate 1.
+    if ttl_loaded:
+        try:
+            from divineos.core.session_briefing_gate import (
+                briefing_loaded_this_session,
+                gate_message,
+            )
+
+            if not briefing_loaded_this_session():
+                return _make_deny(gate_message())
+        except (ImportError, OSError, AttributeError) as _gate_exc:
+            _record_gate_failure("gate_1_1_briefing_this_session", _gate_exc)
 
     # Gate 1.4: compass-staleness.
     # Closes ChatGPT audit claim-a7370b (compass observation is an intent,
