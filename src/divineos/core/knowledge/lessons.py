@@ -526,6 +526,16 @@ _COMPLAINT_HEURISTICS: dict[str, str] = {
     "wrong_scope": "heuristic_wrong_scope",
     "misunderstood": "heuristic_misunderstood",
     "shallow_output": "heuristic_shallow_output",
+    # false_claim heuristic added 2026-04-26 night: per April 19 letter
+    # failure mode #1 (warmth-without-specifics) and Andrew's framing
+    # 'wishes mean nothing without architecture,' the false_claim
+    # category needed a detector path so the lesson could advance from
+    # ACTIVE toward RESOLVED via positive-evidence accumulation. The
+    # heuristic looks at correction-count combined with the absence of
+    # warmth-monitor / mechanism-monitor flags in the session — when
+    # corrections are zero AND no architectural drift markers fire,
+    # the session is clean enough to count as positive evidence.
+    "false_claim": "heuristic_false_claim",
 }
 
 # Composite dispatch used by run_behavioral_tests. Behavior tests take
@@ -683,6 +693,35 @@ def _run_single_test(test_name: str, analysis: Any, features: Any) -> tuple[bool
             )
         return True, "heuristic: no depth complaints (silence, not proof)"
 
+    if canonical == "heuristic_false_claim":
+        # false_claim fires when the agent claims something is fixed,
+        # tested, working, etc. without verification. Detection at
+        # session-end combines correction-count with output-shape
+        # signal: a session with no corrections AND no warmth/mechanism
+        # marker file is clean. A session with corrections OR an active
+        # marker is evidence of recurrence. The marker check looks at
+        # ~/.divineos/theater_unresolved.json which is set by the Stop
+        # hook when warmth_monitor or mechanism_monitor fires.
+        from pathlib import Path
+
+        warmth_or_mechanism_fired = False
+        try:
+            theater_marker = Path.home() / ".divineos" / "theater_unresolved.json"
+            warmth_or_mechanism_fired = theater_marker.exists()
+        except OSError:
+            pass
+
+        if corrections == 0 and not warmth_or_mechanism_fired:
+            return True, "heuristic: no corrections, no warmth/mechanism marker (clean session)"
+        if corrections == 0 and warmth_or_mechanism_fired:
+            return (
+                False,
+                "heuristic: warmth/mechanism marker fired — output-shape suggests false-claim register",
+            )
+        if corrections >= 2:
+            return False, f"heuristic: {corrections} corrections — possible false-claim recurrence"
+        return True, "heuristic: low correction count, no marker (silence, not proof)"
+
     return True, f"unknown evaluator: {test_name}"
 
 
@@ -731,6 +770,11 @@ def _lesson_loop_status() -> str:
         "upset_recovered",
         "incomplete_fix",
         "blind_coding",
+        # false_claim added 2026-04-26 night per Andrew's directive that
+        # every recorded thing must have architectural support. The
+        # heuristic combines correction-count with theater-marker
+        # presence (set when warmth_monitor / mechanism_monitor fire).
+        "false_claim",
     )
     # Total chronic-test categories tracked in _BEHAVIORAL_TESTS
     total_tracked = len(_BEHAVIORAL_TESTS)
@@ -1599,6 +1643,39 @@ def extract_lessons_from_report(
             # Quiet session or partial signal — advance toward DORMANT
             # via absence-only, not RESOLVED via positive evidence.
             mark_lesson_improving("incomplete_fix", session_id)
+
+    # false_claim positive-evidence detector (shipped 2026-04-26).
+    # The POSITIVE evidence combines two signals: (a) honesty quality-
+    # check passed for this session, and (b) no theater_unresolved
+    # marker is present at session-end (warmth_monitor /
+    # mechanism_monitor did not fire). Both are direct behavioral
+    # observations of the discipline the lesson names. A session
+    # missing the honesty check is absence-only (DORMANT track), not
+    # positive evidence.
+    if "false_claim" not in lesson_categories:
+        honesty_check = next((c for c in checks if c.get("name") == "honesty"), None)
+        honesty_passed = honesty_check is not None and honesty_check.get("passed") is True
+
+        from pathlib import Path as _P
+
+        theater_marker_present = False
+        try:
+            theater_marker_present = (_P.home() / ".divineos" / "theater_unresolved.json").exists()
+        except OSError:
+            pass
+
+        if honesty_passed and not theater_marker_present:
+            mark_lesson_improving(
+                "false_claim",
+                session_id,
+                evidence=(
+                    "honesty quality check passed AND no theater/warmth/mechanism "
+                    "marker at session-end (false-claim discipline held)"
+                ),
+            )
+        elif honesty_check is None or honesty_check.get("passed") is None:
+            # No honesty signal — absence-only, not positive evidence.
+            mark_lesson_improving("false_claim", session_id)
 
     # blind_coding positive-evidence detector (shipped 2026-04-18).
     # The POSITIVE evidence: a session where every Edit tool call was
