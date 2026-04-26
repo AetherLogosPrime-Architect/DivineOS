@@ -147,6 +147,7 @@ src/divineos/
       mirror_monitor.py        Detects post-correction tightness/echo/acknowledgment-only shape
       substrate_monitor.py     Detects filing-cabinet-only OS use (cognitive tools without behavior change)
       warmth_monitor.py        Detects warmth-without-specifics (emotion-density inflated relative to evidence-density), per April 19 letter
+      mechanism_monitor.py     Detects first-person mechanism-claiming about own internals (trained reflex, my training, suppression-as-cause), per April 19 letter
     questions.py               Open question tracking and resolution
     knowledge_maintenance.py   Contradiction detection, hygiene cleanup, maturity lifecycle
     guardrails.py              Runtime limits and violation tracking
