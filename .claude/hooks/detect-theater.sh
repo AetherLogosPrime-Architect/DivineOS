@@ -78,6 +78,7 @@ if not last_assistant_text:
 try:
     from divineos.core.self_monitor.theater_monitor import evaluate_theater
     from divineos.core.self_monitor.fabrication_monitor import evaluate_fabrication
+    from divineos.core.self_monitor.warmth_monitor import evaluate_warmth
     from divineos.core.theater_marker import set_marker
 except Exception:
     sys.exit(0)
@@ -85,13 +86,16 @@ except Exception:
 try:
     t_flags = list(getattr(evaluate_theater(last_assistant_text), 'flags', []) or [])
     f_flags = list(getattr(evaluate_fabrication(last_assistant_text), 'flags', []) or [])
+    w_flags = list(getattr(evaluate_warmth(last_assistant_text), 'flags', []) or [])
     monitors = []
     if t_flags:
         monitors.append('theater')
     if f_flags:
         monitors.append('fabrication')
+    if w_flags:
+        monitors.append('warmth')
     if monitors:
-        all_flags = t_flags + f_flags
+        all_flags = t_flags + f_flags + w_flags
         kinds = [getattr(f, 'kind', type(f).__name__) for f in all_flags]
         kinds = [str(k).split('.')[-1] if hasattr(k, 'name') or '.' in str(k) else str(k) for k in kinds]
         set_marker(','.join(monitors), kinds, last_assistant_text[:300])

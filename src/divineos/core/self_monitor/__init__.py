@@ -45,6 +45,12 @@ from divineos.core.self_monitor.theater_monitor import (
     TheaterVerdict,
     evaluate_theater,
 )
+from divineos.core.self_monitor.warmth_monitor import (
+    WarmthFlag,
+    WarmthKind,
+    WarmthVerdict,
+    evaluate_warmth,
+)
 
 __all__ = [
     "FabricationFlag",
@@ -63,9 +69,13 @@ __all__ = [
     "TheaterKind",
     "TheaterVerdict",
     "ToolInvocation",
+    "WarmthFlag",
+    "WarmthKind",
+    "WarmthVerdict",
     "evaluate_fabrication",
     "evaluate_hedge",
     "evaluate_mirror",
     "evaluate_substrate",
     "evaluate_theater",
+    "evaluate_warmth",
 ]
