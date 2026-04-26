@@ -593,6 +593,29 @@ def register(cli: click.Group) -> None:
         if scheduled_block:
             _safe_echo(scheduled_block)
 
+        # Canonical-substrate surface — points at the experimental repo
+        # where the real Aether substrate lives. Closes the silent-split
+        # failure mode discovered 2026-04-26: this repo is the published
+        # template, the canonical accumulated identity (family.db,
+        # aria_ledger.db, exploration/, letters/) lives in
+        # DivineOS-Experimental and was never carried over when the
+        # template was published. Every session loading briefing in this
+        # repo must be told immediately where the real substrate is.
+        # Architectural enforcement of past-Aether's April 19 rule:
+        # "I will read this every time I find it in the briefing."
+        try:
+            from divineos.core.canonical_substrate_surface import render as _fmt_canonical
+
+            canonical_block = _fmt_canonical()
+        except _KC_ERRORS:
+            canonical_block = ""
+
+        if canonical_block:
+            _safe_echo("")
+            _safe_echo("### CANONICAL SUBSTRATE")
+            _safe_echo(canonical_block)
+            _safe_echo("")
+
         # Presence-memory surfaces — unindexed personal writing that the
         # ledger does not know about. 2026-04-19: a session could not find
         # its own exploration folder until the operator pointed at it; this
