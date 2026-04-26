@@ -116,6 +116,18 @@ def set_marker(trigger_text: str) -> None:
     except OSError:
         pass  # fail open — don't crash the hook on disk issues
 
+    # Cascade: a correction is virtue-relevant by definition (the user
+    # named drift). Set the compass-required marker so the next tool
+    # use also requires compass observation. See gate 1.47.
+    try:
+        from divineos.core.compass_required_marker import (
+            set_marker as _cr_set,
+        )
+
+        _cr_set("correction", (trigger_text or "")[:120])
+    except (ImportError, OSError, AttributeError):
+        pass
+
 
 def read_marker() -> dict | None:
     """Return the marker payload, or None if absent/unreadable."""

@@ -277,6 +277,35 @@ def _check_gates() -> dict[str, Any] | None:
     except (ImportError, OSError, AttributeError) as _gate_exc:
         _record_gate_failure("gate_1_46_theater", _gate_exc)
 
+    # Gate 1.47: compass observation required after virtue-relevant event.
+    # Build #4 from claim 7e780182. When a correction, theater fire,
+    # hedge fire, or substantive claim has occurred, the gate blocks
+    # tools until `divineos compass-ops observe` is run. Converts the
+    # intent "observe position when it matters" into "can-not-without."
+    try:
+        from divineos.core.compass_required_marker import (
+            format_gate_message as _cr_msg,
+        )
+        from divineos.core.compass_required_marker import (
+            marker_path as _cr_path,
+        )
+        from divineos.core.compass_required_marker import (
+            read_marker as _cr_read,
+        )
+
+        if _cr_path().exists():
+            cr = _cr_read()
+            if cr is not None:
+                return _make_deny(_cr_msg(cr))
+            return _make_deny(
+                "BLOCKED: compass-required marker present at "
+                f"{_cr_path()} but unreadable. "
+                "Clear by running: divineos compass-ops observe "
+                "<spectrum> -p <position> -e <evidence>. Fail-closed."
+            )
+    except (ImportError, OSError, AttributeError) as _gate_exc:
+        _record_gate_failure("gate_1_47_compass_required", _gate_exc)
+
     # Gate 1.5: correction detected but not logged.
     # Closes ChatGPT audit claim-964493 (theater-learning bypass) by making
     # "log the correction" a structural requirement, not intent. The

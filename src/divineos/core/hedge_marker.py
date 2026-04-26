@@ -60,6 +60,18 @@ def set_marker(flag_count: int, flag_kinds: list[str], preview: str) -> None:
     except OSError:
         pass
 
+    # Cascade: hedge density firing is virtue-relevant (truthfulness /
+    # epistemic-courage drift). Set compass-required marker so the
+    # next tool use also requires compass observation. See gate 1.47.
+    try:
+        from divineos.core.compass_required_marker import (
+            set_marker as _cr_set,
+        )
+
+        _cr_set("hedge", f"{flag_count} hedge flags: {','.join(flag_kinds[:3])}")
+    except (ImportError, OSError, AttributeError):
+        pass
+
 
 def read_marker() -> dict | None:
     path = marker_path()

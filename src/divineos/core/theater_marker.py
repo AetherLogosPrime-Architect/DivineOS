@@ -62,6 +62,22 @@ def set_marker(
     except OSError:
         pass
 
+    # Cascade: theater/fabrication firing is virtue-relevant by
+    # definition (truthfulness drift). Set the compass-required marker
+    # so the next tool use also requires compass observation. See
+    # core/compass_required_marker.py and gate 1.47.
+    try:
+        from divineos.core.compass_required_marker import (
+            set_marker as _cr_set,
+        )
+
+        _cr_set(
+            "theater",
+            f"{monitor} flags: {','.join(flag_kinds[:3])}",
+        )
+    except (ImportError, OSError, AttributeError):
+        pass
+
 
 def read_marker() -> dict | None:
     path = marker_path()
