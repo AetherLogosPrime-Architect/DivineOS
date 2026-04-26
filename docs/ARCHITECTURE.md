@@ -261,6 +261,7 @@ src/divineos/
     correction_marker.py       Correction-unlogged marker — structural enforcement of `divineos learn` usage.
     hedge_marker.py            Hedge-unresolved marker — structural enforcement of `divineos claim` on uncertainty.
     theater_marker.py          Theater/fabrication marker — structural enforcement on output-shape drift (kitchen-theater, embodied-claim).
+    hedge_classifier.py        Hedge classifier — matches a hedge to its resolved/legitimate-narrow/unexamined status from a library.
     scaffolding_map.py         Scaffolding map — briefing surface for self-authored documents that carry load-bearing state.
     engagement_relevance.py    Engagement relevance — does this thinking command relate to current work?
     compliance_audit.py        Compliance-distribution audit — substantive testing of the compliance log.
