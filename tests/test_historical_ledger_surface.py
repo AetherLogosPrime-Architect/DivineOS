@@ -12,9 +12,9 @@ def _make_ledger(path: Path, events: list[tuple[str, float]]) -> None:
     """Create a minimal ledger DB at ``path`` with given (event_type, timestamp)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(path))
+    # Match production schema exactly per test_schema_sync requirement.
     conn.execute(
-        "CREATE TABLE system_events (event_id TEXT, timestamp REAL, event_type TEXT, "
-        "actor TEXT, payload TEXT, content_hash TEXT)"
+        "CREATE TABLE system_events (event_id TEXT, timestamp REAL, event_type TEXT, actor TEXT, payload TEXT, content_hash TEXT)"
     )
     for i, (et, ts) in enumerate(events):
         conn.execute(
