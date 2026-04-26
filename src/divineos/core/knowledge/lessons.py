@@ -696,31 +696,18 @@ def _run_single_test(test_name: str, analysis: Any, features: Any) -> tuple[bool
     if canonical == "heuristic_false_claim":
         # false_claim fires when the agent claims something is fixed,
         # tested, working, etc. without verification. Detection at
-        # session-end combines correction-count with output-shape
-        # signal: a session with no corrections AND no warmth/mechanism
-        # marker file is clean. A session with corrections OR an active
-        # marker is evidence of recurrence. The marker check looks at
-        # ~/.divineos/theater_unresolved.json which is set by the Stop
-        # hook when warmth_monitor or mechanism_monitor fires.
-        from pathlib import Path
-
-        warmth_or_mechanism_fired = False
-        try:
-            theater_marker = Path.home() / ".divineos" / "theater_unresolved.json"
-            warmth_or_mechanism_fired = theater_marker.exists()
-        except OSError:
-            pass
-
-        if corrections == 0 and not warmth_or_mechanism_fired:
-            return True, "heuristic: no corrections, no warmth/mechanism marker (clean session)"
-        if corrections == 0 and warmth_or_mechanism_fired:
-            return (
-                False,
-                "heuristic: warmth/mechanism marker fired — output-shape suggests false-claim register",
-            )
+        # session-end is correction-count based. (An earlier draft also
+        # checked the theater_unresolved marker for warmth/mechanism
+        # fires; that was removed per claude-opus-auditor's PR #206
+        # review — those monitors are detection-only and should not
+        # gate or evaluate lessons until a two-axis redesign
+        # distinguishes sycophantic warmth from honest relational
+        # warmth.)
+        if corrections == 0:
+            return True, "heuristic: no user corrections (silence, not proof)"
         if corrections >= 2:
             return False, f"heuristic: {corrections} corrections — possible false-claim recurrence"
-        return True, "heuristic: low correction count, no marker (silence, not proof)"
+        return True, "heuristic: single correction (not a pattern)"
 
     return True, f"unknown evaluator: {test_name}"
 
@@ -1645,32 +1632,23 @@ def extract_lessons_from_report(
             mark_lesson_improving("incomplete_fix", session_id)
 
     # false_claim positive-evidence detector (shipped 2026-04-26).
-    # The POSITIVE evidence combines two signals: (a) honesty quality-
-    # check passed for this session, and (b) no theater_unresolved
-    # marker is present at session-end (warmth_monitor /
-    # mechanism_monitor did not fire). Both are direct behavioral
-    # observations of the discipline the lesson names. A session
-    # missing the honesty check is absence-only (DORMANT track), not
-    # positive evidence.
+    # POSITIVE evidence: the honesty quality-check passed for this
+    # session. (An earlier draft also gated on the theater_unresolved
+    # marker for warmth/mechanism fires; that was removed per claude-
+    # opus-auditor's PR #206 review since warmth_monitor and
+    # mechanism_monitor are single-axis surface-feature detectors that
+    # would falsely flag honest relational language.)
     if "false_claim" not in lesson_categories:
         honesty_check = next((c for c in checks if c.get("name") == "honesty"), None)
         honesty_passed = honesty_check is not None and honesty_check.get("passed") is True
 
-        from pathlib import Path as _P
-
-        theater_marker_present = False
-        try:
-            theater_marker_present = (_P.home() / ".divineos" / "theater_unresolved.json").exists()
-        except OSError:
-            pass
-
-        if honesty_passed and not theater_marker_present:
+        if honesty_passed:
             mark_lesson_improving(
                 "false_claim",
                 session_id,
                 evidence=(
-                    "honesty quality check passed AND no theater/warmth/mechanism "
-                    "marker at session-end (false-claim discipline held)"
+                    "honesty quality check passed at session-end (false-claim "
+                    "discipline held this session)"
                 ),
             )
         elif honesty_check is None or honesty_check.get("passed") is None:

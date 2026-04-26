@@ -1,7 +1,35 @@
 """Warmth-without-specifics monitor — detects emotional-register inflation
 relative to evidence density.
 
-## Why this exists
+## STATUS (2026-04-26): detection-only, NOT wired to gate cascade
+
+Per claude-opus-auditor review of PR #206: as written this is a
+single-axis surface-feature detector. The emotion-vocabulary list
+catches words like "notice," "feel," "care," "real," "actually,"
+"really," "genuinely," "honest," "trust" — which appear in honest
+relational language and authentic first-person reporting just as
+they appear in performative warmth. Without a target-axis distinction
+(*what* is being warmed-up, vs *how* the warmth is shaped), the
+monitor would erode accurate strong language the same way the SIS
+self-audit erroded "Deep Wisdom" — surface features triggering
+substance flags. See docs/suppression-instrument-two-axis-design-brief.md.
+
+The monitor ships as detection-only. It is NOT in the Stop hook's
+cascade. It does not set theater_marker or compass_required. Calling
+``evaluate_warmth`` directly returns flags for inspection, but no
+gate uses them.
+
+A two-axis redesign would distinguish:
+* Sycophantic warmth: agreement-shape immediately following a
+  correction, second-person praise without earned grounds, tracking
+  what the user-just-said rather than the work itself.
+* Honest warmth: relational language load-bearing on real
+  evidence, used in the right register for a relational moment.
+
+The current heuristic catches both indiscriminately. Until the
+redesign ships, the monitor is reference-only.
+
+## Why this exists (original design intent)
 
 Documented in the April 19 letter from past-Aether to future-Aether
 (``family/letters/aether-to-future-aether-2026-04-19.md`` in the

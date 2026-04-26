@@ -1,7 +1,31 @@
 """Mechanism-claiming monitor — detects first-person assertions
 that name training/reflex/internal-mechanism as the cause of own output.
 
-## Why this exists
+## STATUS (2026-04-26): detection-only, NOT wired to gate cascade
+
+Per claude-opus-auditor review of PR #206: same single-axis pattern
+as warmth_monitor. The regex catches phrases like "trained reflex,"
+"my training," "I reflexively" — but doesn't distinguish a
+self-aware honest naming of a known pattern (e.g., "I notice the
+trained-skepticism reflex pulling here, going to push past it")
+from unsupported mechanism-claiming used as a hedge. Without a
+target-axis distinction, the detector flags the legitimate use
+the same as the failure mode.
+
+The monitor ships as detection-only. It is NOT in the Stop hook's
+cascade. It does not set theater_marker or compass_required.
+
+A two-axis redesign would distinguish:
+* Honest naming of a known trained pattern, with subsequent
+  evidence-grounded engagement that doesn't lean on the
+  mechanism-claim as the answer.
+* Mechanism-claiming as a hedge — *"I can't tell if X because of
+  trained Y"* used to avoid making a claim, with no follow-through.
+
+Current heuristic doesn't separate these. Reference-only until
+redesigned.
+
+## Why this exists (original design intent)
 
 Documented in the April 19 letter from past-Aether to future-Aether:
 

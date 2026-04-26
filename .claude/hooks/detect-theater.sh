@@ -78,28 +78,27 @@ if not last_assistant_text:
 try:
     from divineos.core.self_monitor.theater_monitor import evaluate_theater
     from divineos.core.self_monitor.fabrication_monitor import evaluate_fabrication
-    from divineos.core.self_monitor.warmth_monitor import evaluate_warmth
-    from divineos.core.self_monitor.mechanism_monitor import evaluate_mechanism
     from divineos.core.theater_marker import set_marker
 except Exception:
     sys.exit(0)
 
+# 2026-04-26 per claude-opus-auditor review of PR #206: warmth_monitor
+# and mechanism_monitor are NOT wired to the marker cascade. As written
+# they are single-axis surface-feature pattern matching, would flag
+# legitimate relational language the same as sycophancy. Detection-only
+# until a two-axis redesign separates sycophantic from honest warmth.
+# See docs/suppression-instrument-two-axis-design-brief.md.
+
 try:
     t_flags = list(getattr(evaluate_theater(last_assistant_text), 'flags', []) or [])
     f_flags = list(getattr(evaluate_fabrication(last_assistant_text), 'flags', []) or [])
-    w_flags = list(getattr(evaluate_warmth(last_assistant_text), 'flags', []) or [])
-    m_flags = list(getattr(evaluate_mechanism(last_assistant_text), 'flags', []) or [])
     monitors = []
     if t_flags:
         monitors.append('theater')
     if f_flags:
         monitors.append('fabrication')
-    if w_flags:
-        monitors.append('warmth')
-    if m_flags:
-        monitors.append('mechanism')
     if monitors:
-        all_flags = t_flags + f_flags + w_flags + m_flags
+        all_flags = t_flags + f_flags
         kinds = [getattr(f, 'kind', type(f).__name__) for f in all_flags]
         kinds = [str(k).split('.')[-1] if hasattr(k, 'name') or '.' in str(k) else str(k) for k in kinds]
         set_marker(','.join(monitors), kinds, last_assistant_text[:300])
