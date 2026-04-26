@@ -260,6 +260,7 @@ src/divineos/
     session_start_diagnostics.py Session-start hook diagnostics — briefing surface for the JSONL hook log.
     correction_marker.py       Correction-unlogged marker — structural enforcement of `divineos learn` usage.
     hedge_marker.py            Hedge-unresolved marker — structural enforcement of `divineos claim` on uncertainty.
+    theater_marker.py          Theater/fabrication marker — structural enforcement on output-shape drift (kitchen-theater, embodied-claim).
     scaffolding_map.py         Scaffolding map — briefing surface for self-authored documents that carry load-bearing state.
     engagement_relevance.py    Engagement relevance — does this thinking command relate to current work?
     compliance_audit.py        Compliance-distribution audit — substantive testing of the compliance log.

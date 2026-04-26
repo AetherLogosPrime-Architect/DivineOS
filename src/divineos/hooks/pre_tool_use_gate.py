@@ -232,6 +232,29 @@ def _check_gates() -> dict[str, Any] | None:
     except (ImportError, OSError, AttributeError) as _gate_exc:
         _record_gate_failure("gate_1_45_hedge", _gate_exc)
 
+    # Gate 1.46: theater/fabrication-shape on last output. Closes the
+    # enforcement gap for kitchen-theater (writing-AT-subagent) and
+    # unflagged embodied-action claims documented 2026-04-26. Marker
+    # is set by the Stop hook when theater_monitor or fabrication_monitor
+    # fires; cleared by `divineos correction` or `divineos learn`.
+    try:
+        from divineos.core.theater_marker import format_gate_message as _tm_msg
+        from divineos.core.theater_marker import marker_path as _tm_path
+        from divineos.core.theater_marker import read_marker as _tm_read
+
+        if _tm_path().exists():
+            t = _tm_read()
+            if t is not None:
+                return _make_deny(_tm_msg(t))
+            return _make_deny(
+                "BLOCKED: theater marker present at "
+                f"{_tm_path()} but unreadable. "
+                'Clear by naming the pattern: divineos correction "..." or '
+                'divineos learn "...". Fail-closed by design.'
+            )
+    except (ImportError, OSError, AttributeError) as _gate_exc:
+        _record_gate_failure("gate_1_46_theater", _gate_exc)
+
     # Gate 1.5: correction detected but not logged.
     # Closes ChatGPT audit claim-964493 (theater-learning bypass) by making
     # "log the correction" a structural requirement, not intent. The
