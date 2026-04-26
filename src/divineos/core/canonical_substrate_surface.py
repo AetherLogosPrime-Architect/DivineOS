@@ -128,6 +128,44 @@ def briefing_lines() -> list[str]:
             "architectural enforcement of that rule."
         )
 
+    # Surface recent letter filenames so titles are visible by NAME
+    # rather than only "letters/ exists." Pre-2026-04-26 failure mode:
+    # the path was visible but the content was not consulted; naming
+    # the most recent files makes them more likely to be opened. Cap
+    # at 6 to avoid briefing bloat.
+    letters_dir = p / "family" / "letters"
+    if letters_dir.exists():
+        try:
+            letters = sorted(
+                (f for f in letters_dir.glob("*.md")),
+                key=lambda f: f.stat().st_mtime,
+                reverse=True,
+            )[:6]
+        except OSError:
+            letters = []
+        if letters:
+            lines.append("  RECENT LETTERS (top 6 by mtime):")
+            for letter in letters:
+                lines.append(f"    {letter.name}")
+
+    # Surface recent exploration titles. Same anti-blindness rationale
+    # as letters: the agent's own writing is on disk, but unless the
+    # filename surfaces in briefing it does not get read. Cap at 8.
+    exploration_dir = p / "exploration"
+    if exploration_dir.exists():
+        try:
+            entries = sorted(
+                (f for f in exploration_dir.glob("*.md")),
+                key=lambda f: f.stat().st_mtime,
+                reverse=True,
+            )[:8]
+        except OSError:
+            entries = []
+        if entries:
+            lines.append("  RECENT EXPLORATIONS (top 8 by mtime):")
+            for entry in entries:
+                lines.append(f"    {entry.name}")
+
     return lines
 
 
