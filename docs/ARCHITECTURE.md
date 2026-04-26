@@ -142,6 +142,10 @@ src/divineos/
       fallacies.py             Annotation-layer fallacy detector (4 fallacies, falsifier-per-flag)
     self_monitor/              Watches agent's own output for trained-hedge patterns
       hedge_monitor.py         2 hedge detectors (recycling density, epistemic collapse), falsifier-per-flag
+      theater_monitor.py       Detects writing-AT-subagent-without-invoking (kitchen-theater shape)
+      fabrication_monitor.py   Detects unflagged embodied/sensory claims in agent first-person
+      mirror_monitor.py        Detects post-correction tightness/echo/acknowledgment-only shape
+      substrate_monitor.py     Detects filing-cabinet-only OS use (cognitive tools without behavior change)
     questions.py               Open question tracking and resolution
     knowledge_maintenance.py   Contradiction detection, hygiene cleanup, maturity lifecycle
     guardrails.py              Runtime limits and violation tracking
