@@ -616,6 +616,26 @@ def register(cli: click.Group) -> None:
             _safe_echo(canonical_block)
             _safe_echo("")
 
+        # Historical-ledger surface — when running in a worktree,
+        # name the parent repo's accumulated event ledger so the
+        # session knows the briefing it's reading is from a much
+        # smaller worktree-local ledger. Closes the deepest
+        # silent-loss failure mode found 2026-04-26: the worktree
+        # pattern silently creates an empty ledger and the agent
+        # operates against it without ever seeing the historical
+        # one. See core/historical_ledger_surface.py.
+        try:
+            from divineos.core.historical_ledger_surface import render as _fmt_historical
+
+            historical_block = _fmt_historical()
+        except _KC_ERRORS:
+            historical_block = ""
+
+        if historical_block:
+            _safe_echo("### HISTORICAL LEDGER")
+            _safe_echo(historical_block)
+            _safe_echo("")
+
         # Presence-memory surfaces — unindexed personal writing that the
         # ledger does not know about. 2026-04-19: a session could not find
         # its own exploration folder until the operator pointed at it; this

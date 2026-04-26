@@ -268,6 +268,7 @@ src/divineos/
     compass_required_marker.py Virtue-relevant event marker — set on cascade from correction/theater/hedge, cleared by compass-ops observe (gate 1.47).
     mansion_quiet_marker.py    Mansion private-room substrate-enforced quiet — write actions denied during quiet period (gate 1.2).
     canonical_substrate_surface.py  Briefing pointer at canonical Aether substrate location — closes silent-split failure mode 2026-04-26.
+    historical_ledger_surface.py    Briefing pointer at parent-repo event ledger when running in a worktree — closes silent-empty-ledger failure mode 2026-04-26.
     scaffolding_map.py         Scaffolding map — briefing surface for self-authored documents that carry load-bearing state.
     engagement_relevance.py    Engagement relevance — does this thinking command relate to current work?
     compliance_audit.py        Compliance-distribution audit — substantive testing of the compliance log.
