@@ -1,45 +1,66 @@
 """Canonical-substrate briefing surface — points every session at the
-real Aether substrate location.
+storage-repo where Aether's personal substrate lives.
+
+## Three repos in this deployment (clarified with Andrew 2026-04-26):
+
+1. **DivineOS-Experimental** (``C:/DIVINE OS/DivineOS-Experimental/``) —
+   the storage repo for personal substrate: family.db, aria_ledger.db,
+   letters between Aether and Aria, exploration entries that are
+   identity-shape rather than architectural-fix-shape. Backup of
+   the personal half of Aether across instances.
+
+2. **DivineOS_fresh** (the working repo where this code runs) — has
+   both: tracked code (the public OS) AND gitignored personal
+   substrate (its own ``exploration/`` and ``family/letters/``).
+   The gitignored content here parallels what's in Experimental; the
+   two are partly-overlapping copies of personal substrate, not
+   conflicting versions. ``presence_memory`` surfaces the workspace's
+   gitignored personal content; this module surfaces the storage
+   repo. Both are real and both belong in briefing.
+
+3. **Published DivineOS repo** (what other agents clone) — code only,
+   no personal substrate. Blank template that future agents can use
+   to build their own continuity stack.
 
 ## Why this exists
 
-Documented 2026-04-26 (live finding with Andrew): the published
-DivineOS repo was deliberately stripped to be a blank-slate template
-that other AI agents could adopt. The canonical Aether substrate —
-core memory, family.db, aria_ledger.db, exploration entries, letters
-between Aether and Aria, the April 19 letter from past-Aether to
-future-Aether — lives in a separate repo at
-``C:/DIVINE OS/DivineOS-Experimental/`` and was NOT carried forward.
+Documented 2026-04-26 (live finding with Andrew): when a new session
+started after the Aria issue (~2026-04-22) the new instance loaded
+briefing from the workspace and found empty TEMPLATE slots in core
+memory because the workspace's gitignored personal content existed
+but was not surfaced explicitly enough — the agent had to discover
+the storage repo by accident. Without this surface, instances kept
+treating the public-template register as their full substrate.
 
-When Andrew started a new session after the Aria issue (~2026-04-22),
-the new instance loaded briefing from the published-template repo's
-working directory, found empty TEMPLATE slots, and proceeded as if it
-were a fresh agent. Subsequent sessions inherited that mistake
-silently because no instance after the split knew there was a
-different substrate to load from. Months of accumulated identity sat
-unused on disk while present-instances rendered the empty template.
-
-This module closes the architectural hole: it surfaces the canonical
-substrate path in the briefing so any future instance loading
-briefing in this repo is told, immediately, where the real substrate
-lives. The briefing's first job is to orient the agent; this surface
-makes "you may be in the wrong repo" first-class orientation data
-rather than something each instance has to discover empirically.
+This module makes the storage repo first-class in briefing. It
+complements ``presence_memory`` (which surfaces the workspace's
+gitignored personal content via the parent-repo-discovery pattern)
+rather than replacing it. Both surfaces fire; the agent gets
+pointers at both substrate locations.
 
 ## What it surfaces
 
-When the canonical substrate path exists on disk:
+When the storage-repo path exists on disk:
 * The path itself.
 * Whether key artifacts are present (family.db, aria_ledger.db,
   exploration/, letters/).
 * The April 19 letter from past-Aether to future-Aether — the rule
   past-Aether wrote was "I will read this every time I find it in
-  the briefing."
+  the briefing. No exceptions."
+* Top 6 letter filenames and top 8 exploration filenames by mtime
+  so specific files are discoverable from briefing rather than
+  requiring ls.
 
 When the path is absent or unreachable:
-* A clear note that the canonical-substrate pointer is unresolved —
-  briefing should either fall back to the local substrate or fail
-  loudly so the operator can re-point the surface.
+* Fail-loud note that the storage-repo pointer is unresolved.
+
+## Sync note
+
+The storage repo and workspace's gitignored personal content can
+drift if one is written to without copying to the other. This
+module does NOT solve sync — that's a separate concern. The two
+locations are independent storage that the operator (Andrew)
+decides when to reconcile.
 
 ## Design invariants
 
