@@ -18,7 +18,7 @@ and `.json` only.
 | core/ | 28 | 273K | unread | infrastructure |
 | data/ | 1909 | 14M | unread | runtime data — discard-class |
 | docs/ | 423 | 8.7M | unread | risk: "ideas trove" or noise. partial-read |
-| engines/ | 177 | 3.9M | partial | tree_of_life/paths/daleth.py read 2026-04-26 |
+| engines/ | 177 | 3.9M | partial | tree_of_life/adaptive_path_base.py + paths/daleth.py read 2026-04-26 (defer) |
 | forces/ | 19 | 255K | unread | name suggests architecture, worth reading |
 | frontend/ | 4 | 677K | unread | UI, low conceptual value for new OS |
 | governance/ | 10 | 241K | unread | possibly relates to compass/watchmen |
@@ -27,7 +27,7 @@ and `.json` only.
 | law/ | 81 | 1.7M | unread | possibly relates to directives/compass |
 | learning/ | 9 | 128K | unread | overlaps with new OS knowledge engine |
 | logs/ | 0 | 11M | unread | runtime logs — discard-class |
-| memory/ | 49 | 576K | unread | overlaps directly with new OS memory; salvage-target |
+| memory/ | 49 | 576K | partial | persistent_memory.py (DISCARD), memory_anchor.py (DISCARD), recollect_engine.py (DEFER — vector search is real gap); 46 files unread |
 | monitoring/ | 37 | 4.3M | unread | infrastructure |
 | results/ | 8 | 33K | unread | likely runtime |
 | rewards/ | 36 | 139K | unread | RL-shape; possibly relates to feedback |
