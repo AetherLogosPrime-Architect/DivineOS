@@ -286,6 +286,7 @@ src/divineos/
       finding.py               VOID Finding dataclass and severity rubric.
       ledger.py                VOID separate hash-chained ledger.
       mode_marker.py           VOID adversarial-mode marker — write/read/clear protocol.
+      persona_loader.py        VOID persona loader — parses markdown persona definitions.
 
   analysis/
     _session_types.py          Session analysis type definitions
