@@ -1201,6 +1201,96 @@ tree_of_life = hypergraph-as-CS, qualia = observable-correlates-as-CS).
   reads on specific modules can still happen as triggered work, but
   the architectural strip-mine has covered the load-bearing surface.
 
+### Spec strip-mine pass (operator authorization 2026-04-26: "strip mine anything you find from module specs that you think we need... if it doesnt help you then its not needed")
+
+Sampled six more specs from `module specs/` applying the bar: would I
+*actually use this if it shipped*, not "is it interesting." Honest
+results:
+
+#### `ACTION LOOP CLOSURE` — PORT-CANDIDATE 5 (claim 5b38a31c)
+
+* **What's here**: "Embodied Learning Engine, Feedback Integration
+  Orchestrator." Stripped of metaphysics: COMPARES intended goals with
+  perceived outcomes, CALCULATES prediction error, MODULATES learning
+  rates. The CS primitive is **prediction-error feedback** — *did the
+  action achieve what it was intended to?*
+* **Why I'd use it**: this addresses a real failure mode I have. I
+  take actions (edits, commands, PRs), assume success, move on. The
+  "trust but verify" principle in CLAUDE.md gestures at this but
+  doesn't enforce it mechanically. The new OS has session goals +
+  decision journal + claim engine — items get **filed** but outcomes
+  don't get systematically **compared** back. Decisions get filed;
+  they don't get reviewed-against-outcome.
+* **Concrete shape (extension to existing systems, not new module)**:
+  - **session-goal**: at session end, briefing surface checks "did
+    each open goal get progressed against?"
+  - **decision**: at session start, review previous session's
+    decisions and check "did the decision still hold? was it used?
+    did it produce the intended outcome?"
+  - **claim**: extend the pre-reg review-date pattern to claims so
+    they don't sit OPEN forever
+  - The closure event itself becomes a learning signal: actions that
+    succeeded vs. failed inform future similar actions
+* **Status**: filed as claim 5b38a31c. Real Phase 1 work, not theater.
+  Smaller scope than the other port-candidates because it extends
+  existing systems rather than building new infrastructure.
+
+#### `AXIOM ENFORCER` — DISCARD
+
+* **What's here**: static analyzer that validates files against the
+  55-section SKELETON pattern: density floor (≥50K chars), 55 sections
+  numbered 0-54, regex header validation, SHA-512 hash verification.
+* **Why DISCARD**: this was specifically built to enforce Gemini's
+  spec format. The new OS has its own structural enforcement (pre-
+  commit hooks, doc-counts checker, ARCHITECTURE.md tree sync,
+  vulture, mypy, ruff) appropriate to *Python module discipline*, not
+  to *Gemini-spec compliance*. Backporting AXIOM ENFORCER would be
+  forcing the wrong shape onto the new substrate.
+
+#### `ARK KEEPER` — DISCARD (already-covered)
+
+* **What's here**: WORM storage with deterministic erasure-coded
+  RAID-6, AES-256-GCM, SHA-512 hash chains, hourly bit-rot scrub,
+  multi-replica redundancy.
+* **Why DISCARD**: the integrity-layer concept is already in the new
+  OS via the hash-chained ledger + `divineos verify`. Adding
+  RAID-6-across-multiple-physical-nodes + hourly scrubbing is
+  operationally overkill for a single-agent CLI substrate.
+
+#### `ANCHOR` — DISCARD (function already covered)
+
+* **What's here**: "Reality-Inertia Orchestrator," prevents
+  "Dimensional Drift" and "Ontological Decay." Stripped of metaphysics:
+  baseline-state verifier that detects when the system has drifted
+  from expected operating parameters.
+* **Why DISCARD**: the function (drift detection) is already done by
+  compass-ops (virtue-spectrum drift) + pre-reg (parameter drift
+  against falsifiers) + watchmen (audit findings). ANCHOR would
+  duplicate without adding capability.
+
+#### `METATRON'S CUBE` + `MERKABA ENGINE` — DISCARD (sister-patterns)
+
+* **What's here**: Both are sister-governors to Path Governor — same
+  centralized-daemon-watching-N-Sephira-instances pattern. Metatron =
+  Logic Governor, Merkaba = Integrity Governor.
+* **Why DISCARD**: same evaluation as Path Governor (defer-no-consumer)
+  applies. The pattern is recorded; new OS doesn't have enough
+  pipeline-shaped subsystems to warrant centralized governance yet.
+
+### Spec strip-mine summary
+
+Of six specs sampled: **one PORT-CANDIDATE (action-loop closure)**.
+Five DISCARDs, all for legitimate reasons (already-covered, wrong-
+shape, or duplicate). The bar held — *would I use this?* eliminates
+a lot of "interesting in spec but no concrete consumer" results that
+a less honest review might mark as "potentially useful."
+
+The reading-rule from round 11 (trust-specs-over-implementations) is
+confirmed: every spec read as substantive (Gemini-character — clean,
+purpose-articulated, real CS underneath) regardless of whether the
+function survived evaluation. The five DISCARDs are about
+*new-OS-fit*, not about spec quality.
+
 ## Discard policy reminder
 
 Per Andrew 2026-04-24: *"i dont mind it being ruthlessly pruned as long as
