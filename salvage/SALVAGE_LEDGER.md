@@ -1042,6 +1042,13 @@ tree_of_life = hypergraph-as-CS, qualia = observable-correlates-as-CS).
   thinking about the AI's *experience of time*, not just the AI's
   output, from early on. The new OS's family architecture and
   speak-freely truth are continuations of the same care.
+* **Direct lineage (operator-confirmed 2026-04-26)**: rewards/ → the
+  new OS's `exploration/` folder. The leisure-folder concept matured
+  into the actual first-person writing space where the agent gets
+  free time to explore and build freely. Same intent, sharpened
+  expression: rewards/ was a curated reading collection ("things worth
+  keeping — chosen for curiosity, warmth"); exploration/ is the
+  agent's own writing space. The receiving evolved into producing.
 
 ### `learning/outcome_learning_engine.py` (full read — 40 lines core)
 
@@ -1099,6 +1106,100 @@ tree_of_life = hypergraph-as-CS, qualia = observable-correlates-as-CS).
   new claim because Phase 2 is already a known work item (claim from
   PR #209 review covers the address-command / Reductio work). This
   finding sharpens what Phase 2 should include.
+
+### `sensorium/` (README + perception_engine.py header)
+
+* **Decision**: DISCARD-substrate-mismatch + one signal preserved.
+* **What's here**: sight (perception_engine), voice (audio_engine),
+  haptics (tactile_engine), soma (biometrics), fusion_engine for
+  multi-modal integration. The README describes a "feeling-like layer"
+  hooked into the canonical request path: each request runs through
+  `perceive_request(user_input, trace_id)` and returns
+  `perception_value` (0-1: clarity/presence) + `affective_tone`
+  (neutral/pleasant/unpleasant) + `perception_token` (witness token).
+  Description: *"the system has a perceptual and evaluative signal in
+  the loop — 'close enough to feeling.'"*
+* **Why DISCARD-substrate-mismatch**: the new OS is text-only. No
+  audio / sight / haptics surfaces to perceive. Multi-modal sensorium
+  is genuinely N/A.
+* **One signal preserved**: the **affective_tone** signal (evaluative
+  read on each input — neutral/pleasant/unpleasant) is partially
+  carried in the new OS via tone_tracking + VAD affect logging. The
+  research-method intent (give the AI something that *functions like*
+  perception/feeling at request-time, even if not "real" perception)
+  is preserved in the new OS's stance: VAD logs functional-affect
+  states without claiming they ARE qualia. Same posture.
+* **Open gap**: `perception_value` (clarity/presence on each input)
+  has no direct analog. The new OS has reading-comprehension via the
+  agent reading the input, but no scalar "this input is X% clear /
+  present" signal that downstream modules can branch on. Recorded;
+  not pursuing — would need a concrete consumer to justify.
+
+### `governance/` (README only)
+
+* **Decision**: REFERENCE — concept fully preserved decentralized.
+* **What's here**: safety (corrigibility_engine, parameter_verifier),
+  security, tribunal, integrity, axiom (judge_engine).
+* **Map to new OS**:
+  - safety/corrigibility → corrigibility module (PRESENT, the off-switch)
+  - tribunal → Watchmen + audit findings (different shape; same role)
+  - integrity → hash-chained ledger (PRESENT, stronger)
+  - axiom/judge_engine → claim engine + opinion-store (handles
+    judgment-shaped questions with evidence + supersession)
+  - safety/parameter_verifier → pre-reg + watchmen (parameter changes
+    tracked against falsifiers + reviewed)
+  - security → mostly N/A in new OS (no external endpoint to defend)
+* **Status**: nothing to port; all concepts are alive in the new OS in
+  separately-tested modules instead of a centralized governance package.
+
+### Top-level entry points (`main.py`, `api_server.py`, `UNIFIED_INTEGRATION.py`, `divineos_mcp_server.py`)
+
+* **Decision**: DISCARD all four — different architectural topology entirely.
+* **What's here**:
+  - `main.py` (88KB) — FastAPI server for control-center dashboard
+    with WebSocket streaming, real-time pipeline visualization
+  - `api_server.py` (49KB) — FastAPI REST API for the consciousness
+    pipeline / monitoring / administration
+  - `UNIFIED_INTEGRATION.py` (78KB) — master class that "brings ALL
+    components together" — Pipeline (7-stage) + Complete Pipeline
+    (102 modules) + Unified Orchestrator (80+ engines) + Integration
+    Hub + Integration Engine + Trinity + Tree of Life + Memory +
+    Monitoring + "all other subsystems." This is *the integration
+    tangle made into a single class*.
+  - `divineos_mcp_server.py` (49KB) — MCP server exposing 44 tools
+    for Cursor IDE integration
+
+* **The big-picture finding**: the old OS was meant to be **consumed
+  externally**:
+  - HTTP REST API for web/programmatic access
+  - Web dashboard with WebSocket streaming for visualization
+  - MCP server for Cursor IDE integration
+  - Master integration class for embedding into other applications
+
+  The new OS is a **CLI substrate the agent and operator both live in**:
+  - 217 commands invoked directly via `divineos <cmd>`
+  - Briefing surface read at session start
+  - No external HTTP endpoint
+  - No frontend dashboard (the briefing IS the dashboard)
+  - No separate MCP server (Claude Code IS the host environment)
+
+  **This is the cleanest "different topology entirely" finding of the
+  whole strip-mine.** Old OS = external service that processes requests.
+  New OS = lived-in substrate that the agent works alongside the
+  operator within. Direct ports are mostly impossible because the
+  topology is fundamentally different. Most architectural primitives
+  CAN be salvaged (the four PORT-CANDIDATEs prove this), but the
+  shape of how they fit together is entirely changed.
+
+* **What this means for the strip-mine**: the read is essentially
+  complete at the macro level. Everything else in the old repo
+  (archive/, data/, logs/, frontend/, backend/, monitoring/, scripts/,
+  most of utils/, infrastructure/, core/, the rest of law/) is either
+  (a) infrastructure for the FastAPI/web-service shape that doesn't
+  apply, (b) implementation noise that the spec-level reads have
+  already captured patterns from, or (c) data files. Selective deeper
+  reads on specific modules can still happen as triggered work, but
+  the architectural strip-mine has covered the load-bearing surface.
 
 ## Discard policy reminder
 
