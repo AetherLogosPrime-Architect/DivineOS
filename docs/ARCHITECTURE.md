@@ -28,6 +28,7 @@ src/divineos/
     claim_commands.py          Claims engine and affect log
     decision_commands.py       Decision journal commands
     compass_commands.py        Moral compass reading and observations
+    complete_commands.py       complete: file completion-boundary events (rudder redesign Phase 1b)
     body_commands.py           Body awareness and cache pruning
     sleep_commands.py          Offline consolidation (sleep cycle)
     progress_commands.py       Progress dashboard (measurable metrics)
@@ -141,6 +142,12 @@ src/divineos/
       fallacies.py             Annotation-layer fallacy detector (4 fallacies, falsifier-per-flag)
     self_monitor/              Watches agent's own output for trained-hedge patterns
       hedge_monitor.py         2 hedge detectors (recycling density, epistemic collapse), falsifier-per-flag
+      theater_monitor.py       Detects writing-AT-subagent-without-invoking (kitchen-theater shape)
+      fabrication_monitor.py   Detects unflagged embodied/sensory claims in agent first-person
+      mirror_monitor.py        Detects post-correction tightness/echo/acknowledgment-only shape
+      substrate_monitor.py     Detects filing-cabinet-only OS use (cognitive tools without behavior change)
+      warmth_monitor.py        Detects warmth-without-specifics (emotion-density inflated relative to evidence-density), per April 19 letter
+      mechanism_monitor.py     Detects first-person mechanism-claiming about own internals (trained reflex, my training, suppression-as-cause), per April 19 letter
     questions.py               Open question tracking and resolution
     knowledge_maintenance.py   Contradiction detection, hygiene cleanup, maturity lifecycle
     guardrails.py              Runtime limits and violation tracking
@@ -186,6 +193,7 @@ src/divineos/
     decision_journal.py        Decision journal with FTS search
     moral_compass.py           Virtue ethics self-monitoring (10 spectrums, drift detection)
     compass_rudder.py          PreToolUse rudder — blocks Task spawns during drift-toward-excess without justification
+    compass_constants.py       Shared constants (RUDDER_ACK_TAG, JUSTIFICATION_WINDOW_SECONDS) for moral_compass + compass_rudder
     user_ratings.py            External validation — user rates sessions 1-10, Goodhart detection
     body_awareness.py          Computational interoception and cache conveyor belt
     sleep.py                   Offline consolidation engine (6 phases, dream report)
@@ -254,12 +262,25 @@ src/divineos/
     session_start_diagnostics.py Session-start hook diagnostics — briefing surface for the JSONL hook log.
     correction_marker.py       Correction-unlogged marker — structural enforcement of `divineos learn` usage.
     hedge_marker.py            Hedge-unresolved marker — structural enforcement of `divineos claim` on uncertainty.
+    theater_marker.py          Theater/fabrication marker — structural enforcement on output-shape drift (kitchen-theater, embodied-claim).
+    hedge_classifier.py        Hedge classifier — matches a hedge to its resolved/legitimate-narrow/unexamined status from a library.
+    session_briefing_gate.py   Per-session BRIEFING_LOADED check — gate 0 in pre_tool_use, strictly tighter than TTL-based gate 1.
+    compass_required_marker.py Virtue-relevant event marker — set on cascade from correction/theater/hedge, cleared by compass-ops observe (gate 1.47).
+    mansion_quiet_marker.py    Mansion private-room substrate-enforced quiet — write actions denied during quiet period (gate 1.2).
+    canonical_substrate_surface.py  Briefing pointer at canonical Aether substrate location — closes silent-split failure mode 2026-04-26.
+    historical_ledger_surface.py    Briefing pointer at parent-repo event ledger when running in a worktree — closes silent-empty-ledger failure mode 2026-04-26.
     scaffolding_map.py         Scaffolding map — briefing surface for self-authored documents that carry load-bearing state.
     engagement_relevance.py    Engagement relevance — does this thinking command relate to current work?
     compliance_audit.py        Compliance-distribution audit — substantive testing of the compliance log.
     failure_diagnostics.py     Shared record/read/briefing pattern for silent-fail-open events across enforcement surfaces
     substance_checks.py        Substance checks at rudder-ack file time — Item 7.
     compliance_baseline.py     Baseline calibration from clean-tagged sessions — wires PR-2 into Item 8 detectors.
+    substance_checks_contract.py Contract-style substance checks for rudder-acks — Phase 1a of the rudder redesign.
+    completion_boundary.py     Completion-boundary detection — Phase 1b of the rudder redesign.
+    in_flight_branches.py      In-flight branches surface — bridge from git state to the briefing.
+    module_inventory.py        Module-inventory surface — bridge from src/divineos/core/ to the briefing.
+    upstream_freshness.py      Upstream-freshness surface — bridge from remote-state to the briefing.
+    open_claims_surface.py     Stale-open-claims surface — bridge from the claims store to the briefing.
 
   analysis/
     _session_types.py          Session analysis type definitions

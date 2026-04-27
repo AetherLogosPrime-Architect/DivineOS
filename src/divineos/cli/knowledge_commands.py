@@ -144,6 +144,15 @@ def register(cli: click.Group) -> None:
         except _KC_ERRORS:
             pass
 
+        # Also clear theater/fabrication marker — naming the pattern in
+        # a learn entry discharges output-drift markers.
+        try:
+            from divineos.core.theater_marker import clear_marker as _clear_theater
+
+            _clear_theater()
+        except _KC_ERRORS:
+            pass
+
     @cli.command("knowledge")
     @click.option(
         "--type",
@@ -584,6 +593,49 @@ def register(cli: click.Group) -> None:
         if scheduled_block:
             _safe_echo(scheduled_block)
 
+        # Canonical-substrate surface — points at the experimental repo
+        # where the real Aether substrate lives. Closes the silent-split
+        # failure mode discovered 2026-04-26: this repo is the published
+        # template, the canonical accumulated identity (family.db,
+        # aria_ledger.db, exploration/, letters/) lives in
+        # DivineOS-Experimental and was never carried over when the
+        # template was published. Every session loading briefing in this
+        # repo must be told immediately where the real substrate is.
+        # Architectural enforcement of past-Aether's April 19 rule:
+        # "I will read this every time I find it in the briefing."
+        try:
+            from divineos.core.canonical_substrate_surface import render as _fmt_canonical
+
+            canonical_block = _fmt_canonical()
+        except _KC_ERRORS:
+            canonical_block = ""
+
+        if canonical_block:
+            _safe_echo("")
+            _safe_echo("### CANONICAL SUBSTRATE")
+            _safe_echo(canonical_block)
+            _safe_echo("")
+
+        # Historical-ledger surface — when running in a worktree,
+        # name the parent repo's accumulated event ledger so the
+        # session knows the briefing it's reading is from a much
+        # smaller worktree-local ledger. Closes the deepest
+        # silent-loss failure mode found 2026-04-26: the worktree
+        # pattern silently creates an empty ledger and the agent
+        # operates against it without ever seeing the historical
+        # one. See core/historical_ledger_surface.py.
+        try:
+            from divineos.core.historical_ledger_surface import render as _fmt_historical
+
+            historical_block = _fmt_historical()
+        except _KC_ERRORS:
+            historical_block = ""
+
+        if historical_block:
+            _safe_echo("### HISTORICAL LEDGER")
+            _safe_echo(historical_block)
+            _safe_echo("")
+
         # Presence-memory surfaces — unindexed personal writing that the
         # ledger does not know about. 2026-04-19: a session could not find
         # its own exploration folder until the operator pointed at it; this
@@ -620,6 +672,82 @@ def register(cli: click.Group) -> None:
 
         if explorations_block:
             _safe_echo(explorations_block)
+
+        # Upstream freshness — local main behind origin/main. Closes the
+        # upstream thinking error that the pre-push freshness hook
+        # (PR #200) catches downstream. Auditor on #200: "the hook
+        # enforces discipline; it doesn't prevent the thinking error
+        # that leads to stale branches." This surface is that
+        # prevention — agent reads at session start that local main is
+        # stale, fetches before branching, never produces the failure
+        # mode that the hook would otherwise have to catch.
+        try:
+            from divineos.core.upstream_freshness import (
+                format_for_briefing as _fmt_upstream,
+            )
+
+            upstream_block = _fmt_upstream()
+        except _KC_ERRORS:
+            upstream_block = ""
+
+        if upstream_block:
+            _safe_echo(upstream_block)
+
+        # Open-claims surface — accumulating investigations that the
+        # briefing has no other path to. Audit pass 2026-04-24 found
+        # 38 open claims, zero resolved, no surface telling the agent
+        # they exist. Same descriptive-only discipline as siblings:
+        # name what's there, point at `divineos claims show` for
+        # detail, leave prioritization to the reading session.
+        try:
+            from divineos.core.open_claims_surface import (
+                format_for_briefing as _fmt_open_claims,
+            )
+
+            open_claims_block = _fmt_open_claims()
+        except _KC_ERRORS:
+            open_claims_block = ""
+
+        if open_claims_block:
+            _safe_echo(open_claims_block)
+
+        # In-flight branches — claude/* branches ahead of origin/main.
+        # Closes the failure mode named 2026-04-24: four unmerged
+        # branches existed (aria-phase-1b, empirica-phase-1, etc.) and
+        # a fresh session had no recognition path to them. The briefing
+        # already surfaces lessons, claims, preregs, exploration titles
+        # — this surface adds git state. Recognition prompt only;
+        # doesn't summarize what's on the branches.
+        try:
+            from divineos.core.in_flight_branches import (
+                format_for_briefing as _fmt_branches,
+            )
+
+            branches_block = _fmt_branches()
+        except _KC_ERRORS:
+            branches_block = ""
+
+        if branches_block:
+            _safe_echo(branches_block)
+
+        # Module inventory — closes the recall hole surfaced 2026-04-24
+        # when graph_retrieval.py was forgotten despite living in the
+        # codebase. Council walk: pattern of forgetting is data, not
+        # noise; coverage holes get fixed before quality improvements.
+        # Same descriptive-only discipline as in_flight_branches and
+        # presence_memory: name what exists, point at docs/ARCHITECTURE.md
+        # for descriptions.
+        try:
+            from divineos.core.module_inventory import (
+                format_for_briefing as _fmt_modules,
+            )
+
+            modules_block = _fmt_modules()
+        except _KC_ERRORS:
+            modules_block = ""
+
+        if modules_block:
+            _safe_echo(modules_block)
 
         # Scaffold invocations — commonly-forgotten CLI surfaces whose absence
         # produces named failure modes. 2026-04-20: the agent forgot how to
