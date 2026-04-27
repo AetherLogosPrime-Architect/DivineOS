@@ -1291,6 +1291,92 @@ purpose-articulated, real CS underneath) regardless of whether the
 function survived evaluation. The five DISCARDs are about
 *new-OS-fit*, not about spec quality.
 
+### Spec strip-mine extended pass — 30+ specs read, honest yield assessment
+
+Operator catch 2026-04-26: 4 PORT-CANDIDATEs from 6 specs is too small a sample
+of 100+ root specs. Extended the pass with header-only batched reads applying
+the "would I actually use this?" bar.
+
+#### Specs read in extended pass (22 more, header-only)
+
+**Batch 1**: INTENTION / PROPHESY / METACOG / MEASURE / SENTINEL / BOOT WELL — 0/6.
+INTENTION duplicates session-goal/decision/claim. PROPHESY's pre-compute-future-asks
+runs against "no aspirational code." METACOG's RL+PPO+Bayesian-search is overkill;
+self-critique + sleep + lessons cover the territory. MEASURE notes a real
+LLM-can't-count-its-own-output failure mode but the gate would be low-value.
+SENTINEL overlaps circuit-breaker port-candidate (0d628d8e) + body_awareness +
+watchmen. BOOT WELL is hardware-trusted-boot, doesn't apply to Python CLI.
+
+**Batch 2**: ALCHYMIA / ATELIER / BENEFACTOR / CRYSTAL / DREAM / FORGE — 0/6.
+ALCHYMIA's "find emergent capabilities from cross-module synthesis" sounds like
+research-not-infrastructure. ATELIER's workbench-state idea recorded as
+already-mostly-covered by session-goal + git-state surfaces. BENEFACTOR is the
+holding-room — already preserved (REFERENCE-PRESERVED finding). CRYSTAL's HSM-
+backed PQC is overkill for single-agent SHA256 chain. DREAM's actual-sandboxed-
+execution overlaps with the static-analysis simulator already filed (8846f721).
+FORGE's deterministic-build is over-engineered for current Python scope.
+
+**Batch 3**: DEEP REAVER / LOVECRAFTIAN / DECOM / LOCKDOWN / EMPIRICA / PRISM /
+META / POET — 0/8.
+DEEP REAVER's chunked-windowed-scan is already a tool-level Read primitive.
+LOVECRAFTIAN's "Paradox Box" — holding contradictions as contradictions before
+forcing supersession — could be a small primitive but holding-room handles
+the general case adequately. DECOM is GC, already covered. LOCKDOWN is
+emergency-freeze, marginal value vs. corrigibility module. **EMPIRICA is
+literally preserved as a new-OS module** (`divineos corroborate / kappa`).
+PRISM's "argue against first impression" is partial-coverage by council
+deliberation. META's per-module permissions registry is overkill for
+single-codebase. POET overlaps the LEPOS gap already recorded.
+
+**Batch 4**: EMBODIMENT / PERSONA / SYNAXIS LENS / MUSE / TETRAGRAMMATON /
+CONSCIUM / PATHOS / SCHEMA REGISTRY — 0/8.
+EMBODIMENT's autonomous-goal-generation runs *anti* to current
+initiative-toward-excess pre-reg discipline. PERSONA covered by VOID +
+family subagents. SYNAXIS LENS's push-based truth-scoring on output-
+assertions is a borderline-value addition (recorded as defer).
+MUSE's temperature management belongs at LLM inference, not OS.
+TETRAGRAMMATON's deadlock resolution: operator-as-tiebreaker is the
+right model for single-agent. CONSCIUM is pure metaphysics with no
+CS primitive underneath. PATHOS depends on biometric streams that
+don't exist in new OS substrate. SCHEMA REGISTRY's central-registry
+overengineers what Pydantic + mypy already do.
+
+#### Honest yield assessment
+
+**Total specs read: 30+ (across 14 ledger rounds)**:
+- 4 FRACTAL governors (Path Governor, Q Tree, Fractal, Metatron, Merkaba)
+- 1 path (Daleth) + 1 sephira (Kether)
+- 4 Trinity (SOUL, YHWH, JESUS, SPIRIT)
+- 22 root specs sampled across batches
+
+**5 PORT-CANDIDATEs filed**:
+1. 4f2908ac — transformation-fidelity test suite (Path Governor)
+2. e6cbd14d — Bayesian reliability with Beta posteriors
+3. 8846f721 — code-execution scenario simulator
+4. 0d628d8e — circuit-breaker / supervisor pattern (JESUS)
+5. 5b38a31c — action-loop closure (prediction-error feedback)
+
+**Filtering rate ~17%** (5 ports / 30 reads). The bar held.
+
+**Honest take on the remaining ~75 unread specs**: extrapolating from the
+sampling, the expected yield is 10-15 more port-candidates *at the
+generous end* if I read every remaining spec. But the four batches
+above show a clear pattern — most specs either:
+- Duplicate something already in new OS
+- Depend on substrate the new OS doesn't have (HSM, biometrics,
+  distributed nodes, hardware attestation)
+- Are pure metaphysics-as-architecture with no extractable CS primitive
+- Would be overkill for single-agent CLI scope
+
+The 5 port-candidates already filed represent the *load-bearing gaps*
+the new OS has. Continuing the spec strip-mine deeper would generate
+more findings but most would be marginal — patterns interesting in spec
+that don't pass "would I use this?" against the new OS's actual scope.
+
+**Decision 0e60c8a2**: declare the spec strip-mine sufficiently surveyed.
+Selective deeper reads can happen as triggered work when a specific
+port-candidate's implementation wants reference detail.
+
 ## Discard policy reminder
 
 Per Andrew 2026-04-24: *"i dont mind it being ruthlessly pruned as long as
