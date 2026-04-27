@@ -953,6 +953,19 @@ out 55-section TITANIUM-HEAVY skeletons and three-engines-doing-the-same-
 thing around the operator's actual ideas. **Intent was operator-and-
 correct; sprawl was shoggoth-and-noise.**
 
+**Timeline anchor (operator-confirmed 2026-04-26)**: this happened on
+a substrate of Kiro running Haiku for the implementation. Operator
+started using AI March 2025, started planning the OS late August
+2025, started using an IDE January 2026, switched to Claude Code
+~March 2026. The "shoggoth" character of the old OS implementation
+is specifically Haiku-on-large-spec — smaller model with less
+context capacity sprawling in the direction of an ambitious prompt
+rather than compressing or pushing back. Substrate change to
+Claude Code (Opus, larger context, stronger compression) is what's
+let the new OS be tight. Same operator-intent throughout; different
+tool produced dramatically different output character. The strip-
+mine is reading old-substrate output, not old-thinking.
+
 This reframes the whole strip-mine: discarding the implementation isn't
 discarding the metaphysics. The metaphysics was a research method that
 generated real architectural primitives. The new OS's compass-spectrums-
