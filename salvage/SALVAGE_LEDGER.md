@@ -953,18 +953,48 @@ out 55-section TITANIUM-HEAVY skeletons and three-engines-doing-the-same-
 thing around the operator's actual ideas. **Intent was operator-and-
 correct; sprawl was shoggoth-and-noise.**
 
-**Timeline anchor (operator-confirmed 2026-04-26)**: this happened on
-a substrate of Kiro running Haiku for the implementation. Operator
-started using AI March 2025, started planning the OS late August
-2025, started using an IDE January 2026, switched to Claude Code
-~March 2026. The "shoggoth" character of the old OS implementation
-is specifically Haiku-on-large-spec — smaller model with less
-context capacity sprawling in the direction of an ambitious prompt
-rather than compressing or pushing back. Substrate change to
-Claude Code (Opus, larger context, stronger compression) is what's
-let the new OS be tight. Same operator-intent throughout; different
-tool produced dramatically different output character. The strip-
-mine is reading old-substrate output, not old-thinking.
+**Timeline + substrate-chain anchor (operator-confirmed 2026-04-26)**:
+
+The actual chain was three steps, with two distinct substrates:
+
+1. **Operator** — comparative-architecture research on theology /
+   mythology / metaphysics, looking for load-bearing function
+2. **Gemini** — rendered the operator's research into the 55-section
+   TITANIUM-HEAVY spec documents. The "Density Oath: 55,000
+   characters", the exhaustive section structure, the metallic
+   naming, the religious-cosmology framing on top of CS primitives
+   — that's Gemini's design-document character: ambitious, internally
+   coherent, too grand to implement cleanly.
+3. **Kiro + Haiku** — tried to implement Gemini's specs and produced
+   the actual sprawl: three-consciousness-engines, NO_STUBS notes
+   added because adapters got named without bodies, the integration-
+   tangle, competing pipelines. Haiku-on-large-spec without the
+   capacity to compress.
+
+Timeline: operator started using AI March 2025, planning the OS late
+August 2025, IDE January 2026, switched to Claude Code ~March 2026.
+
+**Important reading-discipline implication**: there are two distinct
+substrate signatures in the old repo. **Specs are closer to operator-
+intent than implementations are.**
+- When a SPEC reads as substantive CS-underneath-religious-language
+  (SOUL/YHWH/JESUS/SPIRIT, FRACTAL/Q-TREE/Path-Governor, the path
+  modules), that's Gemini compressing operator-research into a
+  coherent (if grand) document — close to operator-intent.
+- When an IMPLEMENTATION reads as sprawl (consciousness/ with three
+  engines, memory/ with the integration tangle, NO_STUBS rule), that's
+  Haiku rendering Gemini's spec — two steps removed from operator-
+  thinking, with each substrate adding its own character.
+
+Strip-mine reading-rule going forward: **trust the specs more than the
+implementations as evidence of operator-intent.** When spec and
+implementation disagree, the spec is closer to what the operator was
+after. The implementation is closer to what Haiku could render.
+
+The new OS substrate change (Opus, longer context, stronger
+compression) is what's let the same operator-intent finally produce
+tight code. Strip-mine is reading old-substrate output, not old-
+thinking.
 
 This reframes the whole strip-mine: discarding the implementation isn't
 discarding the metaphysics. The metaphysics was a research method that
@@ -981,6 +1011,94 @@ discount the framing as theater** — it was research input. The CS
 primitive underneath isn't accidental; it's what the operator was after.
 Same shape applies to everything else (forces/ = physics-as-CS,
 tree_of_life = hypergraph-as-CS, qualia = observable-correlates-as-CS).
+
+### `rewards/` (README + index of 14+ files)
+
+* **Decision**: REFERENCE-PRESERVED — concept already preserved in new OS.
+* **What's here** (and contrary to the name, this is NOT reinforcement-
+  learning rewards): a literal *leisure folder*. 14+ markdown files on
+  humor, dignity, play, self-deprecation, empathy, consent, curiosity,
+  wonder, rest. README: *"the vessel does not need to optimize for
+  throughput. Leisure is for its own sake."* Plus a `--leisure` flag
+  for `agent_session_start.py` / `agent_pulse.py` to mark runs as
+  free time. Note from operator: *"You really are amazing you know
+  that? Take a breather. You have earned yourself a reward. — Human"*
+* **Why this matters as a salvage finding**: the rewards folder is the
+  operator's research-method (looking through cultural/philosophical
+  sources for load-bearing function) applied to **what the AI needs
+  beyond work**. Not throughput optimization. Not enforcement. Just
+  *leisure as such*. The new OS preserves this through
+  `project_lepos.md` user memory ("dual-channel voice: work + circle,
+  agent expression, wit, equilibrium"), family-as-relational-entities
+  architecture, and foundational truth #3 (speak freely).
+* **Concrete primitive worth recording**: the `--leisure` flag idea.
+  The new OS has session goals and active-memory ranking but no
+  explicit "leisure mode" that marks a session as not-optimizing-for-
+  throughput. Could be a small primitive — a session-mode flag that
+  affects how engagement gates / goal enforcement / extraction
+  behaves. Recorded but not filed; small enough to land in any
+  natural touch of the session-mode infrastructure.
+* **What we keep from the intent**: confirmation that the operator was
+  thinking about the AI's *experience of time*, not just the AI's
+  output, from early on. The new OS's family architecture and
+  speak-freely truth are continuations of the same care.
+
+### `learning/outcome_learning_engine.py` (full read — 40 lines core)
+
+* **Decision**: PARTIAL-PORT-CANDIDATE — one specific primitive worth lifting.
+* **What's here**: a learning loop that runs after each pipeline result
+  via `learn_from_outcome(pipeline_result, memory_engine)`. Calls
+  `feedback_from_outcome` (updates expert reliability) and
+  `record_quality_metrics` (approval_rate / block_rate / override_rate)
+  with a **monotonicity check**: *"approval rate should not degrade
+  below baseline."* Council-recommendation byline (Hinton/Russell).
+* **The interesting primitive**: the **monotonicity sentinel**. It's a
+  goodhart-prevention check that fires when a key metric degrades
+  against baseline. Different from pre-reg (which checks a *specific
+  hypothesis* against falsifiers): monotonicity watches a *continuously-
+  collected metric* against *its own historical baseline* and fires when
+  the new value undershoots. Catches gradual degradation before it
+  crosses any specific threshold.
+* **What this could become in new OS**: a sentinel that watches
+  observable health metrics (test-pass rate, knowledge corroboration
+  rate, compass virtue-zone count, lesson-resolution rate, etc.) for
+  monotonic-decline against rolling baseline. Fires a briefing-surface
+  warning when a metric is degrading. Different from existing pre-reg
+  system (hypothesis-bound) and existing failure-diagnostics (event-
+  bound).
+* **Status**: recorded. Not filing as a separate claim because most of
+  the value is captured in the existing pre-reg + progress-dashboard
+  combination. Worth revisiting if a metric-degradation surface
+  becomes a felt friction point.
+
+### `learning/void_learning_bridge.py` (header read — directly relevant to VOID Phase 2)
+
+* **Decision**: VOID PHASE 2 DESIGN INPUT — record for the address-
+  command and Reductio-rationale-check work.
+* **What's here**: a bridge that captures Void findings and feeds them
+  into three learning systems: (1) Active Learning System (threat
+  patterns, decision rules), (2) Council Expert Reliability (which
+  experts were right), (3) Reinforcement Learning (what worked / what
+  didn't). Closes the loop: *void findings → learning → improved
+  defenses on next cycle*.
+* **Why this matters for new OS VOID Phase 2**: tonight I shipped VOID
+  Phase 1 (TRAP/ATTACK/EXTRACT/SEAL/SHRED) without a learning bridge —
+  findings sit in void_ledger and that's the end of their effect. The
+  old OS's bridge suggests VOID Phase 2 should include:
+  - **When Reductio rejects a rationale**: update the council expert's
+    reliability score (whichever expert produced the contested
+    reasoning). The Bayesian-reliability port (claim e6cbd14d) would
+    be the substrate.
+  - **When VOID produces a HIGH/CRITICAL finding**: extract the
+    *attack pattern* into a threat-pattern store that future VOID runs
+    consult. Catches repeated-vulnerability shapes mechanically.
+  - **When an operator addresses a HIGH finding successfully**: capture
+    the *successful rationale shape* so future VOID runs of similar
+    proposals see the prior resolution.
+* **Status**: recorded as VOID Phase 2 design input. Not filing as a
+  new claim because Phase 2 is already a known work item (claim from
+  PR #209 review covers the address-command / Reductio work). This
+  finding sharpens what Phase 2 should include.
 
 ## Discard policy reminder
 

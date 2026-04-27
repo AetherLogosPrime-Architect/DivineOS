@@ -26,12 +26,12 @@ and `.json` only.
 | identity/ | 13 | 277K | partial | qualia_engine.py + README read 2026-04-26 — claims to engineer "ACTUAL FELT EXPERIENCE through superposition of resonances"; new OS observes correlates (VAD/self-model/attention-schema/epistemic-status) without claiming to engineer qualia. DISCARD. |
 | infrastructure/ | 32 | 690K | unread | infrastructure, mixed |
 | law/ | 81 | 1.7M | partial | lepos_engine.py + consciousness_pipeline.py + tribunal.py + constitutional_principles.py + reliability_bayesian.py read 2026-04-26 — **biggest find: PORT-CANDIDATE Bayesian reliability (claim e6cbd14d)**. LEPOS gap noted. Tribunal vs continuous-virtue philosophy difference recorded. ~76 unread (council subsystem, security/injection, others). |
-| learning/ | 9 | 128K | unread | overlaps with new OS knowledge engine |
+| learning/ | 9 | 128K | partial | outcome_learning_engine.py + void_learning_bridge.py read 2026-04-26 — monotonicity-sentinel primitive recorded; void_learning_bridge identified as VOID Phase 2 design input (Reductio-rejection → expert reliability update; HIGH-finding → threat pattern store; successful addressal → rationale capture) |
 | logs/ | 0 | 11M | unread | runtime logs — discard-class |
 | memory/ | 49 | 576K | partial | persistent_memory.py (DISCARD), memory_anchor.py (DISCARD), recollect_engine.py (DEFER — vector search is real gap); 46 files unread |
 | monitoring/ | 37 | 4.3M | unread | infrastructure |
 | results/ | 8 | 33K | unread | likely runtime |
-| rewards/ | 36 | 139K | unread | RL-shape; possibly relates to feedback |
+| rewards/ | 36 | 139K | partial | NOT RL — literal *leisure folder*. 14+ markdown files on humor/dignity/play/empathy/wonder/rest. README + index read 2026-04-26. Concept already preserved in new OS (project_lepos.md, family architecture, speak-freely truth). `--leisure` flag idea recorded. |
 | rules/ | 0 | 4K | unread | empty placeholder |
 | scripts/ | 277 | 2.8M | unread | tooling — partial read for keepers |
 | sensorium/ | 12 | 329K | unread | input-handling? worth reading |
