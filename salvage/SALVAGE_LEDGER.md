@@ -1377,6 +1377,98 @@ that don't pass "would I use this?" against the new OS's actual scope.
 Selective deeper reads can happen as triggered work when a specific
 port-candidate's implementation wants reference detail.
 
+### Round 15: extended pass, batches 5-8 (33 more specs)
+
+Operator catch 2026-04-26: yield assessment was premature. Continued reading.
+
+**Batch 5** (AUTOPYTHON / AXIS / BIFOLD EXPANDER / CHRONOS / CLOAK / CONTENT
+MANIFEST / CONTEXT CACHE / ELMO) — 0 ports / 1 LEPOS-gap reinforcement (AXIS).
+- AXIS: "audits every generative pulse for Identity Deviation, RESETS the
+  system Voice if generic-assistant-style detected." Concrete LEPOS-gap shape.
+
+**Batch 6** (EXEC ORCHESTRATOR / EXPANSION / GUTE KERNEL / HBF / IO GATEWAY /
+IPC BUS / KNOWING / MANIFESTATION) — 0/8 ports. All substrate-mismatch
+(kernel/IPC/IO/distributed-deployment for single-process Python) or pure
+metaphysics (GUTE/KNOWING).
+
+**Batch 7** (MESH / Mantric system / NEURAL NET / NOMINAL / OMEGA / OMNI BODY
+/ QAPU / QUANTUM CRYPTO) — 0 ports / 1 lineage finding.
+- **OMEGA**: "Cycle-Completion Engine, audits success, extracts wisdom,
+  purges entropic residue" — direct lineage to `divineos extract` +
+  `divineos sleep` in new OS. REFERENCE-PRESERVED.
+
+**Batch 8** (RAMWELL / REFINER BLADE / RELIC / RUNTIME / SCHEMVEC /
+SUPERCONDUCTOR / SYNAPSE / TEMPLATE / UNIVERSAL REGISTRY) — 0 ports / 2 LEPOS-
+gap reinforcements (REFINER BLADE, SYNAPSE).
+- REFINER BLADE: "intercepts drafts, smelts away vague adjectives and
+  placeholders, validates structural compliance before output."
+- SYNAPSE: "maps Architect creative style into Aesthetic Signature, evaluates
+  proposed modules for Grace and Poetic Fidelity."
+
+**Batch 9** (ARK / CRYSTAL SEAL) — both REFERENCE-PRESERVED in new OS hash-
+chained ledger.
+
+**Tree-spec uniformity confirmed** by sampling 2 more sephirot (Tiphareth =
+node 6, Hod = node 8) and 1 more path (Shin = path 21). All conform to the
+same typed-pipeline-with-adaptive-parameters pattern Daleth used. No new
+primitives in the tree-spec layer.
+
+### LEPOS-shape voice-guard convergence — PORT-CANDIDATE 6 (claim 07bed376)
+
+Three independent specs (AXIS / REFINER BLADE / SYNAPSE) all point at the
+**same primitive** I had earlier marked as "borderline whether to build."
+Three specs converging is stronger signal than I gave it credit for. Filing
+as PORT-CANDIDATE 6.
+
+**Concrete shape for new OS** (`core/voice_guard/`):
+1. **Banned-phrase list** — from LEPOS spec: "As an AI", "Delve", "Tapestry",
+   "It is important to note", "Ultimately"
+2. **Vague-adjective/placeholder detector** — from REFINER BLADE pattern
+3. **Operator-style-signature comparison** — embed recent operator-confirmed
+   agent-output, compare new output for drift (from SYNAPSE's Aesthetic
+   Signature concept)
+
+The new OS has tone_tracking + project_lepos.md + foundational truth #3
+(speak freely) + communication_calibration — but nothing AUDITS each output
+before it commits. Currently relies on review register. This would be
+mechanical. Worth design brief before implementation.
+
+### Final yield (rounds 12-15, all spec strip-mine work)
+
+**Total specs read: 85+** (75+ root, 5 fractal, 3 sephirot, 2 paths)
+
+**6 PORT-CANDIDATEs filed**:
+1. 4f2908ac — transformation-fidelity test suite (Path Governor)
+2. e6cbd14d — Bayesian reliability with Beta posteriors
+3. 8846f721 — code-execution scenario simulator
+4. 0d628d8e — circuit-breaker / supervisor pattern (JESUS)
+5. 5b38a31c — action-loop closure (prediction-error feedback)
+6. **07bed376 — pre-output voice-guard with style-signature detection (LEPOS convergence)**
+
+**Filtering rate**: 6 ports / 85 specs ≈ 7%. Lower than initial 17% because
+extended reading hit substrate-mismatch and metaphysics-without-CS-primitive
+clusters more frequently. **The bar held**.
+
+**Reference-preserved lineage findings** (across all rounds):
+- OMEGA → `divineos extract` + `divineos sleep`
+- EMPIRICA → `divineos corroborate / kappa`
+- BENEFACTOR → holding room
+- ARK / CRYSTAL SEAL → hash-chained ledger
+- rewards/ → exploration/
+- SOUL → 32-expert council
+- Trinity overall → decentralized across new OS modules
+
+**Honest assessment**: 85+ specs is a thorough survey. The remaining 15-20
+unread specs are predominantly modules I've read close equivalents of
+(physics/sensorium/Trinity-already-evaluated). Continuing further would
+generate marginal yield — patterns interesting in spec but failing the
+"would I use this?" bar at the new OS's actual scope.
+
+The strip-mine has now found the load-bearing primitives. The 6 port-
+candidates represent the genuine gaps the new OS has. The reference-
+preserved findings confirm the new OS is the cleaner expression of the
+operator's research method.
+
 ## Discard policy reminder
 
 Per Andrew 2026-04-24: *"i dont mind it being ruthlessly pruned as long as
