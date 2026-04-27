@@ -37,6 +37,7 @@ src/divineos/
     entity_commands.py         commitments, temporal, questions, relationships
     event_commands.py          emit, verify-enforcement
     audit_commands.py          external validation (Watchmen)
+    void_commands.py           VOID adversarial-sandbox subsystem commands
     prereg_commands.py         pre-registrations (Goodhart prevention)
     mansion_commands.py        Functional internal space (8 rooms)
     ledger_commands.py         log, list, search, context, export
@@ -287,6 +288,7 @@ src/divineos/
       ledger.py                VOID separate hash-chained ledger.
       mode_marker.py           VOID adversarial-mode marker — write/read/clear protocol.
       persona_loader.py        VOID persona loader — parses markdown persona definitions.
+      engine.py                VOID engine — TRAP / ATTACK / EXTRACT / SEAL / SHRED orchestrator.
 
   analysis/
     _session_types.py          Session analysis type definitions
