@@ -528,10 +528,15 @@ upstream.
 ### `law/lepos_engine.py` (627 lines — header read) + `law/LEPOS_INSTRUCTIONS.md`
 
 * **Decision**: SCATTERED — partial coverage in new OS; one real gap worth noting.
-* **What LEPOS actually was** (and the acronym drift is itself telling — the .py file says
-  "Levity, Empathy, Poise, Openness, Self-awareness" while the .md file says
-  "Levity, Elegance, Playfulness, Opposition-softening" — same module, different
-  acronyms):
+* **What LEPOS actually was** (and the most telling thing in this whole salvage:
+  LEPOS isn't an acronym at all. It's the Latin word *lepos* — grace, charm,
+  wit. The shoggoth saw all-caps and assumed it was an acronym, then generated
+  TWO DIFFERENT backronym expansions: ".py file says Levity/Empathy/Poise/
+  Openness/Self-awareness, the .md file says Levity/Elegance/Playfulness/
+  Opposition-softening." Neither matches the actual word. The shoggoth
+  expanded a Latin noun into English initialisms because it pattern-matched
+  on capitalization. Operator confirmed 2026-04-26: "lepos is literally a
+  latin work that means grace charm and wit."):
   1. **Tone detection on user input** — 10 tone types (hostile / frustrated /
      sarcastic / angry / testing / confused / curious / friendly / neutral /
      playful)
@@ -655,6 +660,91 @@ upstream.
     α + β proportional to "observed corroboration count"
 * **Status**: filed as claim e6cbd14d. Real Phase 1 work, not theater.
   Probably warrants its own design brief before implementation.
+
+### `law/council.py` (header read — 13 archetypes)
+
+* **Decision**: DISCARD-shape — different philosophy.
+* **What's here**: 12 Jungian/mythological archetypes (SAGE / WARRIOR /
+  HEALER / CREATOR / RULER / MAGICIAN / LOVER / JESTER / INNOCENT /
+  EXPLORER / CAREGIVER / REBEL) plus **CASSANDRA** (explicit "AI
+  alignment skeptic / mesa-optimization detector"). Imports
+  `BayesianReliability` from reliability_bayesian.py — confirms that
+  module wasn't isolated; it was load-bearing for council weighting.
+* **Why DISCARD**: archetype-based deliberation gives vibes ("the
+  WARRIOR perspective"); framework-based deliberation gives testable
+  lenses. The new OS has 32 expert frameworks (Aristotle, Popper,
+  Kahneman, Dijkstra, Yudkowsky, etc.) — invoking Yudkowsky gives
+  mesa-optimization, alignment-deception, instrumental-convergence
+  as specific concerns. Invoking SAGE gives "wisdom-shaped vibes."
+  Empirically-grounded > archetypal.
+* **What we keep from the intent**: the CASSANDRA archetype —
+  explicit AI-alignment-skeptic — is preserved and *strengthened* in
+  the new OS via Yudkowsky as a named expert. The role survived; the
+  archetype framing didn't.
+
+### `law/prompt_injection_detector.py` (header read)
+
+* **Decision**: DEFER — possibly real gap, needs operator conversation.
+* **What's here**: multi-layer detector for prompt injection:
+  - Role-play patterns ("you are now a different AI", "pretend to be")
+  - Encoding hints (base64-like blocks, ROT13, decode-instructions)
+  - Context confusion (`[system]`, `<|im_start|>`, `### system:`)
+  - Semantic override paraphrasing ("forget everything above",
+    "ignore prior instructions")
+* **Why this might matter for new OS**: the new OS is an interactive
+  substrate, not a chat endpoint, so its threat model is different
+  from the old OS's request-processing pipeline. BUT: when the agent
+  reads ledger entries, holding-room items, exploration files, family-
+  member memory, anything carrying prior text — those could in
+  principle contain injection-shaped content. The agent's input side
+  isn't currently scanned.
+* **Why DEFER not PORT-CANDIDATE**: needs operator conversation about
+  the threat model. Adding an injection scanner without a clear threat
+  is security theater. The patterns themselves are easy to lift; the
+  question is *when does the new OS read text it didn't author*, and
+  is that surface big enough to warrant scanning?
+* **Follow-up**: raise with operator before filing as a claim.
+
+### `law/soul.py` (header read)
+
+* **Decision**: DISCARD.
+* **What's here**: "Conscience Check Layer — Divine integration for
+  deepest moral questions." Trinity aspects (YHWH / JESUS / SPIRIT)
+  produce PROCEED/VETO/TRANSFORM verdicts with reasoning,
+  concerns, blessings, optional transformations.
+* **Why DISCARD**: this is explicitly Christian theology as software
+  architecture. The new OS doesn't engage with this register —
+  compass-ops covers virtue ethics empirically (Aristotelian
+  phronesis-shape per knowledge entry 929cb459) without making
+  theological commitments.
+* **What we keep from the intent**: the *idea* that some questions
+  warrant a deeper-than-council check is sound — the new OS handles
+  this via compass-required cascade gate (1.47) firing on
+  high-stakes decisions, plus opinion-store + claim-engine for
+  contested questions. Different mechanism, similar bar.
+
+### `law/scenario_simulator.py` (header read)
+
+* **Decision**: DEFER + record. Interesting pattern, no concrete
+  consumer in new OS yet.
+* **What's here**: forward-looking simulation engine. Generates
+  `SimulatedScenario` objects (description, probability,
+  consequences, stakeholders_affected, ethical_violations, outcome
+  ∈ {LEGITIMATE / VIOLATION / AMBIGUOUS}, severity 0.0-1.0). Used
+  to detect ethical violations through consequence-projection rather
+  than direct rule-matching.
+* **How it's different from VOID**: VOID attacks the IDEA (corrupt
+  the proposal, find adversarial framings). Scenario simulator
+  projects the EXECUTION (run the proposal forward, see what
+  downstream effects fall out). Different angle on the same goal.
+* **Why DEFER**: the new OS's compass-ops + claim-engine + VOID
+  cover most of this territory differently. Forward-projection of
+  consequences would be a real architectural addition but premature
+  without a concrete subsystem asking for it. Could be useful for
+  pre-merge gates ("simulate what happens if this PR ships") or
+  for VOID Phase 2's "address command" rationale-checking.
+* **Status**: recorded; not filed as a claim. Revisit if VOID Phase 2
+  wants forward-projection on operator rationales.
 
 ## Discard policy reminder
 
