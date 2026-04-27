@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import pytest
 
-from tests.contracts.transformation_contracts import CONTRACTS, TransformationContract
+from .transformation_contracts import CONTRACTS, TransformationContract
 
 
 @pytest.mark.parametrize("contract", CONTRACTS, ids=lambda c: c.name)
@@ -49,9 +49,7 @@ def test_negative_case_caught() -> None:
     (transformation returns input unchanged) must fail its check.
     Otherwise the framework can't distinguish theater from real work.
     """
-    from tests.contracts.transformation_contracts import (
-        _check_tone_classifier_produces_non_empty,
-    )
+    from .transformation_contracts import _check_tone_classifier_produces_non_empty
 
     sample = "I'm furious about this absolutely terrible bug."
     with pytest.raises(AssertionError, match="output equals input|copy"):
