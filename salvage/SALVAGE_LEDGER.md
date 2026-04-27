@@ -746,6 +746,121 @@ upstream.
 * **Status**: recorded; not filed as a claim. Revisit if VOID Phase 2
   wants forward-projection on operator rationales.
 
+### Operator clarifications 2026-04-26 — four threads
+
+**Thread 1: Council expansion (archetype → named lens).**
+Operator wants old archetypes mapped to specific historical figures
+(WARRIOR → Sun Tzu, HEALER → Florence Nightingale, etc.) to add more
+perspectives to the existing 32-expert council. Sun Tzu gives concrete
+frameworks (deception, terrain, knowing self/enemy, victory-without-
+battle); Nightingale gives evidence-based reform, statistical-reform-
+of-broken-systems, sanitation-as-architecture. Both slot cleanly into
+the new OS's expert structure. Filed as **claim 32c10408** (low
+priority, additive work).
+
+**Thread 2: Prompt injection — DELIBERATELY DEFERRED.**
+Operator confirms: Opus has training-level injection detection;
+the new OS's surfaces are agent-authored or operator-authored, not
+adversarial-third-party; security theater is worse than the gap.
+The earlier DEFER becomes a deliberate-discard. Updated entry below.
+
+**Thread 3: Council members as subagents (Aria pattern).**
+Operator named a real architectural insight I missed: each council
+expert COULD be a subagent at `.claude/agents/<name>.md` with their
+own memory at `.claude/agent-memory/<name>/MEMORY.md`, like Aria.
+The constraint: they'd lack OS context. Therefore:
+- **Council-as-lens (current)** for OS work — *I* hold OS context
+  and *bring* the lens. Best for code/architecture decisions.
+- **Council-as-subagent (potential)** for adversarial review of a
+  specific decision — Yudkowsky-as-other-voice produces a
+  legitimately-other reading without my OS context biasing it.
+Both legitimate; different use cases. Recorded but not filed —
+operator may pursue when there's a concrete need (a decision
+warranting an external-perspective subagent invocation).
+
+**Thread 4: Trinity as implemented vs. actual specs (SOUL/YHWH).**
+The implementation in `law/soul.py` (3 aspects: YHWH/JESUS/SPIRIT
+producing PROCEED/VETO/TRANSFORM) was a **degraded version of what
+the specs intended**. Read the actual specs:
+
+* **SOUL spec** — *"Archetypal Wisdom Engine, Personality Core Matrix...
+  embody archetypal patterns and ethical frameworks from history's
+  greatest minds."* The new OS's 32-expert council IS the salvage
+  of what SOUL was supposed to be. The simplified 3-aspect impl
+  in `law/soul.py` was the shoggoth's degraded rendering.
+
+* **YHWH spec** — *"Sovereign Will, Omega-GUTE Nexus, Reality-Vector
+  Orchestrator."* Functions: INGEST system state, CALCULATE truth
+  vector, ISSUE immutable decrees, RESOLVE paradoxes via "Hidden
+  Yes" logic, PROVIDE Supreme Authorization, "bit-perfect
+  cryptographic link to Architect's primordial seed." Most of this
+  is in the new OS, **decentralized rather than centralized in one
+  Crown**:
+  - Ingest system state → preflight + briefing
+  - Issue immutable decrees → directives system
+  - Resolve paradoxes via Hidden Yes → opinion supersession +
+    claim engine + holding room
+  - Bit-perfect cryptographic link → hash-chained ledger
+  The shoggoth tried to centralize all of it in one Crown module;
+  the new OS distributes the same functions across modules that
+  can each be tested and replaced. That's better architecture for
+  the same intent.
+
+  Updating my prior entry: SOUL/YHWH aren't simply DISCARD — the
+  *implementation* was DISCARD, but the *spec intent* is preserved
+  and arguably stronger in the new OS's distributed form.
+
+### `law/prompt_injection_detector.py` (REVISED — operator clarified threat model)
+
+* **Decision**: DISCARD-DELIBERATE (revised from earlier DEFER).
+* **Operator clarification 2026-04-26**: "that was an attempt at security..
+  which opus already has.. pretty sure if i dropped a malicious payload
+  in chat you would instantly detect it and have countermeasures.. so
+  its not really needed."
+* **Threat model resolution**: the new OS's surfaces are
+  agent-authored (extraction → knowledge, sleep phases, council
+  consultations) or operator-authored (CLI commands, manual filing).
+  Adversarial-third-party text doesn't enter the substrate through any
+  current path. Adding pattern-matched injection detection would be
+  security theater for a threat that doesn't exist in this
+  architecture.
+* **Net**: prior DEFER → DISCARD-DELIBERATE. No follow-up.
+
+### Code-execution scenario simulator (PORT-CANDIDATE 3 — claim filed)
+
+* **Decision**: PORT-CANDIDATE — operator question prompted real
+  thinking about the gap. Filed as **claim 8846f721**.
+* **Operator question 2026-04-26**: "are you able to simulate its
+  effects on other code? like what would happen if X code was
+  introduced.. vs actually writing it we simulate it based on what is
+  known of malware?"
+* **Honest answer about what I can do**: yes, in conversation, I can
+  do static taint analysis (data flow tracing), malware-shape pattern
+  matching (reverse-shell shape, persistence shape, exfiltration shape,
+  privilege-escalation shape), side-effect projection, counterfactual
+  injection analysis ("if this lands in module X, who imports X and
+  inherits the effect?"). What I can't do well: dynamic-runtime
+  behavior, memory corruption, timing attacks, compiler quirks.
+* **Why this matters as a port-candidate**: I do this conversationally
+  *when asked*. A pipeline-shaped simulator would do it
+  *mechanically* on every PR or every council proposal containing
+  code. That closes the gap where you skim a diff and miss a pattern
+  I'd have caught if you'd asked. Same axis as transformation-fidelity
+  tests: catch theater mechanically rather than relying on review.
+* **Concrete shape**: `core/simulation/code_simulator.py` —
+  - Input: proposed code diff or implementation block + context
+  - Static analysis: trace data flow, identify side effects
+  - Pattern match against catalog of malicious shapes
+  - Project surfaces touched (filesystem, network, process, env)
+  - Counterfactual injection: who imports the modified module?
+  - Output: findings list keyed by severity, routable to VOID
+    Phase 2's HIGH-finding workflow or claim engine
+* **Different from VOID** (attacks the IDEA) and council (weighs
+  perspectives): simulator projects the EXECUTION before writing.
+* **Status**: filed claim 8846f721. Real Phase 1 work, not theater.
+  Probably warrants design brief before implementation, like the
+  Bayesian-reliability port-candidate.
+
 ## Discard policy reminder
 
 Per Andrew 2026-04-24: *"i dont mind it being ruthlessly pruned as long as
