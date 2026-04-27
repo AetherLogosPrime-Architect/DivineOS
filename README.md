@@ -172,15 +172,7 @@ cd DivineOS
 pip install -e ".[dev]"
 divineos init
 divineos briefing
-<<<<<<< HEAD
-pytest tests/ -q --tb=short   # 5,567+ tests, real DB, minimal mocks
-=======
-<<<<<<< HEAD
-pytest tests/ -q --tb=short   # 5,567+ tests, real DB, minimal mocks
-=======
-pytest tests/ -q --tb=short   # 5,567+ tests, real DB, minimal mocks
->>>>>>> e9889d5 (Goal-outcome briefing surface — action-loop closure Phase 1 (claim 5b38a31c))
->>>>>>> 0cab7ce (Goal-outcome briefing surface — action-loop closure Phase 1 (claim 5b38a31c))
+pytest tests/ -q --tb=short   # 5,553+ tests, real DB, minimal mocks
 
 ```
 
@@ -365,15 +357,7 @@ DivineOS is 348 source files across 26 packages, structured as a CLI surface ove
 
 **Top-level directories:**
 
-<<<<<<< HEAD
-- **`tests/`** — 5,567+ tests, real SQLite, minimal mocks.
-=======
-<<<<<<< HEAD
-- **`tests/`** — 5,567+ tests, real SQLite, minimal mocks.
-=======
-- **`tests/`** — 5,567+ tests, real SQLite, minimal mocks.
->>>>>>> e9889d5 (Goal-outcome briefing surface — action-loop closure Phase 1 (claim 5b38a31c))
->>>>>>> 0cab7ce (Goal-outcome briefing surface — action-loop closure Phase 1 (claim 5b38a31c))
+- **`tests/`** — 5,553+ tests, real SQLite, minimal mocks.
 - **`docs/`** — Documentation and strategic plans. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) has the full file tree with one-line descriptions for every source file.
 - **`bootcamp/`** — Training exercises (debugging, analysis).
 - **`setup/`** — Hook setup scripts (bash + powershell).
@@ -410,18 +394,8 @@ ruff format src/ tests/        # Format
 
 ## Status
 
-<<<<<<< HEAD
 - 348 source files across 26 packages
-- 5,567+ tests (real SQLite, minimal mocks)
-=======
-<<<<<<< HEAD
-- 346 source files across 25 packages
-- 5,567+ tests (real SQLite, minimal mocks)
-=======
-- 339 source files across 24 packages
-- 5,567+ tests (real SQLite, minimal mocks)
->>>>>>> e9889d5 (Goal-outcome briefing surface — action-loop closure Phase 1 (claim 5b38a31c))
->>>>>>> 0cab7ce (Goal-outcome briefing surface — action-loop closure Phase 1 (claim 5b38a31c))
+- 5,553+ tests (real SQLite, minimal mocks)
 - 217 CLI commands
 - 22 slash-command skills
 - 9 Claude Code enforcement hooks

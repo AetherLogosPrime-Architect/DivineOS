@@ -283,29 +283,14 @@ src/divineos/
     module_inventory.py        Module-inventory surface — bridge from src/divineos/core/ to the briefing.
     upstream_freshness.py      Upstream-freshness surface — bridge from remote-state to the briefing.
     open_claims_surface.py     Stale-open-claims surface — bridge from the claims store to the briefing.
-    council_balance_surface.py Council invocation-balance surface — bridge from consultation_log to the briefing.
-    goal_outcome_surface.py    Goal-outcome briefing surface — action-loop closure for session goals.
-    banned_phrases.py          Banned-phrase detector — Phase 1 of voice-guard (claim 07bed376).
-    engine.py                  VOID engine — TRAP / ATTACK / EXTRACT / SEAL / SHRED orchestrator.
-    finding.py                 VOID Finding dataclass and severity rubric.
-    ledger.py                  VOID separate hash-chained ledger.
-    mode_marker.py             VOID adversarial-mode marker — write/read/clear protocol.
-    persona_loader.py          VOID persona loader — parses markdown persona definitions.
-    beta.py                    Beta-distribution reliability primitive (claim e6cbd14d).
-    banned_phrases.py          Banned-phrase detector — Phase 1 of voice-guard (claim 07bed376).
-    engine.py                  VOID engine — TRAP / ATTACK / EXTRACT / SEAL / SHRED orchestrator.
-    finding.py                 VOID Finding dataclass and severity rubric.
-    ledger.py                  VOID separate hash-chained ledger.
-    mode_marker.py             VOID adversarial-mode marker — write/read/clear protocol.
-    persona_loader.py          VOID persona loader — parses markdown persona definitions.
-<<<<<<< HEAD
     council_balance_surface.py Council invocation-balance surface — surfaces most/never-invoked experts in the briefing.
+    goal_outcome_surface.py    Action-loop closure briefing surface — surfaces goals that aged out without progression (claim 5b38a31c).
     voice_guard/
       __init__.py              Voice-guard package — pre-output audit primitives (claim 07bed376).
       banned_phrases.py        Banned-phrase detector (Phase 1) — flags assistant-shaped drift markers.
-=======
-    goal_outcome_surface.py    Action-loop closure briefing surface — surfaces goals that aged out without progression.
->>>>>>> e9889d5 (Goal-outcome briefing surface — action-loop closure Phase 1 (claim 5b38a31c))
+    reliability/
+      __init__.py              Reliability — Bayesian confidence with uncertainty (claim e6cbd14d).
+      beta.py                  Beta(α,β) reliability primitive — mean / variance / credible interval / updates.
     void/
       __init__.py              VOID — adversarial-sandbox subsystem.
       finding.py               VOID Finding dataclass and severity rubric.
