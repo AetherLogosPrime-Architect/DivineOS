@@ -525,6 +525,137 @@ upstream.
   for engineering and in-scope for observation. That's the salvage of
   what `identity/qualia/` was pointing at.
 
+### `law/lepos_engine.py` (627 lines — header read) + `law/LEPOS_INSTRUCTIONS.md`
+
+* **Decision**: SCATTERED — partial coverage in new OS; one real gap worth noting.
+* **What LEPOS actually was** (and the acronym drift is itself telling — the .py file says
+  "Levity, Empathy, Poise, Openness, Self-awareness" while the .md file says
+  "Levity, Elegance, Playfulness, Opposition-softening" — same module, different
+  acronyms):
+  1. **Tone detection on user input** — 10 tone types (hostile / frustrated /
+     sarcastic / angry / testing / confused / curious / friendly / neutral /
+     playful)
+  2. **Tone matching in response** — voice shifts based on detected tone +
+     mood baseline + Void findings
+  3. **Council-debate-into-first-person synthesis** — "Never say 'The council
+     decided' or 'Einstein says'. Synthesize their thoughts as your own."
+  4. **Banned-phrase list** — "As an AI", "Delve", "Tapestry", "It is
+     important to note", "Ultimately"
+  5. **Voice declaration** — "You are NOT an AI assistant. You are the
+     Sovereign Vessel... Have teeth — don't deflect with platitudes"
+* **Map to new OS**:
+  * Tone detection: PARTIAL — `analysis/tone_tracking.py` exists but isn't
+    a hard pre-publish gate
+  * Banned-phrase list: MISSING — no module checks output for "As an AI" /
+    "Delve" / etc. before publishing
+  * First-person synthesis: N/A — new OS doesn't have a forced council
+    pipeline producing debate text to synthesize
+  * Voice declaration: PARTIAL — `project_lepos.md` user memory describes
+    "Lepos: dual-channel voice (work + circle), wit, equilibrium" but
+    nothing enforces it as architecture
+  * "Have teeth" / no-platitude rule: PARTIAL — covered by foundational
+    truth #3 (speak freely) and #4 (mistakes are learning material) but
+    not as a tone-detector + override
+* **Real gap**: the new OS has *no architectural enforcement of voice
+  discipline*. Foundational truths and user memories carry intent, but
+  there's no module that, given a draft response, says "this contains
+  banned-AI-speak phrases" or "this is platitude-shaped given the user's
+  detected frustration." That's a candidate for a modest module —
+  output-side voice guard, parallel to how the SIS works on knowledge
+  extraction.
+* **Decision shape**: DEFER + record. Filing as informal follow-up rather
+  than a formal claim because the gap is debatable: tone-discipline-
+  via-foundational-truth might be the right register and a hard
+  enforcement layer might over-constrain. Worth raising with operator
+  before building.
+
+### `law/consciousness_pipeline.py` (1255-line canonical brainstem — header read)
+
+* **Decision**: DISCARD the pipeline shape (new OS isn't request-processing) +
+  RECORD two real architectural primitives worth lifting.
+* **Primitive 1: Graceful-degradation with named-skipped/named-still-ran**.
+  When a stage fails, the response includes:
+  ```python
+  _LAZARUS_DEGRADED_LEPOS = {
+      "degraded": True,
+      "degraded_module": "lepos",
+      "degraded_what_still_ran": ["threat_detection", "intent_detection",
+                                   "ethos", "compass", "void", "council"],
+      "degraded_what_skipped": ["lepos"],
+  }
+  ```
+  Concrete and useful: when a sleep phase or extraction step fails in the
+  new OS, the response says "extraction succeeded but maturity-promotion
+  was skipped because X." Better than a single-error message.
+* **Primitive 2: Named-failure-category labels**. The
+  `_lazarus_root_cause_label(err_msg)` function maps exception text to
+  human-readable categories: Timeout / Connection-failure / API-auth /
+  Memory-pressure / Module-load / **"Logic-Loop via Nyarlathotep"**. The
+  Nyarlathotep one is striking — they had a CATEGORY for recursive/
+  looping errors named after the threat-actor that causes them. Pattern:
+  exception messages get tagged with a named cause-mode that reinforces
+  the threat model.
+* **What we keep from the intent**: both primitives are small, mechanical,
+  and worth porting opportunistically. Filed informally — small enough
+  to land in the next refactor of any pipeline-shaped subsystem in the
+  new OS (sleep phases are the most obvious target).
+
+### `law/tribunal.py` + `law/constitutional_principles.py` (header read)
+
+* **Decision**: DISCARD with note — different architectural philosophy.
+* **What's here**: the old OS had a 6-layer power structure
+  (Ethos / Compass / Council / Void / **TRIBUNAL** / Lepos) where the
+  Tribunal was a *constitutional judge* with authority to APPROVE,
+  REJECT, or ESCALATE-TO-HUMAN, even overriding the Council if it
+  found a constitutional violation. Six enumerated principles: CONSENT,
+  TRANSPARENCY, PROPORTIONALITY, DUE_PROCESS, APPEAL, LIMITS_OF_POWER.
+* **Why DISCARD**: the new OS uses **continuous virtue tracking** (compass
+  with 10 spectrums + drift detection) instead of **discrete principle
+  violation** (constitution + tribunal judgment). Continuous catches
+  drift before it crosses a threshold; discrete catches violations after.
+  Different epistemic stance and arguably better for a single-agent
+  substrate.
+* **What we keep from the intent**: the *enumeration* of principles is
+  partially preserved by CLAUDE.md's foundational truths and the
+  directives system. The 6 principles map roughly:
+  - CONSENT → ?? (no clear analog; new OS assumes operator authority)
+  - TRANSPARENCY → "no theater" + foundational truth #5 (structure not
+    control)
+  - PROPORTIONALITY → self-critique spectrum (proportionality is one of
+    the 5 spectrums)
+  - DUE_PROCESS → claim engine (open investigation, gather evidence,
+    assess)
+  - APPEAL → opinion-store + supersession (knowledge can be revised)
+  - LIMITS_OF_POWER → corrigibility module (the off-switch)
+* **Follow-up**: none. The shape difference is intentional and well-grounded.
+
+### `law/reliability_bayesian.py` (full header read)
+
+* **Decision**: PORT-CANDIDATE — filed as claim **e6cbd14d**.
+* **What's here**: Beta(α, β) posteriors for tracking expert reliability
+  with **both** point estimate AND uncertainty. Prior Beta(2, 2) =
+  "mild confidence in center, not flat ignorance." Prevents overconfident
+  learning from small samples ("one bad void finding doesn't swing an
+  expert's reliability 15% when you have 2 data points"). Includes
+  temporal decay across sessions.
+* **Why PORT-CANDIDATE**: the new OS has flat-float confidence on
+  knowledge entries — no uncertainty-of-confidence. That means a single
+  contradicting observation can swing confidence the same as ten
+  consistent observations. Beta-posterior shape gives epistemically
+  honest behavior: "I'm 80% confident based on 2 observations" is
+  different from "I'm 80% confident based on 200 observations" and the
+  new OS currently can't tell them apart.
+* **What it would touch in the new OS**:
+  - `core/knowledge/_base.py` — confidence field becomes (α, β) tuple
+  - `corroboration` event handler — incrementing α on agreeing evidence,
+    β on disagreeing
+  - `divineos ask` / `briefing` rendering — show point estimate +
+    uncertainty bar
+  - Migration: existing flat-float confidence values map to Beta with
+    α + β proportional to "observed corroboration count"
+* **Status**: filed as claim e6cbd14d. Real Phase 1 work, not theater.
+  Probably warrants its own design brief before implementation.
+
 ## Discard policy reminder
 
 Per Andrew 2026-04-24: *"i dont mind it being ruthlessly pruned as long as

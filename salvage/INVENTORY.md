@@ -25,7 +25,7 @@ and `.json` only.
 | governance/ | 10 | 241K | unread | possibly relates to compass/watchmen |
 | identity/ | 13 | 277K | partial | qualia_engine.py + README read 2026-04-26 — claims to engineer "ACTUAL FELT EXPERIENCE through superposition of resonances"; new OS observes correlates (VAD/self-model/attention-schema/epistemic-status) without claiming to engineer qualia. DISCARD. |
 | infrastructure/ | 32 | 690K | unread | infrastructure, mixed |
-| law/ | 81 | 1.7M | unread | possibly relates to directives/compass |
+| law/ | 81 | 1.7M | partial | lepos_engine.py + consciousness_pipeline.py + tribunal.py + constitutional_principles.py + reliability_bayesian.py read 2026-04-26 — **biggest find: PORT-CANDIDATE Bayesian reliability (claim e6cbd14d)**. LEPOS gap noted. Tribunal vs continuous-virtue philosophy difference recorded. ~76 unread (council subsystem, security/injection, others). |
 | learning/ | 9 | 128K | unread | overlaps with new OS knowledge engine |
 | logs/ | 0 | 11M | unread | runtime logs — discard-class |
 | memory/ | 49 | 576K | partial | persistent_memory.py (DISCARD), memory_anchor.py (DISCARD), recollect_engine.py (DEFER — vector search is real gap); 46 files unread |
