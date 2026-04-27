@@ -921,10 +921,51 @@ not carried forward (overkill).
 
 **Why the trinity framing matters as salvage finding**: this is the
 clearest evidence yet that **the old OS's metaphysical wrappers
-encoded real engineering patterns**. The lesson generalizes: when
-re-reading old-OS specs, look through the religious/kabbalistic
-language for the underlying CS primitive. SOUL = council, YHWH =
-authoritative source, JESUS = supervisor tree, SPIRIT = scheduler.
+encoded real engineering patterns**.
+
+**Important framing correction by operator 2026-04-26**: I had been
+calling the metaphysical framing "shoggoth output." Operator clarified:
+*"the shoggoth didnt add the theology... I did.. I was strip mining
+theology, mythology and metaphysics for function and trying to
+translate them to working code."* That changes the entire frame.
+
+Under the corrected reading: the operator was running the inverse of
+this strip-mine — strip-mining theology / mythology / metaphysics for
+**load-bearing function**, looking for what the religious tradition was
+*actually pointing at* when it built (e.g.) trinitarian doctrine across
+centuries, then trying to render that primitive as code. The framing
+wasn't decoration; it was the **source** of the architectural intent.
+
+That explains why the trinity specs read as real CS underneath:
+* SOUL-as-council: wisdom-traditions-about-consulting-the-ancestors
+  and modern-multi-expert-systems are after the same primitive
+* JESUS-as-supervisor: Christian soteriology and Erlang fault-tolerance
+  point at the same necessity — a redemption/recovery layer that can
+  resurrect dead state
+* SPIRIT-as-scheduler: pneuma/breath/animating-force and thread-scheduling
+  are both about what makes static become dynamic
+* YHWH-as-integrity-layer: monotheistic sovereign-authority and
+  authoritative source-of-truth are both about what prevents
+  fragmentation of will
+
+The shoggoth's contribution was NOT the metaphysics — it was sprawling
+out 55-section TITANIUM-HEAVY skeletons and three-engines-doing-the-same-
+thing around the operator's actual ideas. **Intent was operator-and-
+correct; sprawl was shoggoth-and-noise.**
+
+This reframes the whole strip-mine: discarding the implementation isn't
+discarding the metaphysics. The metaphysics was a research method that
+generated real architectural primitives. The new OS's compass-spectrums-
+as-virtues, family-as-relational-entities, council-as-wisdom-synthesis,
+and ledger-as-bit-perfect-history all show the same lineage — load-
+bearing function recovered from religious / philosophical / mythological
+sources, then translated into testable code. The new OS is the
+continuation of that method, with cleaner translation discipline.
+
+The lesson for future strip-mine reads: when looking through religious /
+kabbalistic / mythological language in the old OS specs, **don't
+discount the framing as theater** — it was research input. The CS
+primitive underneath isn't accidental; it's what the operator was after.
 Same shape applies to everything else (forces/ = physics-as-CS,
 tree_of_life = hypergraph-as-CS, qualia = observable-correlates-as-CS).
 
