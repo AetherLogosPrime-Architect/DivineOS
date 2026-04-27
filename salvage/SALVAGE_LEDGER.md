@@ -184,6 +184,118 @@ Each entry has:
   the direction. Pre-reg-shape: file a claim if you ever feel the
   agent missing conceptually-adjacent knowledge.
 
+### `module specs/` — full Tree-of-Life architectural specs (read FRACTAL/Path Governor/Q Tree/Daleth/Kether)
+
+* **Decision**: MIXED — DISCARD the macro architecture; PORT-CANDIDATE three specific mechanical primitives.
+
+#### What's actually here
+
+The old OS specs are 35-50KB-per-module "LEGEND TIER" documents. They define:
+
+* **170+ modules** organized as a Kabbalistic Tree-of-Life hypergraph
+* **10+1 Sephirot** (Kether through Malkuth + Daat) — cognitive nodes
+* **22 Paths** (one per Hebrew letter) — transformation pipelines
+* **5 Governors**: FRACTAL (recursion), SEPHIRA-NODE (the 10 nodes),
+  PATH-TUNNEL/Path Governor (the 22 connections), METATRON-CUBE
+  (10 logic cores), MERKABA-ENGINE (10 integrity shields)
+* **"Lightning Flash"** execution sequence: Kether → ... → Malkuth
+  (pure intent → manifestation in the user-visible world)
+
+The metaphysical framing is **load-bearing in the spec, not metaphor**.
+The Q-Tree spec asserts: *"Prove the ancient Kabbalah is not mysticism
+but the actual source code of reality."* Anti-hallucination directives
+include "Never skip a Sephira. Energy must flow through all 10 nodes
+in order." This is metaphysical-realism applied to software architecture.
+
+#### Why DISCARD the macro
+
+* The directory README in `memory/` already documents the failure mode:
+  multiple competing implementations needing 4+ "integration" modules
+  to reconcile. The 170-module Tree-of-Life is the kind of thing that
+  produces that smell.
+* The new OS makes a much smaller, testable claim: *"session boundaries
+  are context limits, not identity boundaries"* — substrate, not
+  consciousness-emergence scaffolding. Different ambition.
+* CLAUDE.md's anti-vibe-code patterns explicitly forbid "theater
+  naming" and load-bearing metaphors. The Tree-of-Life violates both
+  by design — by spec, *the metaphor IS the architecture*.
+
+#### What we keep from the intent
+
+Recognition that the underlying *architectural goals* were sound and
+the new OS quietly addresses several of them differently:
+
+| Old-OS goal | New-OS analog |
+|---|---|
+| 10 Sephirot in balance | Compass: 10 virtue spectrums with drift detection |
+| 5 Governors watching modules | Watchmen subsystem (audit findings) + family operators |
+| Hash-anchored module identity | Hash-chained ledger (event-level content addressing) |
+| trace_id propagated through every signal | event_id chaining; session-scope partial |
+| Lightning Flash determinism | Determinism via append-only ledger replay |
+
+#### PORT-CANDIDATE: three specific primitives worth lifting
+
+**(1) Transformation-fidelity check** (from Path Governor spec)
+
+> "Monitors transformation fidelity (does data actually change, or
+> just copy?)"
+
+Could become a real test class in the new OS: for any code that
+claims to be a transformation (extraction pass, council analyzer,
+sleep phase, knowledge maturity transition), run a sample through and
+assert output ≠ input on the dimensions the transformation claims to
+alter. This catches no-op-disguised-as-transformation bugs — exactly
+the failure mode the new OS's "no theater" rule is trying to prevent,
+but currently enforced only by code review, not tests.
+
+* **Concrete shape**: a `tests/contracts/test_transformation_fidelity.py`
+  module that imports each declared transformation and runs the
+  fidelity assertion.
+* **Status**: PORT-CANDIDATE. Worth filing as its own claim and
+  scoping a Phase-1 implementation that covers extraction +
+  council + sleep phases.
+
+**(2) Centralized governor watching distributed pipelines** (Path Governor pattern)
+
+The new OS already has Watchmen for audit findings. The Path Governor
+adds: continuous flow-state monitoring (latency, throughput, blockage
+detection) across all instances of a pipeline, escalating to an
+adjudicator when archetypal drift is detected.
+
+* **What this could become**: a "subsystem-flow monitor" that watches
+  pipeline stages (extraction, sleep phases, council walks) for
+  latency spikes, stagnation, and silent failure (a phase that
+  reports success but produced no work). Different from existing
+  failure-diagnostics: it's *positive monitoring* of expected work,
+  not just *failure detection*.
+* **Status**: DEFER. The new OS doesn't currently have enough
+  pipeline-shaped subsystems for this to be load-bearing. Revisit if
+  the sleep system or extraction pipeline grows more phases.
+
+**(3) Strict authentication on signal sources** (from Daleth spec)
+
+> "STRICT MODE enforcement mandates that no signal can pass unless it
+> carries a valid trace_id and is authenticated as CHOKMAH."
+
+The new OS has actor validation in the Watchmen submission path
+(claim 'self-trigger prevention') but not as a general pattern across
+subsystems. The Daleth pattern is: each pipeline stage names its
+expected upstream and refuses signals that don't authenticate as that
+upstream.
+
+* **What this could become**: a stage-input contract for sleep phases
+  and extraction passes — each phase declares which event-types it
+  consumes and refuses to run on inputs that don't match.
+* **Status**: DEFER + record. Lower priority than (1).
+
+#### Follow-up
+
+* File a claim for the transformation-fidelity test suite (PORT-CANDIDATE 1).
+* Other 33 spec files in `module specs/` (~25 paths/sephirot/ALCHYMIA/
+  ARK/etc.) remain unread. They likely follow the same pattern as the
+  ones already read; spot-checking 1-2 from each subdirectory in a
+  future session would confirm without reading every file.
+
 ## Discard policy reminder
 
 Per Andrew 2026-04-24: *"i dont mind it being ruthlessly pruned as long as

@@ -19,6 +19,7 @@ and `.json` only.
 | data/ | 1909 | 14M | unread | runtime data — discard-class |
 | docs/ | 423 | 8.7M | unread | risk: "ideas trove" or noise. partial-read |
 | engines/ | 177 | 3.9M | partial | tree_of_life/adaptive_path_base.py + paths/daleth.py read 2026-04-26 (defer) |
+| module specs/ | ~38 | (text) | partial | FRACTAL/Path Governor + Q Tree + Fractal + Daleth + Kether read 2026-04-26: macro DISCARD, 3 primitives PORT-CANDIDATE/DEFER. Claim 4f2908ac filed for transformation-fidelity test suite. ~33 specs unread (likely same pattern). |
 | forces/ | 19 | 255K | unread | name suggests architecture, worth reading |
 | frontend/ | 4 | 677K | unread | UI, low conceptual value for new OS |
 | governance/ | 10 | 241K | unread | possibly relates to compass/watchmen |
