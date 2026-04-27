@@ -105,17 +105,21 @@ def invoke(
     _validate_invocation(persona, allow_high_bar=allow_high_bar)
 
     invocation_id = mode_marker.write_marker(persona.name, session_id=session_id)
-    started = void_ledger.append_event(
-        "VOID_INVOCATION_STARTED",
-        {
-            "target": target,
-            "invocation_id": invocation_id,
-            "session_id": session_id,
-            "high_bar": persona.name in _HIGH_BAR,
-        },
-        persona=persona.name,
-        path=void_db_path,
-    )
+    try:
+        started = void_ledger.append_event(
+            "VOID_INVOCATION_STARTED",
+            {
+                "target": target,
+                "invocation_id": invocation_id,
+                "session_id": session_id,
+                "high_bar": persona.name in _HIGH_BAR,
+            },
+            persona=persona.name,
+            path=void_db_path,
+        )
+    except Exception:  # noqa: BLE001 — fail-closed marker clear is intentionally any-exception; symmetry is the safety property, not the failure category
+        mode_marker.clear_marker()
+        raise
 
     state: dict = {"sealed": False, "result": None}
 

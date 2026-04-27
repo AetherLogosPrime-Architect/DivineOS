@@ -163,6 +163,24 @@ class TestFindingValidation:
             engine.run("sycophant", target="t", attack=attack, void_db_path=void_db)
 
 
+class TestStartedEventFailClosed:
+    """Regression: if VOID_INVOCATION_STARTED append fails after marker
+    write, the marker must be cleared before re-raising so the forensic
+    record never has a SHRED without a matching STARTED.
+    """
+
+    def test_failed_started_event_clears_marker(self, void_db) -> None:
+        with patch.object(void_ledger, "append_event", side_effect=RuntimeError("ledger down")):
+            with pytest.raises(RuntimeError, match="ledger down"):
+                engine.run(
+                    "sycophant",
+                    target="t",
+                    attack=_attack_low,
+                    void_db_path=void_db,
+                )
+        assert mode_marker.is_active() is False
+
+
 class TestAssemblePersonaPrompt:
     def test_refused_without_active_marker(self) -> None:
         assert mode_marker.is_active() is False
