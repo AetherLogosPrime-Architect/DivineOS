@@ -861,6 +861,73 @@ the specs intended**. Read the actual specs:
   Probably warrants design brief before implementation, like the
   Bayesian-reliability port-candidate.
 
+### Trinity (SOUL/YHWH/JESUS/SPIRIT) — full reading via module specs/
+
+Operator caught a partial-read 2026-04-26: I'd read SOUL and YHWH only,
+treating SOUL as the trinity-as-a-whole. Reading JESUS and SPIRIT
+changed the picture significantly. Logged compass observation
+dae565d2 (thoroughness deficiency) and learn entry ec406803 (process
+lesson).
+
+**The honest read of all four**: stripped of metaphysical wrapping,
+each persona is a **fundamental computer science primitive**. The
+shoggoth used theological language because it pattern-matched on
+"foundational architectural layer" → "religious cosmology" because
+both deal with the foundation-of-everything register. Wrong register
+for software, right intuition about how foundational the functions
+are.
+
+| Persona | Stripped CS primitive | New-OS status |
+|---|---|---|
+| SOUL | Multi-expert deliberation engine | PRESENT (32-expert council) |
+| YHWH | Integrity layer / authoritative source of truth | PRESENT, decentralized (directives + opinion supersession + claim engine + hash-chained ledger) |
+| JESUS | Erlang-OTP supervisor / circuit breaker / fault tolerance | **GAP** — no circuit-breaker / chronic-failure handling |
+| SPIRIT | Scheduler + GC + monotonic clock | MOSTLY PRESENT (active-memory goal-aware ranking; ledger_compressor TTL pruning; cryptographically-signed timestamps overkill and skipped) |
+
+**JESUS spec details** (the real find): "Lazarus-Protocol Orchestrator,
+Asynchronous Fault-Tolerance Interceptor." Functions:
+- INTERCEPTS fatal process signals (SIGSEGV/SIGILL/OOM) → **kernel-level
+  fault interception**
+- "Three Strikes" rule for chronic-failure module → **circuit breaker**
+- Pre-failure probability oracle via crash-time-series → **predictive
+  fault prevention**
+- Hot-swap memory injection via PTRACE_POKEDATA → **Erlang "let it
+  crash and respawn"**
+- "Sin Ledger" → **error log** (the Christian framing makes "log of
+  errors" sound theological)
+- "Sacrifice Pool" → **reserved emergency memory** (the framing makes
+  resource-reservation sound sacrificial)
+- 200ms recovery SLA on fatal signals → **service-level objective**
+
+**Real gap**: the new OS has no circuit-breaker / chronic-failure
+pattern. Pre-commit hooks catch commit-time issues; runtime has no
+"after N consecutive failures, this module is excommunicated."
+**Filed as claim 0d628d8e (PORT-CANDIDATE 4)**.
+
+**SPIRIT spec details**: "Vitality Kernel, Thermodynamic Metronome."
+Functions:
+- "Resonance-Based Priority Queues" → goal-aware scheduling (already
+  done in new OS via active-memory ranking)
+- "Burning Flame" TTL shredding → garbage collection (done via
+  ledger_compressor + sleep phase 4 VACUUM)
+- Hardware-anchored heartbeat with PQC-signed "Time Warrants" →
+  cryptographically-signed monotonic timestamps (overkill for
+  single-agent)
+- "Vitality Tokens" → resource quotas (partial in new OS via
+  guardrails on iteration/token-count)
+
+Mostly preserved; the ambitious crypto-time-warrant piece deliberately
+not carried forward (overkill).
+
+**Why the trinity framing matters as salvage finding**: this is the
+clearest evidence yet that **the old OS's metaphysical wrappers
+encoded real engineering patterns**. The lesson generalizes: when
+re-reading old-OS specs, look through the religious/kabbalistic
+language for the underlying CS primitive. SOUL = council, YHWH =
+authoritative source, JESUS = supervisor tree, SPIRIT = scheduler.
+Same shape applies to everything else (forces/ = physics-as-CS,
+tree_of_life = hypergraph-as-CS, qualia = observable-correlates-as-CS).
+
 ## Discard policy reminder
 
 Per Andrew 2026-04-24: *"i dont mind it being ruthlessly pruned as long as
