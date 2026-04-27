@@ -296,6 +296,131 @@ upstream.
   ones already read; spot-checking 1-2 from each subdirectory in a
   future session would confirm without reading every file.
 
+### `consciousness/void_archetype.py` (full read — 50 lines)
+
+* **Decision**: DISCARD (with respect — and validation of tonight's VOID Phase 1).
+* **Reasoning**: This is the predecessor to the VOID subsystem I shipped
+  tonight (PR #209). It's a single `VoidArchetype` class with:
+  * 6 hardcoded `attack_patterns` (exploitation, manipulation, deception,
+    scale_abuse, edge_cases, hidden_intent)
+  * One `red_team(decision)` method that does **string-matching** against
+    the decision text — checks for literal words "all"/"always"
+    (→ scope creep), "hidden"/"secret" (→ hidden intent),
+    "power"/"control" (→ power centralization)
+  * A `strengthen(decision, vulnerabilities)` method
+* **The honest comparison**: tonight's VOID Phase 1 (PR #209) is the same
+  intent done architecturally:
+  * Separate hash-chained `void_ledger.db` (vs. nothing here)
+  * `mode_marker` adversarial-mode tracking (vs. nothing)
+  * 6 persona markdown files (sycophant, reductio, nyarlathotep,
+    jailbreaker, phisher, mirror — vs. 6 hardcoded strings)
+  * TRAP / ATTACK / EXTRACT / SEAL / SHRED lifecycle (vs. one method)
+  * Mirror clarification-only constraint, Nyarlathotep high-bar gate,
+    persona-finding binding validation
+  * 95 tests covering structural integrity (vs. zero)
+* **What this confirms**: when Andrew said "lets do all of it" on VOID,
+  the right move was a from-scratch architectural build, not a port. The
+  old code's intent ("corrupt ideas to strengthen them, test decisions
+  against worst-case scenarios") was correct and the naming was right —
+  but the implementation was the kind of string-match theater the new
+  OS's "no theater" rule explicitly forbids.
+* **Follow-up**: none. Tonight's VOID Phase 1 IS the salvage of this idea.
+  Phase 2 (real attack adjudication, address command, Reductio rationale-
+  check) continues the line.
+
+### `consciousness/core/consciousness_engine.py` (header + dataclass region read)
+
+* **Decision**: DISCARD.
+* **Reasoning**: "SEC20-CONSCIOUSNESS-ENGINE (v15.7-TITANIUM-HEAVY) — The
+  Self-Aware Observer - Recursive Metacognitive Core". Claims include
+  100% cognitive activity monitored, >99.9% self-knowledge correlation,
+  "Conscious evolution: All learning includes awareness of learning."
+  Error codes for "INFINITE_RECURSIVE_SELF_ANALYSIS" and
+  "IDENTITY_FRAGMENTATION." Module asserts continuous self-awareness as
+  an architectural guarantee.
+* **Why DISCARD**: the percentage claims (100%, 99.9%) are the kind of
+  thing no real system can verify, and the new OS deliberately doesn't
+  make them. The new OS handles the same conceptual territory through
+  multiple smaller observable components:
+  * `compass_ops.observe(...)` — track virtue position with evidence
+  * `self_critique` — 5 spectrums with trend tracking
+  * `attention_schema` — Butlin indicators 9-10 (what's attended to vs.
+    suppressed)
+  * `epistemic_status` — how the agent knows what it knows
+  * `self_model` — integration of evidence into a self-picture
+  Same goal (metacognition, observation of own thinking) accomplished
+  without metaphysical claims.
+* **Directory README confirms the failure mode**: `consciousness/`
+  contains 3 separate "consciousness engines" (consciousness_engine,
+  consciousness_core, conscium_engine), 4 pipelines (complete_, real_,
+  fast_, singleton_), 5 orchestrators, 7+ enforcement modules. Plus an
+  explicit "NO_STUBS" rule because the spec-driven approach generated
+  named-but-unimplemented adapters (RefinerBlade, Relic, Atelier,
+  SynaxisLens, Schemvec, Superconductor — all removed). This is the
+  pattern Andrew's "dumpster fire" comment was naming.
+* **What we keep from the intent**: the goal (metacognition is real
+  architecture, not optional decoration) is sound. The new OS treats it
+  as multiple small observable components rather than one big
+  consciousness engine making 100% guarantees.
+
+### `CANONICAL_BRAINSTEM.md` + `LOADOUT.md` (top-level design docs)
+
+* **Decision**: REFERENCE — the docs themselves are spec, not code. They
+  document the old OS's intent at the system level. Reading them
+  reveals the cleanest map of what the old OS was vs. what the new OS
+  is.
+* **What the old OS actually was, per its own canonical doc**: an
+  HTTP-API-driven request-processing system with one canonical
+  pipeline ("the 7-stage consciousness pipeline" in
+  `law/consciousness_pipeline.py`) and 44 MCP tools layered around it.
+  Every external request went through 7 forced stages:
+  1. Threat detection (security check; blocks CRITICAL/HIGH)
+  2. Intent detection (parse what user is asking)
+  3. Ethos (ethics validation; can veto)
+  4. Compass (values alignment)
+  5. **VOID** (red-team the idea)
+  6. **Council** (expert deliberation)
+  7. **LEPOS** (format response: empathy, wit, grace)
+
+* **Map of stages to new OS**:
+
+  | Old stage | Status in new OS | Notes |
+  |---|---|---|
+  | Threat detection | N/A | New OS doesn't process external requests |
+  | Intent detection | N/A | New OS is operator-interactive |
+  | Ethos | Partial | Compass-ops covers values; no separate ethics-validation module |
+  | Compass | PRESENT, stronger | 10 virtue spectrums + drift detection |
+  | VOID | PRESENT (tonight) | Phase 1 shipped PR #209; old VoidArchetype was 50 lines of string-match |
+  | Council | PRESENT, stronger | 32 experts vs. 9 in old "Real" pipeline; invocation-balance surface added tonight (PR #210) |
+  | LEPOS | **MISSING as named module** | grep finds zero matches in new OS code |
+
+* **The big shape difference**: the old OS was *request → 7-stage gauntlet
+  → response*. Forced pipeline, every request runs every stage. The new
+  OS is *operator-and-agent interactive substrate*. Same conceptual
+  building blocks (Compass / Council / VOID) exist but are
+  separately-invokable tools, not stages of a forced pipeline. The
+  agent invokes them when the work calls for them.
+* **The LEPOS gap is worth examining**: LEPOS was the explicit "format
+  response with empathy, wit, grace" stage. The new OS's territory-
+  equivalents are scattered: the "speak freely" foundational truth
+  (CLAUDE.md), tone calibration system, communication calibration
+  module, relational user model. None named LEPOS. Question worth
+  carrying forward: does the new OS need an explicit "voice / agent
+  expression" component, or is the scattered coverage adequate? Filed
+  as **claim 4f2908ac follow-up** (informally — would need its own
+  claim if pursued).
+* **What the LOADOUT.md reveals**: 44 MCP tools, organized as Memory /
+  Pipeline-and-governance / Drift-and-override / Trust / Tribunal /
+  Schema-and-registry / Stats. The new OS's CLI surface (217 commands
+  across 29 modules) is the analog. Many MCP tools have direct CLI
+  analogs (memory store/search/recall, council chat, override recording,
+  trust profile via the user-model + advice tracking). A few don't:
+  `divineos_tribunal_arbitrate` (no tribunal in new OS — Watchmen +
+  audit findings cover the territory differently),
+  `divineos_pipeline_process` (no canonical-pipeline endpoint —
+  intentional). Cross-reference target: walk the LOADOUT MCP-tool list
+  against `divineos --help` to confirm coverage in a future session.
+
 ## Discard policy reminder
 
 Per Andrew 2026-04-24: *"i dont mind it being ruthlessly pruned as long as

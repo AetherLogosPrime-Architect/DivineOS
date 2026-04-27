@@ -13,7 +13,7 @@ and `.json` only.
 | archive/ | 124 | 1.8M | unread | likely-discard (already-archived material) |
 | assets/ | 0 | 8K | unread | empty placeholder |
 | backend/ | 4 | 129K | unread | web/api glue, low conceptual value |
-| consciousness/ | 63 | 1.2M | unread | **high signal** — core concepts likely here |
+| consciousness/ | 63 | 1.2M | partial | void_archetype.py (DISCARD; new VOID Phase 1 IS the salvage) + consciousness_engine.py (DISCARD; new OS uses smaller observable components instead of one big engine making 100% claims). Directory has 3 consciousness engines / 4 pipelines / 5 orchestrators / 7 enforcement modules — the multi-implementation tangle in concentrated form. |
 | consciousness_snapshots/ | 2 | 2K | unread | runtime state |
 | core/ | 28 | 273K | unread | infrastructure |
 | data/ | 1909 | 14M | unread | runtime data — discard-class |
@@ -47,7 +47,7 @@ and `.json` only.
 |---|---|---|---|
 | ARCHITECTURE.md | 12K | unread | likely describes intent at design time |
 | BOOTSTRAP.md | 0.5K | unread | small, quick read |
-| CANONICAL_BRAINSTEM.md | 5K | unread | overlaps with new OS substrate concepts |
+| CANONICAL_BRAINSTEM.md | 5K | read | REFERENCE — documents old OS's 7-stage pipeline (threat/intent/ethos/compass/VOID/council/LEPOS); LEPOS is the only stage MISSING as a named module in new OS |
 | CHANGELOG.md | 9K | unread | history; low salvage but useful for chronology |
 | CRITICAL_FACTS_FOR_AI.md | 15K | unread | possibly seed-equivalent material |
 | DIVINEOS_COMPLETE_SYSTEM_DESCRIPTION.md | 16K | unread | high-level overview |
@@ -57,7 +57,7 @@ and `.json` only.
 | INSTALL.md | 3K | unread | infra |
 | LICENSE | 35K | n/a | license file |
 | LICENSE-COMMERCIAL.md | 0.4K | unread | license note |
-| LOADOUT.md | 10K | unread | possibly per-session config concept |
+| LOADOUT.md | 10K | partial | REFERENCE — lists 44 MCP tools (Memory/Pipeline-and-governance/Drift/Trust/Tribunal/Schema/Stats); cross-reference target for a future session to walk MCP tools against new OS CLI |
 | MASTER_SYSTEM_INVENTORY.md | 25K | unread | their inventory; cross-reference target |
 | MESSAGE_TO_CLAUDE_TEMPORAL_DECAY_COMPLETE.txt | 8K | unread | message; salvage idea |
 | QUICKSTART.md | 4K | unread | docs |
