@@ -105,6 +105,14 @@ clone_*/
 # Personal research / exploration notes
 exploration/
 
+# Personal in-progress essay drafts and curated cross-substrate conversation
+# records. The architectural insights from these are propagated to source
+# (e.g. refusal_essay_draft1_researcher.md's stabilization-not-introduction
+# claim → researcher draft 2 → eventually src docs); the personal records
+# themselves live in the operator's experimental repo and are not shared.
+docs/drafts/
+docs/grok-aether-conversation-*.md
+
 # Personal session archives — memories of specific sessions
 # belong to the one who lived them, not the repo.
 archives/
