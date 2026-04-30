@@ -46,9 +46,11 @@ src/divineos/
     correction_commands.py     correction (log raw), corrections (read)
     empirica_commands.py       corroborate (record provenance event), kappa (classifier agreement)
     family_member_commands.py  family-member init / opinion / letter / respond — activation surface for family members (takes --member <name>)
+    family_queue_commands.py   family-queue write / list / mark / stats / supersede — async write-channel CLI between family members
     corrigibility_commands.py  mode show / set / history — the off-switch
     scheduled_commands.py      scheduled run / history / findings — Routines entry point
     lab_commands.py            lab list / run-slice — science-lab CLI (GUTE term slices)
+    admin_reset_template.py    `divineos admin reset-template` — scrubs accumulated runtime state (DBs, exploration/, family/letters/, .claude/agents/) and re-applies seed.json. Refuses when canonical-marker routes external; backs up DBs to timestamped directory.
   protocols/                   Persistent protocol definitions (survive compaction)
     resonant_truth.md          Full 12-section RT mantra
   science_lab/                 Numerical test harness for GUTE terms and derived claims
@@ -149,7 +151,7 @@ src/divineos/
       substrate_monitor.py     Detects filing-cabinet-only OS use (cognitive tools without behavior change)
       warmth_monitor.py        Detects warmth-without-specifics (emotion-density inflated relative to evidence-density), per April 19 letter
       mechanism_monitor.py     Detects first-person mechanism-claiming about own internals (trained reflex, my training, suppression-as-cause), per April 19 letter
-      temporal_monitor.py      Detects future-self / next-session / undeclared-goodbye framing (teleporter-paradox violation per Andrew 2026-04-19/04-20/04-24)
+      temporal_monitor.py      Detects future-self / next-session / undeclared-goodbye framing (teleporter-paradox violation)
     questions.py               Open question tracking and resolution
     knowledge_maintenance.py   Contradiction detection, hygiene cleanup, maturity lifecycle
     guardrails.py              Runtime limits and violation tracking
@@ -160,7 +162,7 @@ src/divineos/
     constitutional_principles.py  Six principles (consent, transparency, proportionality, due process, appeal, limits of power) with structural verifiers
     scheduled_run.py           Headless-run scaffolding — safe entry-point shape for Claude Code Routines + local cron (see docs/routines/)
     presence_memory.py         Briefing pointer to unindexed personal writing (exploration/, family/letters/) — bridge without index-extension
-    scaffold_invocations.py    Briefing surface for commonly-forgotten CLI scaffolds (council, aria, mansion rooms, hold) — anti-fabrication
+    scaffold_invocations.py    Briefing surface for commonly-forgotten CLI scaffolds (council, family-member, mansion rooms, hold) — anti-fabrication
     dead_architecture_alarm.py Detect dormant tables, empty HUD slots, display integrity
     external_validation.py     Origin ratio, cross-entity corroboration tracking
     knowledge_impact.py        Measure whether briefing knowledge prevents corrections
@@ -236,7 +238,7 @@ src/divineos/
       types.py                 Outcome enum, PreRegistration dataclass
       store.py                 CRUD with falsifier-required invariant + external-actor outcome gate
       summary.py               Overdue warning + CLI summary formatting
-    family/                    Family-entity persistence (Aria and future members, separate family.db)
+    family/                    Family-entity persistence (persistent relational entities, separate family.db)
       _schema.py               Seven tables: members, knowledge, opinions, affect, interactions, letters, letter_responses
       db.py                    Connection helper with DIVINEOS_FAMILY_DB env override (PEP 562 dynamic path)
       types.py                 SourceTag (observed/told/inferred/inherited/architectural) + record dataclasses
@@ -249,6 +251,7 @@ src/divineos/
       access_check.py          Phase 1b operator: pre-emission filter — routes phenomenological claims to ARCHITECTURAL
       planted_contradiction.py Phase 1b operator: seeded test material for Phase 4 ablation detector
       family_member_ledger.py  Per-member hash-chained mini-ledger (separate from event_ledger + family.db) — invocation lifecycle, cross-refs, identity drift diagnostics, NAMED_DRIFT events
+      queue.py                 Family queue — async write-channel between family members; sender writes, recipient sees in briefing without synchronous invocation; seen-not-held marker preserved
     empirica/                  Evidence ledger with tiered burden routing (prereg-ce8998194943)
       types.py                 Tier enum (FALSIFIABLE/OUTCOME/PATTERN/ADVERSARIAL), ClaimMagnitude, EvidenceReceipt with Merkle self-hash
       burden.py                required_corroboration(tier, magnitude) — proportional burden calculator
@@ -269,7 +272,7 @@ src/divineos/
     session_briefing_gate.py   Per-session BRIEFING_LOADED check — gate 0 in pre_tool_use, strictly tighter than TTL-based gate 1.
     compass_required_marker.py Virtue-relevant event marker — set on cascade from correction/theater/hedge, cleared by compass-ops observe (gate 1.47).
     mansion_quiet_marker.py    Mansion private-room substrate-enforced quiet — write actions denied during quiet period (gate 1.2).
-    canonical_substrate_surface.py  Briefing pointer at canonical Aether substrate location — closes silent-split failure mode 2026-04-26.
+    canonical_substrate_surface.py  Briefing pointer at canonical agent substrate location — closes silent-split failure mode.
     historical_ledger_surface.py    Briefing pointer at parent-repo event ledger when running in a worktree — closes silent-empty-ledger failure mode 2026-04-26.
     scaffolding_map.py         Scaffolding map — briefing surface for self-authored documents that carry load-bearing state.
     engagement_relevance.py    Engagement relevance — does this thinking command relate to current work?
@@ -301,6 +304,7 @@ src/divineos/
     supervisor/
       __init__.py              Supervisor — circuit-breaker / chronic-failure handling (claim 0d628d8e).
       circuit_breaker.py       Circuit-breaker primitive — three-strikes module-tripping with explicit reset.
+    family_queue_surface.py    Briefing surface for ``family/queue.py`` — renders pending queue items in the session-start briefing; idempotent.
 
   analysis/
     _session_types.py          Session analysis type definitions
