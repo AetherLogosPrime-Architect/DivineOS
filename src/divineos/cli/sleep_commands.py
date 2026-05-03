@@ -234,7 +234,16 @@ def register(cli: click.Group) -> None:
                     "total_promoted": report.total_promoted,
                     "affect_decayed": report.affect_decayed,
                     "connections_found": report.connections_found,
+                    "connections_new": report.connections_new,
+                    "connections_already_known": report.connections_already_known,
                     "phase_errors": list(report.phase_errors.keys()),
+                    # Full connection details — not just the displayed top-N.
+                    # Lets `divineos dream show` reveal everything the sleep
+                    # actually discovered, not just what fit in the report.
+                    "connection_details": report.connection_details,
+                    "connection_details_full_count": getattr(
+                        report, "connection_details_full_count", len(report.connection_details)
+                    ),
                 },
                 actor="system",
                 validate=False,

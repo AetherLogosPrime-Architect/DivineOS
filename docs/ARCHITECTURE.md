@@ -39,6 +39,7 @@ src/divineos/
     exploration_commands.py    exploration related / list-territories — territory-tagged surfacing of prior council walks (claim 02f0dcc0)
     audit_commands.py          external validation (Watchmen)
     bio_commands.py            Bio sheet — show, edit, history, write
+    dream_commands.py          Dream CLI — list and show sleep recombinations
     void_commands.py           VOID adversarial-sandbox subsystem commands
     prereg_commands.py         pre-registrations (Goodhart prevention)
     mansion_commands.py        Functional internal space (8 rooms)

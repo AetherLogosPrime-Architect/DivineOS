@@ -211,6 +211,7 @@ from divineos.cli import (  # noqa: E402
     corrigibility_commands,
     decision_commands,
     directive_commands,
+    dream_commands,
     empirica_commands,
     entity_commands,
     event_commands,
@@ -245,6 +246,7 @@ bio_commands.register(cli)
 compass_commands.register(cli)
 body_commands.register(cli)
 directive_commands.register(cli)
+dream_commands.register(cli)
 entity_commands.register(cli)
 memory_commands.register(cli)
 analysis_commands.register(cli)

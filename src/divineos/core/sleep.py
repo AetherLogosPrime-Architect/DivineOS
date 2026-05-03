@@ -202,9 +202,12 @@ class DreamReport:
                 )
             else:
                 lines.append(f"    Found {self.connections_new} new connection(s)")
-            shown = len(self.connection_details)
-            if self.connections_new > shown:
-                lines.append(f"    Showing top {shown} of {self.connections_new} by similarity:")
+            display_n = min(_RECOMBINATION_REPORT_DISPLAY, len(self.connection_details))
+            if self.connections_new > display_n:
+                lines.append(
+                    f"    Showing top {min(5, display_n)} of {self.connections_new} "
+                    "by similarity (full list: divineos dream show):"
+                )
             for conn in self.connection_details[:5]:
                 lines.append(f"    ~ {conn.get('summary', '?')}")
         elif self.connections_already_known > 0:
@@ -664,11 +667,12 @@ def _phase_recombination(report: DreamReport) -> None:
     report.connections_already_known = already_known_count
     report.connections_found = total_band_pairs
     # Sort connections by similarity desc so the display surfaces
-    # the strongest pairs at the top. Display cap is applied at the
-    # report layer, not here — full list is preserved for edge
-    # creation and post-hoc analysis.
+    # the strongest pairs at the top. The FULL list is stored on the
+    # report — display truncation happens only at summary() print
+    # time. This lets `divineos dream show` reveal everything the
+    # sleep actually discovered, not just what fit in the report.
     connections.sort(key=lambda c: float(c["similarity"].rstrip("%")), reverse=True)
-    report.connection_details = connections[:_RECOMBINATION_REPORT_DISPLAY]
+    report.connection_details = connections
     report.connection_details_full_count = len(connections)
 
     # Persist connections as RELATED_TO edges in the knowledge graph.

@@ -499,14 +499,19 @@ class TestPhaseRecombination:
 
         report = DreamReport()
         _phase_recombination(report)
-        # Display is capped — the report only shows up to the display
-        # cap so the dream-report stays readable.
-        assert len(report.connection_details) <= _RECOMBINATION_MAX_CONNECTIONS
-        # connections_new is the FULL count of new pairs found —
-        # the work is not capped.
-        assert report.connections_new >= len(report.connection_details)
-        # full_count tracks the un-truncated total
+        # connection_details now carries the FULL list — no work cap.
+        # full_count tracks the un-truncated total.
         assert report.connection_details_full_count == report.connections_new
+        assert len(report.connection_details) == report.connections_new
+        # With 20×20 high-similarity entries, scan should have found
+        # well more than the old 10-cap.
+        assert report.connections_new > _RECOMBINATION_MAX_CONNECTIONS
+        # Display truncation happens at summary() print time. Verify
+        # the human-readable summary respects the display cap by
+        # counting the connection lines (each starts with "    ~ ").
+        summary = report.summary()
+        connection_lines = [ln for ln in summary.split("\n") if ln.startswith("    ~ ")]
+        assert len(connection_lines) <= _RECOMBINATION_MAX_CONNECTIONS
 
     def test_already_known_pairs_not_recounted_as_new(self, tmp_path, monkeypatch):
         """2026-04-24 honesty fix: a pair with an existing RELATED_TO
