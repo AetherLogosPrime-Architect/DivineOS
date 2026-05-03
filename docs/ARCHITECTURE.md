@@ -349,16 +349,11 @@ src/divineos/
     tone_tracking.py           Tone shift detection and classification
     feature_storage.py         Feature result DB storage
     audit_classifier.py        Test quality audit (data/assertion/coverage classification)
-  agent_integration/           Agent self-observation: tool-call events → session lessons → pattern feedback. The "observing myself" side. Distinct from integration/ which handles external systems.
+  agent_integration/           Agent self-observation: feedback generation and outcome measurement for the session pipeline.
     types.py                   Type definitions
     outcome_measurement.py     Rework, churn, correction rate, session health
-    learning_cycle.py          Pattern extraction and confidence updates
-    learning_audit_store.py    Learning audit trail storage
-    decision_store.py          Decision persistence
     feedback_system.py         Feedback processing
-    pattern_store.py           Pattern persistence
-    pattern_validation.py      Pattern validation checks
-  clarity_system/              Pre-work/post-work clarity statements (plan → execute → deviation → learning). Work-cycle scope. Distinct from clarity_enforcement/ which is per-tool-call.
+  clarity_system/              Pre-work/post-work clarity statements (plan → execute → deviation → learning). Work-cycle scope.
     base.py                    Clarity system base
     types.py                   Type definitions
     clarity_generator.py       Clarity statement generation
@@ -372,12 +367,6 @@ src/divineos/
     hook_integration.py        Hook execution integration
     learning_extractor.py      Learning extraction from clarity
     ledger_integration.py      Ledger integration
-  clarity_enforcement/         Real-time tool-call clarity gate: BLOCKING / LOGGING / PERMISSIVE modes. Per-call scope. Distinct from clarity_system/ which operates across a full work cycle.
-    config.py                  Clarity configuration
-    enforcer.py                Enforcement engine
-    semantic_analyzer.py       Semantic analysis
-    violation_detector.py      Violation detection
-    violation_logger.py        Violation logging
   event/                       Event types, dispatch, capture
     _event_context.py          Event context management
     event_capture.py           Event capture pipeline
@@ -385,24 +374,15 @@ src/divineos/
     event_emission.py          Event emission API
     event_validation.py        Event payload validation
   hooks/                       Hook integration
-    clarity_enforcement.py     Clarity enforcement hooks
+    clarity_enforcement.py     Clarity enforcement engine (AGENT_RUNTIME — invoked from .claude/hooks/, not from the CLI pipeline)
     pre_tool_use_gate.py       PreToolUse consolidated gate (bypass, briefing, goal, pull, engagement, cadence) — single-process replacement for require-goal.sh Python spawn chain
     post_tool_use_checkpoint.py  PostToolUse consolidated checkpoint (state, counters, warnings, nudges) — single-process replacement for session-checkpoint.sh spawn chain
     targeted_tests.py          PostToolUse targeted test runner — maps edited source file to corresponding test file, runs only that (full suite stays on pre-commit)
     hook_diagnostics.py        Hook health diagnostics
     hook_validator.py          Hook validation
-  integration/                 External integration: IDE, MCP tool capture, enforcement facade (thin re-exports from core.enforcement / core.tool_wrapper). The "integrating with other systems" side — distinct from agent_integration/ which observes the agent itself.
+  integration/                 External integration: IDE, MCP tool capture, enforcement facade (thin re-exports from core.enforcement / core.tool_wrapper).
     mcp_event_capture_server.py  MCP event capture server
     system_monitor.py          System health monitoring
-  supersession/                Contradiction detection and resolution
-    clarity_integration.py     Clarity system integration
-    contradiction_detector.py  Contradiction detection
-    event_integration.py       Event system integration
-    ledger_integration.py      Ledger integration
-    query_interface.py         Query API
-    resolution_engine.py       Resolution strategies
-  violations_cli/              Violation reporting CLI
-    violations_command.py      Violation report commands
 tests/                         4,721+ tests (real DB, minimal mocks)
 
 docs/                          Project documentation and strategic plans
