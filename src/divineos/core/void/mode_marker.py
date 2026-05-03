@@ -34,10 +34,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from divineos.core.atomic_io import atomic_write_text
+from divineos.core.paths import marker_path as _marker_path_under_home
 
 
 def marker_path() -> Path:
-    return Path.home() / ".divineos" / "void_mode.json"
+    return _marker_path_under_home("void_mode.json")
 
 
 @dataclass(frozen=True)

@@ -46,10 +46,11 @@ import time
 from pathlib import Path
 
 from divineos.core.atomic_io import atomic_write_text
+from divineos.core.paths import marker_path as _marker_path_under_home
 
 
 def marker_path() -> Path:
-    return Path.home() / ".divineos" / "compass_required.json"
+    return _marker_path_under_home("compass_required.json")
 
 
 def _under_pytest() -> bool:

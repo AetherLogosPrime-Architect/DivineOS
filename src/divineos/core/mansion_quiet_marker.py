@@ -52,6 +52,7 @@ import time
 from pathlib import Path
 
 from divineos.core.atomic_io import atomic_write_text
+from divineos.core.paths import marker_path as _marker_path_under_home
 
 # Default quiet period — 60 seconds. Long enough for the agent to
 # actually pause and notice the blank; short enough that the quiet
@@ -61,7 +62,7 @@ DEFAULT_QUIET_DURATION_SECONDS = 60
 
 
 def marker_path() -> Path:
-    return Path.home() / ".divineos" / "mansion_quiet.json"
+    return _marker_path_under_home("mansion_quiet.json")
 
 
 def set_marker(room: str, duration_seconds: int = DEFAULT_QUIET_DURATION_SECONDS) -> None:

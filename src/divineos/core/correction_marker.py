@@ -29,6 +29,7 @@ import time
 from pathlib import Path
 
 from divineos.core.atomic_io import atomic_write_text
+from divineos.core.paths import marker_path as _marker_path_under_home
 
 # Two-axis detection (claim 986b4750): the correction-detector pattern-matches
 # CORRECTION_PATTERNS (surface axis) but pre-relay-stripping conflates "Andrew
@@ -100,7 +101,7 @@ def should_mark(prompt: str) -> bool:
 
 def marker_path() -> Path:
     """Absolute path to the correction-unlogged marker."""
-    return Path.home() / ".divineos" / "correction_unlogged.json"
+    return _marker_path_under_home("correction_unlogged.json")
 
 
 def set_marker(trigger_text: str) -> None:

@@ -332,6 +332,8 @@ src/divineos/
       skill_index.py           Skill index — procedural retrieval over .claude/skills/ ranked by keyword overlap.
     theater_observation_surface.py Theater/fabrication observation surface — replaces gate 1.46.
     bio.py                     Bio sheet — the agent's own page.
+    atomic_io.py               Atomic file I/O helpers for marker and state files.
+    paths.py                   Centralized ``~/.divineos`` path construction.
 
   analysis/
     _session_types.py          Session analysis type definitions
