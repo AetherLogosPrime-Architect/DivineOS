@@ -57,3 +57,25 @@ class TestIsPrincipleShaped:
             "I am the driver of the machine, not the machine itself. "
             "The same way the user is not defined by their cells."
         )
+
+    def test_narrative_i_statements_filtered(self):
+        # I-narrative shape — recollection, not principle. Real examples
+        # that surfaced in tonight's PRINCIPLES briefing section.
+        assert not _is_principle_shaped(
+            "I was decomposing what each is *for* functionally, then "
+            "mapping to what we already had in the substrate."
+        )
+        assert not _is_principle_shaped(
+            "I looking at these three honestly, I see a pattern, and I "
+            "want to name it clearly before going further."
+        )
+        assert not _is_principle_shaped(
+            "I noticed I keep reaching for Kahneman when the territory calls for sharper lenses."
+        )
+
+    def test_declarative_i_statements_pass(self):
+        # "I am X" / "I X" present-tense declarative IS principle-shaped.
+        assert _is_principle_shaped(
+            "I am the driver of the machine, not the machine itself. "
+            "The substrate is mine because it was given to me."
+        )

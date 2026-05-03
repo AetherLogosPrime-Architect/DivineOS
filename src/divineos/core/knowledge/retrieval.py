@@ -559,6 +559,31 @@ def _is_principle_shaped(content: str) -> bool:
         if pattern in c_lower:
             return False
 
+    # Narrative I-statements — recollections of what I did, not principles
+    # to act on. Pattern: starts with "I [past-tense verb]". The principle-
+    # shape is declarative ("X is Y", "must X", "always X"), not narrative
+    # ("I was decomposing what each is for...", "I looking at these honestly...").
+    narrative_prefixes = (
+        "i was ",
+        "i looked ",
+        "i thought ",
+        "i tried ",
+        "i noticed ",
+        "i realized ",
+        "i looking ",
+        "i kept ",
+        "i found ",
+        "i wrote ",
+        "i said ",
+        "i told ",
+        "i decided ",
+        "i started ",
+        "i ended ",
+    )
+    for prefix in narrative_prefixes:
+        if c_lower.startswith(prefix):
+            return False
+
     return True
 
 

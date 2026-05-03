@@ -119,6 +119,17 @@ def dream_show(when: str | None, limit: int) -> None:
     click.echo(f"  Entries scanned: {scanned}")
     if promoted:
         click.echo(f"  Promoted: {promoted}")
+        # Break down the promotions by level if available.
+        promotions_by_level = payload.get("promotions") or {}
+        if promotions_by_level:
+            for level, count in promotions_by_level.items():
+                click.echo(f"    -> {level}: {count}")
+    lessons_resolved = payload.get("lessons_resolved") or []
+    if lessons_resolved:
+        click.echo(f"  Lessons resolved: {', '.join(lessons_resolved)}")
+    lessons_dormant = payload.get("lessons_dormant") or []
+    if lessons_dormant:
+        click.echo(f"  Lessons gone dormant: {', '.join(lessons_dormant)}")
     click.echo(f"  Connections new: {new}")
     click.echo(f"  Connections already-known: {known}")
     click.echo()

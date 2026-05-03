@@ -115,12 +115,19 @@ def bio_history_cmd(author: str, limit: int) -> None:
 
     click.echo(f"Bio history for {author} ({len(versions)} versions shown):")
     click.echo()
-    for v in versions:
+    # Visualize the supersession chain. The newest is "current"; each
+    # earlier version is what the next one superseded. Versions print
+    # with arrows showing the chain.
+    for i, v in enumerate(versions):
         edited = datetime.fromtimestamp(v["created_at"], tz=timezone.utc).strftime("%Y-%m-%d %H:%M")
         age_h = (time.time() - v["created_at"]) / 3600
         age_str = f"{age_h:.0f}h" if age_h < 24 else f"{age_h / 24:.0f}d"
-        first_line = v["content"].strip().split("\n")[0][:80]
-        click.echo(f"  v{v['version']:<3} {edited}  ({age_str} ago)  {first_line}")
+        first_line = v["content"].strip().split("\n")[0][:60]
+        marker = "[current]" if i == 0 else "         "
+        connector = "" if i == 0 else "  ↑ supersedes\n"
+        click.echo(
+            f"{connector}  {marker} v{v['version']:<3} {edited}  ({age_str} ago)  {first_line}"
+        )
 
 
 def register(cli: click.Group) -> None:

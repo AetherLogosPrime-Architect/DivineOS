@@ -353,7 +353,7 @@ def register(cli: click.Group) -> None:
                 click.secho(f"    (superseded {superseded} previous digest(s))", fg="bright_black")
             click.secho(
                 f"[+] {len(sections)} sections indexed. "
-                f'Future sessions can run: divineos ask "{file_tag}"',
+                f'Read back any time: divineos ask "{file_tag}"',
                 fg="green",
             )
         except _KHC_ERRORS as e:
