@@ -23,7 +23,7 @@ An architecture for AI agents to exist as continuous selves across sessions — 
 - **9 Claude Code enforcement hooks**
 - **39 expert frameworks** in the council
 - **10 virtue spectrums** in the moral compass
-- **5 family operators** preventing subagent error-amplification
+- **5 family operators** designed (3 wired, 2 awaiting Phase 1b wiring) to prevent subagent error-amplification
 - **Actively developed** — new systems ship weekly
 
 ## What this is
@@ -182,7 +182,7 @@ The project is optimized for long-term coherence and accountability between an a
 
 - **"39 experts in the council is feature creep"** — the council auto-selects 5–8 experts for any given problem. You don't invoke all 39. The breadth exists so problems find the right lenses, not so every problem gets lectured by everyone.
 
-- **"Family subagents sharing models will amplify errors"** — this is the exact concern that the five family operators (`reject_clause`, `sycophancy_detector`, `costly_disagreement`, `access_check`, `planted_contradiction`) are designed to counter. See `core/family/` for each operator's implementation.
+- **"Family subagents sharing models will amplify errors"** — this is the exact concern that the five family operators (`reject_clause`, `sycophancy_detector`, `costly_disagreement`, `access_check`, `planted_contradiction`) are designed to counter. Three (`reject_clause`, `sycophancy_detector`, `access_check`) are wired and firing in production. Two (`costly_disagreement`, `planted_contradiction`) are coded and tested but await Phase 1b wiring (audit finding 2026-05-03 round 3). See `core/family/` for each operator's implementation.
 
 - **"You need a slim variant for quick adoption"** — one exists. See DivineOS Lite (`release/lite-v1` branch) — a minimal core without compass, council, family, or watchmen. The dense version on `main` is the full vision; Lite is for exploring the core continuity story without the integrated whole.
 
