@@ -24,6 +24,7 @@ from pathlib import Path
 
 from divineos.core._hud_io import _ensure_hud_dir, _get_hud_dir
 from divineos.core.ledger import log_event
+from divineos.core.atomic_io import atomic_write_text
 
 # -- Pull Markers --------------------------------------------------------
 #
@@ -344,7 +345,7 @@ def _write_check_marker(result: PullCheck) -> None:
         "soft_markers": result.soft_markers,
         "checked_at": result.checked_at,
     }
-    (hud_dir / _PULL_CHECK_MARKER).write_text(json.dumps(data), encoding="utf-8")
+    atomic_write_text((hud_dir / _PULL_CHECK_MARKER), json.dumps(data))
 
 
 def last_check() -> PullCheck | None:

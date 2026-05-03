@@ -25,6 +25,7 @@ from divineos.core.claim_store import count_claims
 from divineos.core.decision_journal import count_decisions, get_paradigm_shifts
 from divineos.core.growth import compute_growth_map
 from divineos.core.knowledge import get_connection, get_lessons
+from divineos.core.atomic_io import atomic_write_text
 
 
 def get_memory_dir() -> Path | None:
@@ -255,7 +256,7 @@ def _update_memory_index(memory_dir: Path, results: dict[str, bool]) -> None:
                 changed = True
 
     if changed:
-        index_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        atomic_write_text(index_path, "\n".join(lines) + "\n")
 
 
 def _write_if_changed(path: Path, content: str) -> bool:
@@ -264,7 +265,7 @@ def _write_if_changed(path: Path, content: str) -> bool:
         existing = path.read_text(encoding="utf-8")
         if existing.strip() == content.strip():
             return False
-    path.write_text(content, encoding="utf-8")
+    atomic_write_text(path, content)
     return True
 
 

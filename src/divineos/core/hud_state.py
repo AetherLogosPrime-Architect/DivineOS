@@ -12,6 +12,7 @@ from loguru import logger
 
 from divineos.core._hud_io import _ensure_hud_dir
 from divineos.core.constants import SECONDS_PER_DAY
+from divineos.core.atomic_io import atomic_write_text
 
 _HS_ERRORS = (
     ImportError,
@@ -33,7 +34,7 @@ def update_goals(goals: list[dict[str, str]]) -> None:
     Each goal: {"text": "...", "original_words": "...", "status": "active"|"done"}
     """
     path = _ensure_hud_dir() / "active_goals.json"
-    path.write_text(json.dumps(goals, indent=2), encoding="utf-8")
+    atomic_write_text(path, json.dumps(goals, indent=2))
 
 
 def update_session_health(
@@ -51,14 +52,14 @@ def update_session_health(
         "notes": notes,
         "updated_at": time.time(),
     }
-    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    atomic_write_text(path, json.dumps(data, indent=2))
 
 
 def update_context_budget(used_pct: int) -> None:
     """Update context budget percentage."""
     path = _ensure_hud_dir() / "context_budget.json"
     data = {"used_pct": used_pct, "updated_at": time.time()}
-    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    atomic_write_text(path, json.dumps(data, indent=2))
 
 
 def update_task_state(
@@ -89,7 +90,7 @@ def update_task_state(
         "blocked": blocked,
         "updated_at": time.time(),
     }
-    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    atomic_write_text(path, json.dumps(data, indent=2))
 
 
 def get_active_goals() -> list[dict[str, Any]]:
@@ -136,7 +137,7 @@ def add_goal(text: str, original_words: str = "") -> None:
         "added_at": time.time(),
     }
     goals.append(goal_entry)
-    path.write_text(json.dumps(goals, indent=2), encoding="utf-8")
+    atomic_write_text(path, json.dumps(goals, indent=2))
 
 
 def _increment_lifetime_goals(count: int = 1) -> None:
@@ -188,7 +189,7 @@ def complete_goal(text: str) -> bool:
             break
 
     if found:
-        path.write_text(json.dumps(goals, indent=2), encoding="utf-8")
+        atomic_write_text(path, json.dumps(goals, indent=2))
         _increment_lifetime_goals(1)
     return found
 
@@ -222,7 +223,7 @@ def _record_goal_outcome(goal: dict[str, Any], outcome: str) -> None:
     # Cap at 200 entries to prevent unbounded growth — the surface
     # only reads recent entries anyway.
     outcomes = outcomes[-200:]
-    path.write_text(json.dumps(outcomes, indent=2), encoding="utf-8")
+    atomic_write_text(path, json.dumps(outcomes, indent=2))
 
 
 def auto_clean_goals(max_age_days: float = 1.0) -> dict[str, int]:
@@ -307,7 +308,7 @@ def auto_clean_goals(max_age_days: float = 1.0) -> dict[str, int]:
     if changed:
         # Remove any newly-marked-done goals too
         goals = [g for g in goals if g.get("status") != "done"]
-        path.write_text(json.dumps(goals, indent=2), encoding="utf-8")
+        atomic_write_text(path, json.dumps(goals, indent=2))
 
     return {
         "stale_archived": stale_archived,
@@ -360,7 +361,7 @@ def set_session_plan(
         "estimated_time_minutes": estimated_time_minutes,
         "created_at": time.time(),
     }
-    path.write_text(json.dumps(plan, indent=2), encoding="utf-8")
+    atomic_write_text(path, json.dumps(plan, indent=2))
 
 
 def get_session_plan() -> dict[str, Any] | None:

@@ -26,6 +26,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from divineos.core.atomic_io import atomic_write_text
+
 _INTERRUPT_ERRORS = (OSError, json.JSONDecodeError, KeyError, TypeError)
 
 # Cooldown: don't fire the same interrupt more than once per N seconds
@@ -54,7 +56,7 @@ def _load_state() -> dict[str, Any]:
 def _save_state(state: dict[str, Any]) -> None:
     """Save interrupt state."""
     try:
-        _state_path().write_text(json.dumps(state), encoding="utf-8")
+        atomic_write_text(_state_path(), json.dumps(state))
     except _INTERRUPT_ERRORS:
         pass
 

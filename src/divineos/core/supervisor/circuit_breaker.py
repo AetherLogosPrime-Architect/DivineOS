@@ -31,6 +31,8 @@ of trip / reset; this module's JSON is the running counter.
 
 from __future__ import annotations
 
+from divineos.core.atomic_io import atomic_write_text
+
 import json
 import time
 from pathlib import Path
@@ -62,7 +64,7 @@ def _load_state() -> dict[str, dict]:
 def _save_state(state: dict[str, dict]) -> None:
     path = _state_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+    atomic_write_text(path, json.dumps(state, indent=2))
 
 
 def _ensure_entry(state: dict[str, dict], name: str) -> dict:

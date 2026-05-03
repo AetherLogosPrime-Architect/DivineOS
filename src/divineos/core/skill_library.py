@@ -16,6 +16,7 @@ import time
 from typing import Any
 
 from divineos.core._hud_io import _ensure_hud_dir
+from divineos.core.atomic_io import atomic_write_text
 
 _SL_ERRORS = (ImportError, OSError, json.JSONDecodeError, KeyError, TypeError, ValueError)
 
@@ -81,7 +82,7 @@ def _load_skills() -> dict[str, dict[str, Any]]:
 def _save_skills(skills: dict[str, dict[str, Any]]) -> None:
     """Save skill library to disk."""
     path = _ensure_hud_dir() / _SKILLS_FILE
-    path.write_text(json.dumps(skills, indent=2), encoding="utf-8")
+    atomic_write_text(path, json.dumps(skills, indent=2))
 
 
 # ─── Skill Operations ─────────────────────────────────────────────

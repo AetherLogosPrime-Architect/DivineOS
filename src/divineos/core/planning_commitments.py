@@ -18,6 +18,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from divineos.core._hud_io import _ensure_hud_dir
+from divineos.core.atomic_io import atomic_write_text
 
 _PC_ERRORS = (ImportError, OSError, json.JSONDecodeError, KeyError, TypeError, ValueError)
 
@@ -105,7 +106,7 @@ def _load_commitments() -> list[dict[str, Any]]:
 def _save_commitments(commitments: list[dict[str, Any]]) -> None:
     """Save commitments to disk."""
     path = _ensure_hud_dir() / _COMMITMENTS_FILE
-    path.write_text(json.dumps(commitments, indent=2), encoding="utf-8")
+    atomic_write_text(path, json.dumps(commitments, indent=2))
 
 
 def add_commitment(text: str, context: str = "") -> Commitment:

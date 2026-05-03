@@ -45,6 +45,7 @@ from divineos.core.drift_detection import (
 from divineos.core.memory import get_core
 from divineos.core.planning_commitments import get_pending_commitments
 from divineos.core.skill_library import get_strongest_skills, get_weakest_skills
+from divineos.core.atomic_io import atomic_write_text
 
 _SELF_MODEL_ERRORS = (
     sqlite3.OperationalError,
@@ -74,8 +75,8 @@ def _persist_completeness(completeness: dict[str, Any]) -> None:
         from divineos.core._hud_io import _ensure_hud_dir
 
         hud_dir = _ensure_hud_dir()
-        (hud_dir / "self_model_completeness.json").write_text(
-            json.dumps(completeness, indent=2), encoding="utf-8"
+        atomic_write_text(
+            (hud_dir / "self_model_completeness.json"), json.dumps(completeness, indent=2)
         )
     except OSError as e:
         logger.debug("Could not persist self-model completeness: %s", e)

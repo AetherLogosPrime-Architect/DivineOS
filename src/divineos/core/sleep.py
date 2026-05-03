@@ -26,6 +26,8 @@ from typing import Any
 
 from loguru import logger
 
+from divineos.core.atomic_io import atomic_write_text
+
 # Pre-compiled at module load: detects "(session abcd1234)" suffix used by
 # tone-shift extraction in lessons.py. Used by _phase_recombination to skip
 # session-specific entries from cross-knowledge mining.
@@ -784,7 +786,7 @@ def _phase_lesson_rehearsal(report: DreamReport) -> None:
             from divineos.core._hud_io import _ensure_hud_dir
 
             path = _ensure_hud_dir() / "lesson_rehearsals.json"
-            path.write_text(json.dumps(rehearsals, indent=2), encoding="utf-8")
+            atomic_write_text(path, json.dumps(rehearsals, indent=2))
             report.lessons_rehearsed = len(rehearsals)
 
     except _SLEEP_ERRORS as e:

@@ -18,6 +18,7 @@ from divineos.core._hud_io import _ensure_hud_dir, _get_hud_dir
 from divineos.core.constants import TIME_HANDOFF_EXPIRY_HOURS
 from divineos.core.hud_state import has_session_fresh_goal
 from divineos.core.ledger import count_events
+from divineos.core.atomic_io import atomic_write_text
 
 _HH_ERRORS = (
     ImportError,
@@ -94,7 +95,7 @@ def save_handoff_note(
         note["next_steps"] = next_steps
     if context_snapshot:
         note["context_snapshot"] = context_snapshot
-    path.write_text(json.dumps(note, indent=2), encoding="utf-8")
+    atomic_write_text(path, json.dumps(note, indent=2))
     logger.debug("Handoff note saved to %s", path)
     return path
 
@@ -229,7 +230,7 @@ def mark_engaged(tool: str = "", query: str = "") -> None:
         "last_tool": tool,
         "deep_actions_since": new_deep,
     }
-    path.write_text(json.dumps(marker), encoding="utf-8")
+    atomic_write_text(path, json.dumps(marker))
 
 
 def record_code_action() -> None:
@@ -262,7 +263,7 @@ def record_code_action() -> None:
         # claim-a7370b — structural enforcement of periodic compass use.
         marker["compass_actions_since"] = marker.get("compass_actions_since", 0) + 1
         marker["last_action_at"] = time.time()
-        path.write_text(json.dumps(marker), encoding="utf-8")
+        atomic_write_text(path, json.dumps(marker))
     except (json.JSONDecodeError, OSError) as e:
         logger.debug("Engagement marker update failed: %s", e)
 
@@ -285,7 +286,7 @@ def reset_compass_actions_counter() -> None:
             return
         marker["compass_actions_since"] = 0
         marker["last_compass_obs_at"] = time.time()
-        path.write_text(json.dumps(marker), encoding="utf-8")
+        atomic_write_text(path, json.dumps(marker))
     except (json.JSONDecodeError, OSError) as e:
         logger.debug("Compass counter reset failed: %s", e)
 
@@ -554,7 +555,7 @@ def mark_briefing_loaded() -> None:
         "loaded_at": now,
         "tool_calls_at_load": tool_calls,
     }
-    (hud_dir / ".briefing_loaded").write_text(json.dumps(marker), encoding="utf-8")
+    atomic_write_text((hud_dir / ".briefing_loaded"), json.dumps(marker))
 
     # Log to ledger for cross-session tracking
     try:

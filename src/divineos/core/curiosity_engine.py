@@ -15,6 +15,7 @@ from typing import Any
 
 from divineos.core._hud_io import _ensure_hud_dir
 from divineos.core.constants import SECONDS_PER_DAY
+from divineos.core.atomic_io import atomic_write_text
 
 _CE_ERRORS = (ImportError, OSError, json.JSONDecodeError, KeyError, TypeError, ValueError)
 
@@ -41,7 +42,7 @@ def _load_curiosities() -> list[dict[str, Any]]:
 def _save_curiosities(curiosities: list[dict[str, Any]]) -> None:
     """Save curiosities to disk."""
     path = _ensure_hud_dir() / _CURIOSITIES_FILE
-    path.write_text(json.dumps(curiosities, indent=2), encoding="utf-8")
+    atomic_write_text(path, json.dumps(curiosities, indent=2))
 
 
 # ─── Operations ────────────────────────────────────────────────────

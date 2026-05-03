@@ -13,6 +13,8 @@ The hooks become optional scaffolding. The OS works without them.
 
 import atexit
 import json
+
+from divineos.core.atomic_io import atomic_write_text
 import sqlite3
 import time
 from pathlib import Path
@@ -55,7 +57,7 @@ def _load_state() -> dict[str, Any]:
 def _save_state(state: dict[str, Any]) -> None:
     """Persist lifecycle state."""
     try:
-        _state_path().write_text(json.dumps(state, indent=2), encoding="utf-8")
+        atomic_write_text(_state_path(), json.dumps(state, indent=2))
     except OSError as e:
         logger.debug(f"Could not save lifecycle state: {e}")
 

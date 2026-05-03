@@ -17,6 +17,7 @@ import click
 
 from divineos.core._hud_io import _ensure_hud_dir, _get_hud_dir
 from divineos.core.ledger import log_event
+from divineos.core.atomic_io import atomic_write_text
 
 # Protocol lives next to its package, not in runtime data.
 _PROTOCOL_DIR = Path(__file__).resolve().parent.parent / "protocols"
@@ -51,7 +52,7 @@ def load_protocol() -> str:
         "source": str(_PROTOCOL_FILE),
         "length": len(text),
     }
-    (hud_dir / _RT_LOADED_MARKER).write_text(json.dumps(marker), encoding="utf-8")
+    atomic_write_text((hud_dir / _RT_LOADED_MARKER), json.dumps(marker))
 
     log_event(
         "RT_LOADED",
@@ -83,7 +84,7 @@ def invoke_rt() -> str:
     marker = {
         "activated_at": time.time(),
     }
-    (hud_dir / _RT_ACTIVE_MARKER).write_text(json.dumps(marker), encoding="utf-8")
+    atomic_write_text((hud_dir / _RT_ACTIVE_MARKER), json.dumps(marker))
 
     log_event(
         "RT_INVOKED",

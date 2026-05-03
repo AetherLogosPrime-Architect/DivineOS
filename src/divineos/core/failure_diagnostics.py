@@ -27,6 +27,8 @@ surfacing.
 
 from __future__ import annotations
 
+from divineos.core.atomic_io import atomic_write_text
+
 import json
 import time
 from pathlib import Path
@@ -85,7 +87,7 @@ def _truncate_if_needed(path: Path) -> None:
         return
     try:
         kept = lines[-_MAX_ENTRIES_PER_SURFACE:]
-        path.write_text("\n".join(kept) + "\n", encoding="utf-8")
+        atomic_write_text(path, "\n".join(kept) + "\n")
     except OSError:
         pass
 

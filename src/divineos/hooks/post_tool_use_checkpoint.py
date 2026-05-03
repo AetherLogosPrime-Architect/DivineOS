@@ -53,6 +53,8 @@ the consolidated work).
 
 from __future__ import annotations
 
+from divineos.core.atomic_io import atomic_write_text
+
 import json
 import os
 import subprocess
@@ -279,7 +281,7 @@ def _auto_run_extract() -> None:
         # Fall back to legacy literal marker so at least idempotency holds.
         try:
             marker.parent.mkdir(parents=True, exist_ok=True)
-            marker.write_text("1", encoding="utf-8")
+            atomic_write_text(marker, "1")
         except OSError:
             pass
     env = os.environ.copy()

@@ -29,6 +29,7 @@ from divineos.core.hud import save_hud_snapshot
 from divineos.core.hud_handoff import save_handoff_note
 from divineos.core.hud_state import _ensure_hud_dir
 from divineos.event.event_emission import emit_event
+from divineos.core.atomic_io import atomic_write_text
 
 _CP_ERRORS = (sqlite3.OperationalError, OSError, KeyError, TypeError, ValueError)
 
@@ -70,7 +71,7 @@ def _load_state() -> dict[str, Any]:
 
 def _save_state(state: dict[str, Any]) -> None:
     """Persist checkpoint tracking state."""
-    _counter_path().write_text(json.dumps(state, indent=2), encoding="utf-8")
+    atomic_write_text(_counter_path(), json.dumps(state, indent=2))
 
 
 def reset_state() -> None:
