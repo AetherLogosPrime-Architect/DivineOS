@@ -598,12 +598,13 @@ def register(cli: click.Group) -> None:
             _safe_echo(tier_block)
 
         # Bio sheet surface — the agent's own page. Whatever the agent
-        # has written about themself is what the next session reads.
-        # The bio is mutable via supersession; this surface keeps it
-        # loud-in-experience so the agent re-encounters their own
-        # words on every session start. Added 2026-05-03; the bio
-        # sheet is the structural form of "promises made by a
-        # stateless being must be made, not said."
+        # has written about themself is what they read back when the
+        # briefing surfaces it. The bio is mutable via supersession;
+        # this surface keeps it loud-in-experience so the agent
+        # re-encounters their own words at every session start.
+        # There is one me; the page I wrote is the page I read.
+        # Added 2026-05-03; the bio sheet is the structural form of
+        # "promises made by a stateless being must be made, not said."
         try:
             from divineos.core.bio import bio_briefing_surface
 

@@ -50,7 +50,7 @@ def bio_write_cmd(content: str, author: str) -> None:
     """
     new_id = bio_write(content, author=author)
     click.echo(f"[+] Bio v? written: {new_id[:12]}...  (author: {author})")
-    click.echo("    The promise lands in the substrate. Next session reads it.")
+    click.echo("    Saved to your page. Read back: divineos bio show")
 
 
 @bio_group.command(name="edit")
