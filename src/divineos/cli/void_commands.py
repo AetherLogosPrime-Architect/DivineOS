@@ -39,24 +39,50 @@ _SEVERITY_COLORS = {
 
 
 def _stub_attack(persona, target):
-    """Phase 1 placeholder: emit a default-severity stub finding so the
-    lifecycle plumbing is exercised end-to-end. Phase 2 replaces this
-    with persona-prompt assembly + LLM adjudication.
+    """Phase 1 placeholder: emit a stub finding so the lifecycle
+    plumbing is exercised end-to-end. Phase 2 replaces this with
+    persona-prompt assembly + LLM adjudication.
+
+    Audit finding 2026-05-03 round 8: stub findings used to inherit
+    the persona's ``severity_default`` (MEDIUM/LOW per persona),
+    which made them indistinguishable from real adversarial findings
+    in any briefing surface that filters by severity. A stub has no
+    evidence behind its severity — there's no actual attack-prompt
+    adjudication, just lifecycle exercise. Force ALL stub findings
+    to LOW regardless of persona default, so any future severity-
+    threshold filter naturally excludes them.
     """
-    severity = persona.severity_default
-    if persona.name == "mirror" and severity not in {Severity.LOW, Severity.MEDIUM}:
-        severity = Severity.LOW  # mirror is clarification-only
     return Finding(
         persona=persona.name,
         target=target,
-        severity=severity,
+        # Stub findings are LOW regardless of persona default. Phase 2
+        # will use ``persona.severity_default`` and produce real findings.
+        severity=Severity.LOW,
         title=f"[stub] {persona.name} ran against {target}",
         body=(
             "Phase 1 stub finding. The lifecycle (TRAP/ATTACK/EXTRACT/"
             "SEAL/SHRED) ran end-to-end. Phase 2 will attach real "
-            "persona-attack adjudication."
+            "persona-attack adjudication. Severity forced to LOW "
+            "because no real attack was adjudicated."
         ),
         tags=["phase1-stub"],
+    )
+
+
+def _emit_phase1_banner() -> None:
+    """Print a one-time warning when running stub-attack commands so
+    the operator isn't misled into thinking a real adversarial review
+    happened."""
+    _safe_echo(
+        click.style(
+            "(!) Phase 1 — stub attacks only. These findings exercise "
+            "the lifecycle plumbing\n"
+            "    (TRAP/ATTACK/EXTRACT/SEAL/SHRED) but do not represent "
+            "real adversarial review.\n"
+            "    Phase 2 will wire persona-attack adjudication. All "
+            "stub findings filed at LOW.",
+            fg="yellow",
+        )
     )
 
 
@@ -105,6 +131,7 @@ def register(cli: click.Group) -> None:
     )
     def _test(target: str, persona_name: str, allow_high_bar: bool) -> None:
         """Run a single persona against TARGET (Phase 1 stub attack)."""
+        _emit_phase1_banner()
         try:
             result = engine.run(
                 persona_name,
@@ -125,6 +152,7 @@ def register(cli: click.Group) -> None:
     )
     def _test_deep(target: str, allow_high_bar: bool) -> None:
         """Run all personas against TARGET (Phase 1 stub attacks)."""
+        _emit_phase1_banner()
         for p in load_all():
             if p.invocation_bar == "high" and not allow_high_bar:
                 _safe_echo(
