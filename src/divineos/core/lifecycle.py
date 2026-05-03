@@ -151,6 +151,32 @@ def enforce(command: str = "") -> None:
         session_stale = (now - session_start) > _SESSION_STALE_SECONDS if session_start else True
 
         if not session_start or session_stale:
+            # Audit r9-21 #34: if the previous session expired stale
+            # without emitting SESSION_END (SIGKILL, OOM, power loss),
+            # write a SESSION_END_INFERRED event so the ledger reflects
+            # the boundary even though atexit didn't fire. The ledger
+            # is append-only — a missing SESSION_END is permanently
+            # missing without this synthetic recovery.
+            if session_start and session_stale and not state.get("session_end_emitted", False):
+                try:
+                    from divineos.core.ledger import log_event
+
+                    log_event(
+                        "SESSION_END_INFERRED",
+                        "lifecycle",
+                        {
+                            "session_started_at": session_start,
+                            "session_stale_threshold_seconds": _SESSION_STALE_SECONDS,
+                            "elapsed_seconds": now - session_start,
+                            "reason": "stale_no_clean_end",
+                            "last_command": state.get("last_command", ""),
+                            "last_command_at": state.get("last_command_at", session_start),
+                        },
+                        validate=False,
+                    )
+                except _LIFECYCLE_ERRORS as e:
+                    logger.debug(f"SESSION_END_INFERRED emit failed: {e}")
+
             # New session (or stale one expired)
             state = {
                 "session_started_at": now,
