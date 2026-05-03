@@ -1080,9 +1080,21 @@ LENS_FAMILIES: dict[str, list[str]] = {
     "cognitive_bias": ["Kahneman", "Yudkowsky"],
     "investigation": ["Holmes", "Polya", "Feynman", "Peirce"],
     "formal": ["Godel", "Knuth", "Turing"],
-    "meta_observer": ["Hofstadter", "Dennett", "Godel", "Wittgenstein"],
+    # Audit r9-21 #10: Godel removed (was double-counted as both formal
+    # and meta_observer; family-cap math broke when one expert sat in
+    # two families). Kept in formal — closer methodological fit.
+    "meta_observer": ["Hofstadter", "Dennett", "Wittgenstein"],
     "design": ["Norman", "Deming"],
     "voice": ["Angelou", "Tannen"],
+    # Audit r9-21 #10: 11 experts had no family entry, exempting them
+    # from the family-cap and breaking exploration-vs-diversity math.
+    "classical_method": ["Aristotle"],
+    "deep_learning": ["Bengio", "Hinton"],
+    "safety": ["Dekker", "Schneier"],
+    "information": ["Shannon", "Lovelace"],
+    "ai_foundations": ["Minsky", "Pearl"],
+    "risk": ["Taleb"],
+    "eastern_philosophy": ["Watts"],
 }
 
 # How many from one family before we start skipping.
