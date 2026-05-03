@@ -120,15 +120,27 @@ class TestForwardChain:
         assert len(derivations) == 2
 
     def test_no_cycles(self):
-        """Graph with cycle should not loop forever."""
+        """Graph with cycle should not loop forever.
+
+        Audit r9-21 #19 made IMPLIES asymmetric — direct A→B + B→A
+        is now rejected at create_relation time. We construct a
+        3-node cycle (A→B→C→A) instead, which still exercises the
+        forward_chain cycle-handling without violating the new
+        asymmetry contract.
+        """
         a = _insert_knowledge()
         b = _insert_knowledge()
+        c = _insert_knowledge()
         create_relation(a, b, "IMPLIES")
-        create_relation(b, a, "IMPLIES")
+        create_relation(b, c, "IMPLIES")
+        create_relation(c, a, "IMPLIES")
         derivations = forward_chain(a)
-        # Should find b but not loop back to a
-        assert len(derivations) == 1
-        assert derivations[0].target_id == b
+        # Should find b and c via the chain but not infinite-loop back.
+        target_ids = {d.target_id for d in derivations}
+        assert b in target_ids
+        assert c in target_ids
+        # And a must not appear as a self-derivation.
+        assert a not in target_ids
 
     def test_only_follows_implies(self):
         """SUPPORTS and other types are not followed."""

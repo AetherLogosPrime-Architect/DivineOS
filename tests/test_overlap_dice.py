@@ -169,7 +169,13 @@ class TestStemmingBehavior:
         assert "the" not in words
 
     def test_stemmed_overlap_catches_variants(self):
-        """Stemmed overlap finds matches that raw overlap misses."""
+        """Stemmed overlap finds matches that raw overlap misses.
+
+        Audit r9-21 #31: _compute_overlap now takes an explicit
+        ``stemmed=`` keyword. The default (raw) preserves existing
+        threshold calibrations; opt-in stemmed catches morphological
+        variants. This test pins both behaviors at once.
+        """
         a = _stemmed_word_set("testing validation deployment")
         b = _stemmed_word_set("tested validated deployed")
         stemmed_score = _compute_stemmed_overlap(a, b)
@@ -177,8 +183,15 @@ class TestStemmingBehavior:
             "testing validation deployment",
             "tested validated deployed",
         )
-        # Stemmed should find matches, raw should not
+        opt_in_stemmed = _compute_overlap(
+            "testing validation deployment",
+            "tested validated deployed",
+            stemmed=True,
+        )
+        # Default-raw misses morphological variants.
         assert stemmed_score > raw_score
+        # Opt-in stemmed agrees with the dedicated stemmed function.
+        assert opt_in_stemmed == stemmed_score
 
 
 class TestThresholdConstants:

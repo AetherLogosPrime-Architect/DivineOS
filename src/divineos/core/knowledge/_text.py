@@ -405,18 +405,29 @@ def _extract_key_terms(text: str) -> str:
     return " ".join(unique[:20])  # cap at 20 terms for FTS5 query
 
 
-def _compute_overlap(text_a: str, text_b: str) -> float:
+def _compute_overlap(text_a: str, text_b: str, *, stemmed: bool = False) -> float:
     """Compute word set overlap between two texts using Sørensen-Dice.
 
     Returns 0.0-1.0. Symmetric — order doesn't matter, and length
-    mismatches are naturally penalized. A 5-word text matching 3 words
-    of a 50-word text scores ~11% (appropriate), not 60% (the old
-    min-denominator result that let short texts game the threshold).
+    mismatches are naturally penalized.
+
+    Audit r9-21 #31: caller now picks raw vs stemmed explicitly via
+    the ``stemmed`` keyword. Default remains RAW for back-compat
+    (22 callers were calibrated against raw thresholds; flipping the
+    default would shift every overlap-gated decision in the system).
+    Pass ``stemmed=True`` when callers want morphological variants
+    ("running" / "runs" / "ran") to count as the same token.
+    Contradiction detection (in knowledge_maintenance) and any new
+    callers should prefer ``stemmed=True``.
 
     Sørensen-Dice: 2 * |intersection| / (|A| + |B|)
     """
-    words_a = set(_normalize_text(text_a).split()) - _STOPWORDS
-    words_b = set(_normalize_text(text_b).split()) - _STOPWORDS
+    if stemmed:
+        words_a = _stemmed_word_set(text_a)
+        words_b = _stemmed_word_set(text_b)
+    else:
+        words_a = set(_normalize_text(text_a).split()) - _STOPWORDS
+        words_b = set(_normalize_text(text_b).split()) - _STOPWORDS
     if not words_a or not words_b:
         return 0.0
     intersection = words_a & words_b
