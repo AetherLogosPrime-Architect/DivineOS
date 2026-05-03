@@ -28,6 +28,8 @@ import re
 import time
 from pathlib import Path
 
+from divineos.core.atomic_io import atomic_write_text
+
 # Two-axis detection (claim 986b4750): the correction-detector pattern-matches
 # CORRECTION_PATTERNS (surface axis) but pre-relay-stripping conflates "Andrew
 # correcting the agent" with "AI text relayed by Andrew that contains
@@ -112,7 +114,7 @@ def set_marker(trigger_text: str) -> None:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         payload = {"ts": time.time(), "trigger": (trigger_text or "")[:200]}
-        path.write_text(json.dumps(payload), encoding="utf-8")
+        atomic_write_text(path, json.dumps(payload))
     except OSError:
         pass  # fail open — don't crash the hook on disk issues
 

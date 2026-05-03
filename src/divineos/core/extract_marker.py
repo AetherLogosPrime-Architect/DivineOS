@@ -24,6 +24,8 @@ import os
 import time
 from pathlib import Path
 
+from divineos.core.atomic_io import atomic_write_text
+
 
 def marker_path() -> Path:
     """Absolute path to the extract idempotency marker."""
@@ -42,7 +44,7 @@ def write_marker(trigger: str = "manual", session_id: str | None = None) -> None
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         payload = {"trigger": trigger, "ts": time.time(), "session_id": session_id}
-        path.write_text(json.dumps(payload), encoding="utf-8")
+        atomic_write_text(path, json.dumps(payload))
     except OSError:
         pass
 

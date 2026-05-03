@@ -45,6 +45,8 @@ import json
 import time
 from pathlib import Path
 
+from divineos.core.atomic_io import atomic_write_text
+
 
 def marker_path() -> Path:
     return Path.home() / ".divineos" / "compass_required.json"
@@ -86,7 +88,7 @@ def set_marker(trigger_kind: str, trigger_summary: str) -> None:
             "kind": trigger_kind,
             "summary": (trigger_summary or "")[:200],
         }
-        path.write_text(json.dumps(payload), encoding="utf-8")
+        atomic_write_text(path, json.dumps(payload))
     except OSError:
         pass
 

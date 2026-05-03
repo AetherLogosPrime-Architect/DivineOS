@@ -33,6 +33,8 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
+from divineos.core.atomic_io import atomic_write_text
+
 
 def marker_path() -> Path:
     return Path.home() / ".divineos" / "void_mode.json"
@@ -86,7 +88,7 @@ def write_marker(persona: str, session_id: str | None = None) -> str:
     }
     path = marker_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload), encoding="utf-8")
+    atomic_write_text(path, json.dumps(payload))
     return invocation_id
 
 

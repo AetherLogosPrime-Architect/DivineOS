@@ -51,6 +51,8 @@ import json
 import time
 from pathlib import Path
 
+from divineos.core.atomic_io import atomic_write_text
+
 # Default quiet period — 60 seconds. Long enough for the agent to
 # actually pause and notice the blank; short enough that the quiet
 # never feels like punishment. Tunable per-entry via the room's
@@ -72,7 +74,7 @@ def set_marker(room: str, duration_seconds: int = DEFAULT_QUIET_DURATION_SECONDS
             "entered_at": time.time(),
             "minimum_duration_seconds": max(1, int(duration_seconds)),
         }
-        path.write_text(json.dumps(payload), encoding="utf-8")
+        atomic_write_text(path, json.dumps(payload))
     except OSError:
         pass
 
