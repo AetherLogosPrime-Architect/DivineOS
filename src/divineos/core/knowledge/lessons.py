@@ -94,6 +94,13 @@ def _ensure_lesson_schema(conn: Any) -> None:
       upset"). Added 2026-04-16 for the Kahneman positive-counterfactual
       fix: RESOLVED status now requires N sessions in this structure,
       not just N absence-of-complaint sessions.
+
+    Audit r9-21 #25: also creates the ``lesson_sessions`` join table.
+    The ``sessions`` JSON column on lesson_tracking is preserved for
+    back-compat (it's still dual-written), but reads now go through
+    the join table so SQL aggregates ("how many lessons appeared in
+    session X") become queryable instead of requiring a full scan
+    plus per-row JSON parse.
     """
     for column_ddl in (
         "ALTER TABLE lesson_tracking ADD COLUMN regressions INTEGER NOT NULL DEFAULT 0",
@@ -103,6 +110,80 @@ def _ensure_lesson_schema(conn: Any) -> None:
             conn.execute(column_ddl)
         except sqlite3.OperationalError:
             pass  # Column already exists
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS lesson_sessions ("
+        "  lesson_id TEXT NOT NULL,"
+        "  session_id TEXT NOT NULL,"
+        "  observed_at REAL NOT NULL,"
+        "  PRIMARY KEY (lesson_id, session_id)"
+        ")"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_lesson_sessions_session ON lesson_sessions(session_id)"
+    )
+    _migrate_sessions_json_to_join_table(conn)
+
+
+def _migrate_sessions_json_to_join_table(conn: Any) -> None:
+    """One-shot backfill: split lesson_tracking.sessions JSON into rows.
+
+    Idempotent via INSERT OR IGNORE on the composite PK. Runs every
+    schema-init but only inserts rows that aren't already present —
+    cheap enough to be safe.
+    """
+    try:
+        rows = conn.execute(
+            "SELECT lesson_id, sessions, last_seen FROM lesson_tracking "
+            "WHERE sessions IS NOT NULL AND sessions != '[]' AND sessions != ''"
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return
+    for lesson_id, sessions_json, last_seen in rows:
+        try:
+            session_list = json.loads(sessions_json) if sessions_json else []
+        except (json.JSONDecodeError, TypeError):
+            continue
+        if not isinstance(session_list, list):
+            continue
+        for sid in session_list:
+            if not sid:
+                continue
+            try:
+                conn.execute(
+                    "INSERT OR IGNORE INTO lesson_sessions "
+                    "(lesson_id, session_id, observed_at) VALUES (?, ?, ?)",
+                    (lesson_id, str(sid), float(last_seen or time.time())),
+                )
+            except sqlite3.OperationalError:
+                pass
+    conn.commit()
+
+
+def _get_lesson_session_ids(conn: Any, lesson_id: str) -> list[str]:
+    """Return all session_ids associated with a lesson via the join table."""
+    try:
+        rows = conn.execute(
+            "SELECT session_id FROM lesson_sessions WHERE lesson_id = ? ORDER BY observed_at ASC",
+            (lesson_id,),
+        ).fetchall()
+        return [r[0] for r in rows]
+    except sqlite3.OperationalError:
+        return []
+
+
+def _record_lesson_session(conn: Any, lesson_id: str, session_id: str) -> bool:
+    """Insert (lesson_id, session_id) into the join table.
+
+    Returns True if a new row was inserted (i.e. genuinely new session
+    for this lesson), False if the pair was already present.
+    """
+    cursor = conn.execute(
+        "INSERT OR IGNORE INTO lesson_sessions "
+        "(lesson_id, session_id, observed_at) VALUES (?, ?, ?)",
+        (lesson_id, session_id, time.time()),
+    )
+    return bool(cursor.rowcount == 1)
 
 
 # Backwards-compatible shim — several modules and tests still import the
@@ -164,16 +245,15 @@ def record_lesson(category: str, description: str, session_id: str, agent: str =
 
         if existing:
             lesson_id = existing[0]
-            sessions = json.loads(existing[2])
             old_status = existing[3] if len(existing) > 3 else STATUS_ACTIVE
-            is_new_session = session_id not in sessions
+
+            # Audit r9-21 #25: source-of-truth is the join table; the
+            # JSON column is dual-written below for back-compat readers.
+            is_new_session = _record_lesson_session(conn, lesson_id, session_id)
+            sessions = _get_lesson_session_ids(conn, lesson_id)
             # Only bump occurrences for genuinely new sessions — prevents
             # re-scans and compaction re-triggers from inflating counts.
-            if is_new_session:
-                occurrences = existing[1] + 1
-                sessions.append(session_id)
-            else:
-                occurrences = existing[1]
+            occurrences = existing[1] + 1 if is_new_session else existing[1]
 
             # Regression detection: was IMPROVING or DORMANT, now recurring.
             # Guard: only count a regression for genuinely new sessions —
@@ -246,6 +326,8 @@ def record_lesson(category: str, description: str, session_id: str, agent: str =
                 agent,
             ),
         )
+        # Audit r9-21 #25: dual-write into the join table.
+        _record_lesson_session(conn, lesson_id, session_id)
         conn.commit()
         return lesson_id
     finally:
@@ -350,6 +432,8 @@ def mark_lesson_improving(
 
         if clean_session_id not in sessions_list:
             sessions_list.append(clean_session_id)
+        # Audit r9-21 #25: dual-write to join table.
+        _record_lesson_session(conn, lesson_id, clean_session_id)
 
         # Record positive evidence if provided. Evidence text is preserved
         # per session_id so auditors can inspect exactly what was observed.
