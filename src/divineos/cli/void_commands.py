@@ -91,6 +91,31 @@ def register(cli: click.Group) -> None:
     def void() -> None:
         """VOID adversarial-sandbox subsystem."""
 
+    @void.command("status")
+    def _status() -> None:
+        """Show VOID phase status — what's actually wired vs scaffolded.
+
+        Audit finding 2026-05-03 round 8: ``divineos void test`` and
+        ``test-deep`` advertised as "adversarial review" but actually
+        ran lifecycle-only stub attacks. The user-visible promise
+        overshot reality. This command makes the gap explicit.
+        """
+        _safe_echo(click.style("VOID adversarial-sandbox subsystem", bold=True))
+        _safe_echo("")
+        _safe_echo(click.style("Phase 1 (current): lifecycle plumbing only", fg="yellow"))
+        _safe_echo("  - TRAP / ATTACK / EXTRACT / SEAL / SHRED lifecycle: WIRED ✓")
+        _safe_echo("  - persona-prompt assembly: STUB (returns canned finding)")
+        _safe_echo("  - LLM-based adjudication: NOT IMPLEMENTED")
+        _safe_echo("  - All findings filed at LOW severity regardless of persona default")
+        _safe_echo("")
+        _safe_echo(click.style("Phase 2 (planned): real adversarial review", fg="cyan"))
+        _safe_echo("  - Persona-specific attack-prompt templates")
+        _safe_echo("  - LLM call to adjudicate the response")
+        _safe_echo("  - Persona's severity_default applied to real findings")
+        _safe_echo("")
+        _safe_echo("See ``divineos void list`` to see the 6 personas.")
+        _safe_echo("Run ``divineos void test <target> --persona X`` for a stub run.")
+
     @void.command("list")
     def _list() -> None:
         """List available personas."""
