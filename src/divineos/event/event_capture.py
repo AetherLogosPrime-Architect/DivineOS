@@ -17,6 +17,12 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
+# Audit r9-21 #8: re-export the canonical EventValidationError instead
+# of defining a second class with the same name. Two distinct classes
+# meant the same schema-fail produced different log labels and `except
+# EventValidationError` caught only one origin's errors.
+from divineos.event.event_validation import EventValidationError
+
 
 class EventType(str, Enum):
     """Supported event types for IDE integration.
@@ -47,10 +53,6 @@ CONSOLIDATION_EVENT_TYPES = frozenset(
         EventType.CONSOLIDATION_CHECKPOINT.value,
     }
 )
-
-
-class EventValidationError(Exception):
-    """Raised when event payload validation fails."""
 
 
 @dataclass

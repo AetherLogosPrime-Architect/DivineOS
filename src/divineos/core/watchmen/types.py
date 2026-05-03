@@ -68,15 +68,22 @@ class FindingStatus(str, Enum):
     DUPLICATE = "DUPLICATE"  # Already covered by another finding
 
 
-# Valid external actors — these are the only actors allowed to submit findings.
-# Internal actors (system, assistant, pipeline) are structurally rejected.
+# Audit r9-21 #37 clarification: EXTERNAL_ACTORS is NOT an allowlist.
+# Membership here grants no privileges and is not consulted at write
+# time — INTERNAL_ACTORS (below) is the rejection list. EXTERNAL_ACTORS
+# functions as the canonical bare-name registry: actors that have a
+# default tier mapping, used for displaying actor lists and for help
+# text. Any disambiguated string outside this set (e.g. "claude-opus-
+# auditor", "alice@external-team") is also accepted at write time —
+# the only structural rejection is membership in INTERNAL_ACTORS.
 #
-# NOTE: the bare actor "claude" is intentionally absent. The running agent IS
-# Claude, so accepting "claude" as an external actor would create a self-audit
-# hole exactly where the self-trigger prevention system is supposed to protect.
-# External Claude instances performing audits must use a disambiguated name
-# (e.g. "claude-opus-auditor", "claude-sonnet-external", or "claude-$session"),
-# so a finding's actor can never collide with the running agent's identity.
+# NOTE: the bare actor "claude" is intentionally absent. The running
+# agent IS Claude, so accepting "claude" as an external actor would
+# create a self-audit hole exactly where the self-trigger prevention
+# system is supposed to protect. External Claude instances performing
+# audits must use a disambiguated name (e.g. "claude-opus-auditor",
+# "claude-sonnet-external", or "claude-$session"), so a finding's
+# actor can never collide with the running agent's identity.
 EXTERNAL_ACTORS = frozenset(
     {
         "user",

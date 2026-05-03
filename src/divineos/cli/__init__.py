@@ -47,12 +47,10 @@ _BYPASS_COMMANDS = frozenset(
         "affect",
         "checkpoint",
         "context-status",
-        "self-model",
-        "drift",
-        "predict",
+        # Audit r9-21 #33: removed 5 stale entries (attention, drift,
+        # epistemic, predict, self-model) — those moved to the `inspect`
+        # group (already bypassed via "inspect" above).
         "affect-feedback",
-        "attention",
-        "epistemic",
         "sleep",
         "progress",
         "validate",

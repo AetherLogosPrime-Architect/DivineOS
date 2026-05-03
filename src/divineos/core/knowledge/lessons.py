@@ -282,12 +282,26 @@ def record_lesson(category: str, description: str, session_id: str, agent: str =
                 use_desc = description
             else:
                 use_desc = old_desc_text
+            # Audit r9-21 #36: recompute content_hash so it stays in sync
+            # with description. Without this, hash points to the original
+            # description forever and any future content-equality check
+            # would silently fail against the stale digest.
+            new_hash = compute_hash(f"{category}:{use_desc}")
             conn.execute(
                 """UPDATE lesson_tracking
                    SET occurrences = ?, last_seen = ?, sessions = ?, status = 'active',
-                       description = ?, regressions = regressions + ?
+                       description = ?, regressions = regressions + ?,
+                       content_hash = ?
                    WHERE lesson_id = ?""",
-                (occurrences, now, json.dumps(sessions), use_desc, regression_bump, lesson_id),
+                (
+                    occurrences,
+                    now,
+                    json.dumps(sessions),
+                    use_desc,
+                    regression_bump,
+                    new_hash,
+                    lesson_id,
+                ),
             )
             conn.commit()
 
