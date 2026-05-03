@@ -85,7 +85,39 @@ def _normalize_actor(actor: str) -> str:
     normalized = collapsed.casefold()
     if not normalized:
         raise ValueError("Actor name cannot be empty")
+    # Audit r9-21 round-2 review: NFKC doesn't fold cross-script
+    # homoglyphs (Cyrillic с U+0441 vs Latin c U+0063 are distinct
+    # code points in distinct scripts). Without this guard,
+    # actor="сlaude" (Cyrillic с) bypasses INTERNAL_ACTORS.
+    if _has_mixed_scripts(normalized):
+        raise ValueError(
+            f"Actor '{actor}' contains mixed-script characters; this looks like "
+            "a homoglyph attack. Use a single-script identifier."
+        )
     return normalized
+
+
+def _has_mixed_scripts(s: str) -> bool:
+    """Detect cross-script homoglyph attempts (LATIN/CYRILLIC/GREEK)."""
+    import unicodedata as _ud
+
+    scripts: set[str] = set()
+    for ch in s:
+        if not ch.isalpha():
+            continue
+        try:
+            name = _ud.name(ch)
+        except ValueError:
+            continue
+        if name.startswith("LATIN"):
+            scripts.add("LATIN")
+        elif name.startswith("CYRILLIC"):
+            scripts.add("CYRILLIC")
+        elif name.startswith("GREEK"):
+            scripts.add("GREEK")
+        if len(scripts) > 1:
+            return True
+    return False
 
 
 def _require_external_actor(actor: str) -> str:

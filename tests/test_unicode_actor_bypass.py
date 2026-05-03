@@ -74,3 +74,48 @@ def test_external_actors_still_pass_through_watchmen():
     from divineos.core.watchmen.store import _validate_actor
 
     assert _validate_actor("grok") == "grok"
+
+
+# Audit r9-21 round-2 review follow-up: cross-script homoglyphs.
+# NFKC alone doesn't fold these because Cyrillic/Greek/Latin
+# characters are distinct code points in distinct scripts. The
+# script-mixing detector closes the gap.
+_HOMOGLYPH_CASES = [
+    # Cyrillic 'с' U+0441 substituted for Latin 'c' in claude
+    "сlaude",
+    # Cyrillic 'а' U+0430 for Latin 'a'
+    "clаude",
+    # Both swapped
+    "сlаude",
+    # Greek omicron U+03BF for Latin 'o' in a fake "robot" actor
+    "rοbοt",
+]
+
+
+@pytest.mark.parametrize("homoglyph", _HOMOGLYPH_CASES)
+def test_watchmen_rejects_mixed_script_homoglyph(homoglyph):
+    from divineos.core.watchmen.store import _validate_actor
+
+    with pytest.raises(ValueError, match="mixed-script|homoglyph"):
+        _validate_actor(homoglyph)
+
+
+@pytest.mark.parametrize("homoglyph", _HOMOGLYPH_CASES)
+def test_pre_registrations_rejects_mixed_script_homoglyph(homoglyph):
+    from divineos.core.pre_registrations.store import _require_external_actor
+
+    with pytest.raises(ValueError, match="mixed-script|homoglyph"):
+        _require_external_actor(homoglyph)
+
+
+def test_single_script_actors_still_pass():
+    """Single-script identifiers must remain valid."""
+    from divineos.core.pre_registrations.store import _require_external_actor
+    from divineos.core.watchmen.store import _validate_actor
+
+    # Pure-Latin
+    assert _validate_actor("grok") == "grok"
+    assert _require_external_actor("alice@external") == "alice@external"
+    # Mixed letter + digit + punct is fine — the detector only flags
+    # Latin/Cyrillic/Greek script mixing, not script-with-non-letter.
+    assert _validate_actor("auditor-2025") == "auditor-2025"

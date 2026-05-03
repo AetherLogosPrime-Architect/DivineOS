@@ -74,14 +74,53 @@ def _validate_actor(actor: str) -> str:
     # to a single space, then strip the result.
     collapsed = re.sub(r"\s+", " ", invisible_stripped).strip()
     normalized = collapsed.casefold()
+    if not normalized:
+        raise ValueError("Actor name cannot be empty")
+    # Audit r9-21 round-2 review: NFKC alone doesn't catch cross-script
+    # homoglyphs because Cyrillic 'с' (U+0441) and Latin 'c' (U+0063)
+    # are distinct characters in distinct scripts — semantically not
+    # the same code point, visually identical. Without this guard,
+    # actor="сlaude" (Cyrillic с) bypasses INTERNAL_ACTORS.
+    if _has_mixed_scripts(normalized):
+        raise ValueError(
+            f"Actor '{actor}' contains mixed-script characters; this looks like "
+            "a homoglyph attack. Use a single-script identifier."
+        )
     if normalized in INTERNAL_ACTORS:
         raise ValueError(
             f"Actor '{actor}' is an internal component and cannot submit audit findings. "
             f"Only external actors are allowed: {', '.join(sorted(EXTERNAL_ACTORS))}"
         )
-    if not normalized:
-        raise ValueError("Actor name cannot be empty")
     return normalized
+
+
+def _has_mixed_scripts(s: str) -> bool:
+    """Detect cross-script homoglyph attempts.
+
+    Returns True if the string mixes characters from two or more of:
+    LATIN, CYRILLIC, GREEK. Mixed-script identifiers are nearly
+    always either an attack or a typo — neither is a legitimate
+    actor name. Audit r9-21 round-2 follow-up to #1.
+    """
+    import unicodedata
+
+    scripts: set[str] = set()
+    for ch in s:
+        if not ch.isalpha():
+            continue
+        try:
+            name = unicodedata.name(ch)
+        except ValueError:
+            continue
+        if name.startswith("LATIN"):
+            scripts.add("LATIN")
+        elif name.startswith("CYRILLIC"):
+            scripts.add("CYRILLIC")
+        elif name.startswith("GREEK"):
+            scripts.add("GREEK")
+        if len(scripts) > 1:
+            return True
+    return False
 
 
 def submit_round(
