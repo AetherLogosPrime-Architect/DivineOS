@@ -177,6 +177,7 @@ def apply_seed(
     # intentionally retired. get_knowledge only returns active entries,
     # so we also query superseded ones directly.
     existing_contents = set()
+    existing_seed_keys: dict[str, str] = {}  # seed_key -> knowledge_id
     if mode == "merge":
         for entry in get_knowledge(limit=1000):
             existing_contents.add(entry["content"].strip().lower())
@@ -188,11 +189,28 @@ def apply_seed(
             ).fetchall()
             for row in rows:
                 existing_contents.add(row[0].strip().lower())
+            # Audit r9-21 #29: collect existing seed_keys (active rows
+            # only — superseded seed entries shouldn't be resurrected,
+            # but they also shouldn't block a fresh apply).
+            seed_rows = conn.execute(
+                "SELECT seed_key, knowledge_id FROM knowledge "
+                "WHERE seed_key IS NOT NULL AND superseded_by IS NULL"
+            ).fetchall()
+            for sk, kid in seed_rows:
+                existing_seed_keys[sk] = kid
         finally:
             conn.close()
 
     for entry in seed_data.get("knowledge", []):
         content = entry.get("content", "").strip()
+        seed_key = entry.get("key")  # optional stable identifier
+
+        # Audit r9-21 #29: if seed_key supplied and already present,
+        # treat as known regardless of content drift. Lets seed authors
+        # tweak wording without producing dup inserts.
+        if mode == "merge" and seed_key and seed_key in existing_seed_keys:
+            counts["skipped"] += 1
+            continue
         if mode == "merge" and content.lower() in existing_contents:
             counts["skipped"] += 1
             continue
@@ -201,7 +219,7 @@ def apply_seed(
         # explicitly specifies a source, honor it (e.g., a seed entry that
         # encodes a corroborated observation); otherwise default to
         # INHERITED so the epistemic reporter classifies it correctly.
-        store_knowledge(
+        new_kid = store_knowledge(
             knowledge_type=entry["type"],
             content=content,
             confidence=entry.get("confidence", 1.0),
@@ -209,6 +227,17 @@ def apply_seed(
             maturity=entry.get("maturity", "RAW"),
             source=entry.get("source", "INHERITED"),
         )
+        # Stamp seed_key on the new row if provided.
+        if seed_key and new_kid:
+            conn = _get_connection()
+            try:
+                conn.execute(
+                    "UPDATE knowledge SET seed_key = ? WHERE knowledge_id = ?",
+                    (seed_key, new_kid),
+                )
+                conn.commit()
+            finally:
+                conn.close()
         counts["knowledge"] += 1
 
     # Lessons — only seed categories that don't already exist

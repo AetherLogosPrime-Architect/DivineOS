@@ -70,6 +70,7 @@ _KNOWLEDGE_COL_NAMES: list[str] = [
     "related_to",
     "corroboration_sources",
     "memory_kind",
+    "seed_key",
 ]
 
 _KNOWLEDGE_COLS = ", ".join(_KNOWLEDGE_COL_NAMES)
@@ -241,6 +242,22 @@ def init_knowledge_table() -> None:
             )
         except sqlite3.OperationalError as e:
             logger.debug(f"Column supersession_reason already exists: {e}")
+
+        # Audit r9-21 #29: stable seed key for content-drift tracking.
+        # Without it, editing a seed entry's wording (typo fix, comma)
+        # produces a duplicate insert because dedup matches on lowercase
+        # content. seed_key gives the seed authoring layer a stable
+        # handle independent of content.
+        try:
+            conn.execute(
+                "ALTER TABLE knowledge ADD COLUMN seed_key TEXT DEFAULT NULL",
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_knowledge_seed_key "
+                "ON knowledge(seed_key) WHERE seed_key IS NOT NULL",
+            )
+        except sqlite3.OperationalError as e:
+            logger.debug(f"Column seed_key already exists: {e}")
 
         # Temporal dimension columns (nullable — NULL means unbounded)
         for col, col_type, default in [
