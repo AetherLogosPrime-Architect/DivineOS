@@ -37,7 +37,7 @@ from divineos.core.knowledge._text import (
     _stemmed_word_set,
 )
 from divineos.core.knowledge import get_connection
-from divineos.core.knowledge.crud import supersede_knowledge
+from divineos.core.knowledge.crud import link_supersession
 
 from divineos.core.constants import (
     CONFIDENCE_DEMOTE_CAP,
@@ -235,8 +235,12 @@ def resolve_contradiction(
     increment_contradiction_count(match.existing_id)
 
     if match.contradiction_type in ("TEMPORAL", "SUPERSESSION"):
-        supersede_knowledge(
+        # Audit r9-21 #4: was supersede_knowledge with the successor only
+        # in the reason string — link_supersession actually stores the
+        # successor UUID in the superseded_by field.
+        link_supersession(
             match.existing_id,
+            new_id,
             reason=f"Superseded by {new_id[:12]} ({match.contradiction_type})",
         )
         logger.info(
