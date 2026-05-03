@@ -987,7 +987,7 @@ def _build_loadout_slot() -> str:
 
 **[DECISIONS & OPINIONS]**
   - `decide "what" --why "reasoning"` — Record WHY I chose something. Searchable.
-  - `opinions` — My formed judgments with evidence. Not facts — stances.
+  - `opinion` — My formed judgments with evidence. Not facts — stances.
   - `claims` — Things I'm investigating. Five evidence tiers. Nothing dismissed without looking.
 
 **[VOICE & EXPRESSION]**
