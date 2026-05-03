@@ -130,6 +130,82 @@ _SELECT_ALL_COLS = (
 )
 
 
+def apply_pre_registration_seed(seed_data: dict[str, Any], mode: str = "merge") -> dict[str, int]:
+    """Audit r9-21 #30: load seed_pre_registrations.json into a fresh clone.
+
+    Without this, a freshly-cloned substrate ships with no load-bearing
+    pre-regs — the entire Goodhart-prevention layer has to be rebuilt
+    by hand for each new install. Seed entries carry an optional
+    ``key`` field to dedup across re-applies (parallel to seed_key in
+    knowledge — audit r9-21 #29).
+
+    Returns counts: ``{"applied": int, "skipped": int}``.
+    """
+    counts = {"applied": 0, "skipped": 0}
+    init_pre_registrations_tables()
+
+    # Collect existing seed_keys (if column has been migrated). Best-
+    # effort: if the column doesn't exist yet, fall back to mechanism
+    # match for dedup (the natural unique-ish handle).
+    existing_keys: set[str] = set()
+    existing_mechanisms: set[str] = set()
+    conn = _get_connection()
+    try:
+        try:
+            rows = conn.execute(
+                "SELECT seed_key FROM pre_registrations WHERE seed_key IS NOT NULL"
+            ).fetchall()
+            existing_keys = {r[0] for r in rows}
+        except sqlite3.OperationalError:
+            # seed_key column may not be migrated; skip the lookup.
+            pass
+        rows = conn.execute("SELECT mechanism FROM pre_registrations").fetchall()
+        existing_mechanisms = {r[0] for r in rows}
+    finally:
+        conn.close()
+
+    for entry in seed_data.get("pre_registrations", []):
+        key = entry.get("key")
+        mechanism = entry.get("mechanism", "")
+        if mode == "merge" and key and key in existing_keys:
+            counts["skipped"] += 1
+            continue
+        if mode == "merge" and mechanism in existing_mechanisms:
+            counts["skipped"] += 1
+            continue
+        try:
+            prereg_id = file_pre_registration(
+                actor=entry.get("actor", "system"),
+                mechanism=mechanism,
+                claim=entry["claim"],
+                success_criterion=entry["success_criterion"],
+                falsifier=entry["falsifier"],
+                review_window_days=entry.get("review_window_days", 30),
+                tags=entry.get("tags"),
+            )
+        except (ValueError, KeyError) as e:
+            logger.warning(f"Pre-registration seed entry skipped: {e}")
+            counts["skipped"] += 1
+            continue
+        # Stamp seed_key if column exists.
+        if key and prereg_id:
+            conn = _get_connection()
+            try:
+                try:
+                    conn.execute(
+                        "UPDATE pre_registrations SET seed_key = ? WHERE prereg_id = ?",
+                        (key, prereg_id),
+                    )
+                    conn.commit()
+                except sqlite3.OperationalError:
+                    pass
+            finally:
+                conn.close()
+        counts["applied"] += 1
+
+    return counts
+
+
 def file_pre_registration(
     actor: str,
     mechanism: str,

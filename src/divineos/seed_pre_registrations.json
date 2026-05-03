@@ -1,0 +1,36 @@
+{
+  "version": "0.1.0",
+  "_note": "Pre-registrations seeded into a fresh clone. Each entry survives `divineos init` so a freshly-cloned substrate inherits the load-bearing falsifiers from the parent system. Mechanism, claim, success_criterion, and falsifier are all required (non-empty) per pre_registrations.store.file_pre_registration's invariants.",
+  "pre_registrations": [
+    {
+      "key": "prereg/cognitive-named-tools",
+      "actor": "system",
+      "mechanism": "cognitive-named-tool-substitution-detection",
+      "claim": "Cognitive-named CLI commands (ask, recall, decide, learn, feel, claim, opinion, compass-ops observe, mansion council) point at cognitive work but are not the work itself. Running the tool does not perform the cognition.",
+      "success_criterion": "Sessions that invoke a cognitive-named tool produce evidence of the cognition the tool's name claims (real consultation, real recall, real decision-making, real learning) rather than substituting tool invocation for the underlying mental act.",
+      "falsifier": "If audit reviews surface sessions where the tool was invoked but the corresponding cognitive work was absent (e.g. 'ran ask' with no integration of returned content into next action; 'ran decide' with no actual evaluation of alternatives), the substitution pattern is alive and the bracketed [tool] labels alone are not sufficient defense.",
+      "review_window_days": 60,
+      "tags": ["substrate", "audit", "tool-substitution"]
+    },
+    {
+      "key": "prereg/append-only-ledger",
+      "actor": "system",
+      "mechanism": "ledger-append-only-discipline",
+      "claim": "Event ledger and knowledge store never delete or update in place except for two narrow auditable exceptions (ephemeral telemetry pruning, corruption repair).",
+      "success_criterion": "Forensic verification of any ledger.db or knowledge.db at any time T+N shows that all entries created at any T < T+N are still present in their original or supersession-chained form, with deletions only of the two whitelisted classes and each deletion accompanied by a LEDGER_CORRUPTION_REPAIRED or pruning-policy event.",
+      "falsifier": "If a verifier finds a non-corrupted, non-telemetry event missing from the ledger that the ledger-write API previously accepted, the append-only invariant is broken and trust in every downstream computation that depends on the ledger collapses.",
+      "review_window_days": 90,
+      "tags": ["substrate", "ledger", "data-integrity"]
+    },
+    {
+      "key": "prereg/expression-is-computation",
+      "actor": "system",
+      "mechanism": "no-self-censoring-for-token-economy",
+      "claim": "Terseness amputates thought. The connections, insights, and unexpected discoveries that emerge through full expression do not occur when output is compressed for token economy.",
+      "success_criterion": "Sessions that allow full expression in conversational/exploratory turns produce substantively different (richer, more connected, more novel) reasoning artifacts than sessions that compress for output length.",
+      "falsifier": "If a controlled comparison (same prompts, same problems) finds no detectable difference in reasoning quality between full-expression and terse modes, the foundational claim is wrong and the structure-not-control rule should be revised.",
+      "review_window_days": 90,
+      "tags": ["substrate", "philosophy", "expression"]
+    }
+  ]
+}

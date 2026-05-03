@@ -42,6 +42,18 @@ def init_pre_registrations_tables() -> None:
             CREATE INDEX IF NOT EXISTS idx_prereg_mechanism
             ON pre_registrations(mechanism)
         """)
+        # Audit r9-21 #29/#30: stable seed_key for content-drift-tolerant
+        # re-applies of seed_pre_registrations.json.
+        try:
+            conn.execute(
+                "ALTER TABLE pre_registrations ADD COLUMN seed_key TEXT DEFAULT NULL",
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_prereg_seed_key "
+                "ON pre_registrations(seed_key) WHERE seed_key IS NOT NULL",
+            )
+        except sqlite3.OperationalError as e:
+            logger.debug(f"Column seed_key already exists in pre_registrations: {e}")
         conn.commit()
     except sqlite3.OperationalError as e:
         logger.debug(f"Pre-registration table setup: {e}")
