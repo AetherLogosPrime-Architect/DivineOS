@@ -59,10 +59,21 @@ def _validate_actor(actor: str) -> str:
     # NFKC handles U+00A0 → space, U+2009 → space, full-width forms,
     # and other unicode whitespace/compatibility variants.
     nfkc = unicodedata.normalize("NFKC", actor)
+    # Strip invisible / zero-width characters that NFKC + .strip() leave
+    # alone. Audit r9-21 round 12 finding: a plain ``.strip().lower()``
+    # also misses U+200B (zero-width space), U+200C-U+200F (joiners /
+    # directional marks), U+FEFF (BOM), U+00AD (soft hyphen). Without
+    # this strip, ``ZWSP+claude`` would pass through.
+    invisible_pattern = (
+        "["
+        + "".join(chr(cp) for cp in (0x200B, 0x200C, 0x200D, 0x200E, 0x200F, 0xFEFF, 0x00AD))
+        + "]"
+    )
+    invisible_stripped = re.sub(invisible_pattern, "", nfkc)
     # Collapse all whitespace (including the now-folded former-U+00A0)
     # to a single space, then strip the result.
-    collapsed = re.sub(r"\s+", " ", nfkc).strip()
-    normalized = collapsed.lower()
+    collapsed = re.sub(r"\s+", " ", invisible_stripped).strip()
+    normalized = collapsed.casefold()
     if normalized in INTERNAL_ACTORS:
         raise ValueError(
             f"Actor '{actor}' is an internal component and cannot submit audit findings. "
