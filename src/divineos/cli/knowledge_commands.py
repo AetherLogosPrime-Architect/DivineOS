@@ -1047,9 +1047,31 @@ def register(cli: click.Group) -> None:
                 click.echo()
 
     @cli.command("clear-lessons")
-    def clear_lessons_cmd() -> None:
-        """Wipe all lessons from lesson_tracking (for re-extraction after fixes)."""
+    @click.option(
+        "--confirm",
+        is_flag=True,
+        default=False,
+        help="Required explicit acknowledgment. Without this flag the "
+        "command refuses — protects against accidental wipe via hook, "
+        "script, or cron.",
+    )
+    def clear_lessons_cmd(confirm: bool) -> None:
+        """Wipe all lessons from lesson_tracking (DESTRUCTIVE — for re-extraction after fixes).
+
+        Audit r9-21 #35: this is a hard DELETE that violates the
+        project's append-only discipline. Requires --confirm at the
+        CLI in addition to the interactive prompt so a non-TTY caller
+        (hook, script, agent) cannot trigger a wipe by accident.
+        """
         from divineos.core.knowledge import get_lessons
+
+        if not confirm:
+            click.secho(
+                "[!] clear-lessons is destructive and append-only-violating. "
+                "Re-run with --confirm to acknowledge.",
+                fg="red",
+            )
+            raise click.exceptions.Exit(2)
 
         active = get_lessons(status="active")
         improving = get_lessons(status="improving")
