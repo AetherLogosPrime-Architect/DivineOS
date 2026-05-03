@@ -16,11 +16,11 @@ INPUT=$(cat)
 
 cd "$(git rev-parse --show-toplevel 2>/dev/null || echo ".")" || exit 0
 
-if ! command -v python &>/dev/null; then
+if ! command -v python3 &>/dev/null; then
   exit 0
 fi
 
-echo "$INPUT" | python -c "
+echo "$INPUT" | python3 -c "
 import json, sys, os
 from pathlib import Path
 

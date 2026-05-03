@@ -21,6 +21,6 @@ fi
 # Single Python invocation — all tracking operations in one process.
 # Emits additionalContext JSON to stdout when warnings/nudges are
 # active; otherwise empty output (Claude Code's default: allow).
-echo "$INPUT" | python -m divineos.hooks.post_tool_use_checkpoint 2>/dev/null
+echo "$INPUT" | python3 -m divineos.hooks.post_tool_use_checkpoint 2>/dev/null
 
 exit 0

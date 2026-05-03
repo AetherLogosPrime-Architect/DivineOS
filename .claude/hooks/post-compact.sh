@@ -32,7 +32,7 @@ ${lessons}
 
 === END REMINDER ==="
 
-  escaped=$(echo "$full_context" | python -c "import sys,json; print(json.dumps(sys.stdin.read()))" 2>/dev/null)
+  escaped=$(echo "$full_context" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))" 2>/dev/null)
   echo "{\"additionalContext\": ${escaped}}"
 fi
 

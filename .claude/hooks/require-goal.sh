@@ -18,6 +18,6 @@ fi
 
 # Single Python invocation — all imports happen once, all gates checked,
 # a single JSON decision is emitted to stdout (or empty = allow).
-echo "$INPUT" | python -m divineos.hooks.pre_tool_use_gate 2>/dev/null
+echo "$INPUT" | python3 -m divineos.hooks.pre_tool_use_gate 2>/dev/null
 
 exit 0

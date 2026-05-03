@@ -26,7 +26,7 @@ if ! command -v divineos &>/dev/null; then
   exit 0
 fi
 
-tool_name=$(echo "$INPUT" | python -c "import sys,json; print(json.load(sys.stdin).get('tool_name',''))" 2>/dev/null || echo "")
+tool_name=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_name',''))" 2>/dev/null || echo "")
 
 # Only the gated tool names trigger the rudder. Anything else exits
 # immediately — no compass query, no decision-journal scan, no latency.
@@ -34,7 +34,7 @@ if [ "$tool_name" != "Task" ] && [ "$tool_name" != "Agent" ]; then
   exit 0
 fi
 
-result=$(python -c "
+result=$(python3 -c "
 import json, sys
 
 try:

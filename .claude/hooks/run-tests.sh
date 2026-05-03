@@ -14,13 +14,13 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null || echo ".")" || exit 1
 
 INPUT=$(cat)
 
-if ! command -v python &>/dev/null; then
+if ! command -v python3 &>/dev/null; then
   exit 0
 fi
 
 # Only .py files are worth testing. The module itself also guards this,
 # but checking here avoids spawning Python for obvious non-Python edits.
-file_path=$(echo "$INPUT" | python -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('file_path',''))" 2>/dev/null || echo "")
+file_path=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('file_path',''))" 2>/dev/null || echo "")
 
 if ! echo "$file_path" | grep -qE '\.py$'; then
   exit 0
@@ -29,6 +29,6 @@ fi
 # Single Python invocation — module finds the right test target and
 # runs pytest against only that file (if it exists), emitting
 # additionalContext JSON on stdout if there's output.
-echo "$INPUT" | python -m divineos.hooks.targeted_tests 2>/dev/null
+echo "$INPUT" | python3 -m divineos.hooks.targeted_tests 2>/dev/null
 
 exit 0

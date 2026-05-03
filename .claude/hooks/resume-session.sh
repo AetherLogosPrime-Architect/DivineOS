@@ -16,9 +16,9 @@ fi
 
 # Reset checkpoint counters for resumed session
 # Use Python expanduser for Windows compatibility (Git Bash $HOME = /c/Users/...)
-DIVINEOS_DIR=$(python -c "import os; print(os.path.join(os.path.expanduser('~'), '.divineos'))" 2>/dev/null || echo "$HOME/.divineos")
+DIVINEOS_DIR=$(python3 -c "import os; print(os.path.join(os.path.expanduser('~'), '.divineos'))" 2>/dev/null || echo "$HOME/.divineos")
 mkdir -p "$DIVINEOS_DIR"
-python -c "
+python3 -c "
 import json, time, os
 SF = os.path.join(os.path.expanduser('~'), '.divineos', 'checkpoint_state.json')
 json.dump({'edits':0,'tool_calls':0,'last_checkpoint':0,'checkpoints_run':0,'session_start':time.time()}, open(SF,'w'), indent=2)
@@ -28,7 +28,7 @@ json.dump({'edits':0,'tool_calls':0,'last_checkpoint':0,'checkpoints_run':0,'ses
 # divineos briefing marks briefing as loaded — we don't want that here.
 # The gate will force the AI to do it deliberately.
 hud=$(divineos hud 2>/dev/null)
-handoff=$(python -c "
+handoff=$(python3 -c "
 import json
 from pathlib import Path
 p = Path.home() / '.divineos' / 'hud' / 'handoff_note.json'
@@ -68,7 +68,7 @@ ${hud}
 
 === END SESSION RESUME ==="
 
-  escaped=$(echo "$full_context" | python -c "import sys,json; print(json.dumps(sys.stdin.read()))" 2>/dev/null)
+  escaped=$(echo "$full_context" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))" 2>/dev/null)
   echo "{\"additionalContext\": ${escaped}}"
 fi
 
