@@ -16,6 +16,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Audit r9-21 #24: ML embedding stack as an explicit extras-group.
+# core/knowledge/_text.py imports sentence_transformers and sklearn;
+# without these, _ensure_embedding_model() returns False, the SIS
+# Tier 3 semantic layer is silently disabled, and contradiction
+# detection falls back to lexical-only. Naming the dependency makes
+# the degradation explicit (preflight surfaces a [DEGRADED] line)
+# instead of a fresh install silently shipping with half a brain.
+embeddings = [
+    "sentence-transformers>=2.0",
+    "scikit-learn>=1.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-asyncio>=0.21.0",
