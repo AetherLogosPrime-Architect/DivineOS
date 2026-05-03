@@ -108,8 +108,14 @@ def _get_ledger_root() -> Path:
     env_path = os.environ.get("DIVINEOS_FAMILY_LEDGER_DIR")
     if env_path:
         return Path(env_path)
-    # src/divineos/core/family/family_member_ledger.py -> up 4 to src/, up 1 to repo
-    return Path(__file__).parent.parent.parent.parent.parent / "family"
+    # Audit r9-21 #5 round-2 follow-up: route through data_dir() so
+    # the env override moves the family ledger directory in lockstep
+    # with the event ledger. Previously the 5-up walk pointed at the
+    # repo's top-level family/ directory, which doesn't exist under
+    # non-editable install and bypassed test isolation.
+    from divineos.core._ledger_base import data_dir
+
+    return data_dir() / "family"
 
 
 def get_ledger_path(member_slug: str) -> Path:

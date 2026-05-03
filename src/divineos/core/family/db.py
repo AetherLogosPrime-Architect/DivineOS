@@ -48,7 +48,14 @@ def _get_family_db_path() -> Path:
     env_path = os.environ.get("DIVINEOS_FAMILY_DB")
     if env_path:
         return Path(env_path)
-    return Path(__file__).parent.parent.parent.parent.parent / "data" / "family.db"
+    # Audit r9-21 #5 round-2 follow-up: route through data_dir() so the
+    # DIVINEOS_DB env override moves family.db in lockstep with the
+    # event ledger. Previously the 5-up walk hardcoded the src tree
+    # which broke under non-editable install and bypassed test
+    # isolation.
+    from divineos.core._ledger_base import data_dir
+
+    return data_dir() / "family.db"
 
 
 def __getattr__(name: str) -> object:

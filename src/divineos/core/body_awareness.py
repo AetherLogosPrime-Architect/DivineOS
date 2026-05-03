@@ -149,9 +149,24 @@ def _measure_cache(cache_dir: Path, name: str, limit_mb: float) -> CacheState:
     )
 
 
-def _get_project_root() -> Path:
-    """Project root: four levels up from this file (core/ -> divineos/ -> src/ -> root)."""
-    return Path(__file__).parent.parent.parent.parent
+def _get_project_root() -> Path | None:
+    """Project root, or None if the running install isn't a source checkout.
+
+    Audit r9-21 #5 round-2 follow-up: under ``pip install .`` (non-editable),
+    the four-level walk lands inside ``site-packages`` which has no
+    ``.mypy_cache`` / ``.pytest_cache`` / ``tmp`` to measure or prune.
+    The previous unconditional walk produced silent no-ops on dev caches
+    that don't exist there — and would crash if any caller assumed the
+    returned path was writable as a project tree.
+
+    Returns the candidate root only if it looks like a real source
+    checkout (contains pyproject.toml or .git). Otherwise None — callers
+    treat this as "no project root, skip cache pruning / transcript debris."
+    """
+    candidate = Path(__file__).parent.parent.parent.parent
+    if (candidate / "pyproject.toml").exists() or (candidate / ".git").exists():
+        return candidate
+    return None
 
 
 def prune_caches(dry_run: bool = False) -> list[str]:
@@ -164,6 +179,9 @@ def prune_caches(dry_run: bool = False) -> list[str]:
     """
     project_root = _get_project_root()
     actions: list[str] = []
+    if project_root is None:
+        # Non-editable install — there's no source-tree project to prune.
+        return actions
 
     for cache_name, limit_mb in CACHE_LIMITS.items():
         cache_dir = project_root / cache_name
@@ -487,6 +505,9 @@ def clean_pytest_tmp(dry_run: bool = False, keep_recent: int = 3) -> dict:
 
     project_root = _get_project_root()
     result: dict = {"removed": 0, "freed_mb": 0.0, "details": []}
+    if project_root is None:
+        # Non-editable install — no source tree containing tmp/pytest.
+        return result
 
     # Collect all pytest tmp dirs: main repo + worktrees
     pytest_dirs: list[Path] = []
@@ -691,8 +712,11 @@ def measure_vitals(auto_remediate: bool = True) -> SubstrateVitals:
         pass
 
     # -- Cache sizes (with auto-remediation) --
-    project_root = Path(__file__).parent.parent.parent.parent
+    project_root = _get_project_root()
     auto_pruned: list[str] = []
+    if project_root is None:
+        # Non-editable install — no source tree to measure caches in.
+        return vitals
     for cache_name, limit_mb in CACHE_LIMITS.items():
         cache_dir = project_root / cache_name
         if cache_dir.exists() and cache_dir.is_dir():

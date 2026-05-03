@@ -136,9 +136,23 @@ _FTS_TABLES: list[str] = [
 
 
 def _checkout_root() -> Path:
-    """Return the running checkout's root (where pyproject.toml lives)."""
-    # cli/admin_reset_template.py -> cli -> divineos -> src -> <root>
-    return Path(__file__).parent.parent.parent.parent
+    """Return the running checkout's root (where pyproject.toml lives).
+
+    Audit r9-21 #5 round-2 follow-up: this function intentionally
+    assumes a source checkout. ``divineos admin reset-template`` is
+    a developer-time command that re-applies seed.json from the local
+    repo — it has no meaningful behavior under ``pip install .``
+    (non-editable). Callers fail visibly rather than silently if the
+    walked path doesn't contain pyproject.toml.
+    """
+    candidate = Path(__file__).parent.parent.parent.parent
+    if not (candidate / "pyproject.toml").exists():
+        raise RuntimeError(
+            "admin reset-template requires a source checkout (pyproject.toml "
+            f"not found at {candidate}). This command isn't meaningful under "
+            "non-editable installs."
+        )
+    return candidate
 
 
 def _is_canonical_external() -> tuple[bool, Path | None]:
