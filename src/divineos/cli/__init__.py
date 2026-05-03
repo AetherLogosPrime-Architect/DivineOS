@@ -202,6 +202,7 @@ def cli() -> None:
 from divineos.cli import (  # noqa: E402
     analysis_commands,
     audit_commands,
+    bio_commands,
     body_commands,
     claim_commands,
     compass_commands,
@@ -240,6 +241,7 @@ journal_commands.register(cli)
 decision_commands.register(cli)
 claim_commands.register(cli)
 audit_commands.register(cli)
+bio_commands.register(cli)
 compass_commands.register(cli)
 body_commands.register(cli)
 directive_commands.register(cli)
