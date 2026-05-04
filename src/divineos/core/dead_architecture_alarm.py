@@ -107,8 +107,16 @@ _FTS_SHADOW_TABLES = frozenset(
         "journal_fts",
         "decision_fts",
         "claim_fts",
+        "system_events_fts",
     }
 )
+
+# Suffixes used by SQLite FTS5 for auto-generated internal tables.
+# These are companions to a parent FTS5 virtual table (e.g.
+# system_events_fts_data, system_events_fts_idx, etc.). We skip them
+# generically so adding a new FTS5 surface does not require an
+# explicit name addition here.
+_FTS_INTERNAL_SUFFIXES = ("_data", "_idx", "_docsize", "_config")
 
 
 @dataclass
@@ -196,6 +204,8 @@ def scan_dormant_tables() -> list[str]:
         for table in sorted(all_tables):
             if table in _INFRASTRUCTURE_TABLES or table in _FTS_SHADOW_TABLES:
                 continue
+            if table.endswith(_FTS_INTERNAL_SUFFIXES):
+                continue
             try:
                 count = conn.execute(f"SELECT COUNT(*) FROM [{table}]").fetchone()[0]  # nosec B608: table/column names from module constants; values parameterized
                 if count == 0:
@@ -222,6 +232,8 @@ def scan_active_tables() -> list[str]:
         active = []
         for table in sorted(all_tables):
             if table in _INFRASTRUCTURE_TABLES or table in _FTS_SHADOW_TABLES:
+                continue
+            if table.endswith(_FTS_INTERNAL_SUFFIXES):
                 continue
             try:
                 count = conn.execute(f"SELECT COUNT(*) FROM [{table}]").fetchone()[0]  # nosec B608: table/column names from module constants; values parameterized
