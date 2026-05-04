@@ -819,6 +819,19 @@ def _is_extraction_noise(content: str, knowledge_type: str) -> bool:
     if "user expressed" in stripped_lower and "preferences this session" in stripped_lower:
         return True
 
+    # Auto-correction-template artifact: extracted "knowledge" of the
+    # shape "I was [conversational fragment], but the correct approach
+    # is: [more conversation]". The extractor was wrapping operator
+    # responses in this fake-correction template and storing them as
+    # PRINCIPLE/BOUNDARY entries — the wrapped content is raw operator
+    # voice, not a distilled correction. 30 live entries matched
+    # 2026-05-04 across PRINCIPLE/BOUNDARY/DIRECTION types in TESTED
+    # and CONFIRMED maturities. The phrase "but the correct approach
+    # is:" never appears in legitimately-distilled knowledge — it is
+    # always the extractor's wrapping artifact.
+    if "but the correct approach is:" in stripped_lower:
+        return True
+
     # Questions directed at the AI — prompts, not knowledge
     if stripped_lower.endswith("?"):
         is_tag_question = stripped_lower.rstrip().endswith(("ok?", "right?", "yes?", "no?"))

@@ -729,3 +729,31 @@ class TestAuditReviewNoise:
             "matches across many sessions.",
             "PATTERN",
         )
+
+    def test_auto_correction_template(self):
+        """Extractor wraps operator-voice replies in 'I was X, but the
+        correct approach is: Y'. 30 live entries matched 2026-05-04 —
+        the wrapped content is raw operator voice, not distilled."""
+        assert _is_extraction_noise(
+            "I was nine minds each looking at the OS from a different "
+            "angle, but the correct approach is: Not just 9. we could "
+            "add so many more.",
+            "PRINCIPLE",
+        )
+
+    def test_auto_correction_template_in_boundary(self):
+        assert _is_extraction_noise(
+            "I was framing it one way, but the correct approach is: frame it the other way.",
+            "BOUNDARY",
+        )
+
+    def test_real_correction_without_template_passes(self):
+        """A real principle that doesn't use the auto-template phrase
+        still passes through. The filter targets the specific extractor
+        artifact, not all corrections."""
+        assert not _is_extraction_noise(
+            "Defer database connection until first use; do not cache at "
+            "module-import time. DB_PATH overrides depend on lazy "
+            "resolution.",
+            "PRINCIPLE",
+        )
