@@ -688,7 +688,7 @@ def get_observations(
         rows = conn.execute(
             "SELECT observation_id, created_at, spectrum, position, evidence, "
             "source, session_id, tags, fire_id "
-            f"FROM compass_observation{where_sql} "
+            f"FROM compass_observation{where_sql} "  # nosec B608 — where_sql composed from literal fragments; values bound via params
             "ORDER BY created_at DESC LIMIT ?",
             tuple(params),
         ).fetchall()
