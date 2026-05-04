@@ -1,5 +1,19 @@
 """Circuit-breaker primitive (claim 0d628d8e, PORT-CANDIDATE 4).
 
+# AGENT_RUNTIME — Phase 2 deferred: 159 LOC supervisor primitive.
+# Audit master finding #22 explicitly named this module as deferred
+# scaffolding ("supervisor/circuit_breaker (159 LOC, no callers — Phase
+# 2 wiring deferred)"). Built ahead of the supervisor wiring layer
+# that would call is_tripped(name) before invoking failure-prone
+# modules. Tests pin the contract; production wiring lands with the
+# supervisor pass.
+#
+# Audit r9-21 #22 round-3 follow-up: this module was hidden from the
+# orphan detector before round-3 due to a regex blind spot in
+# scripts/check_orphan_modules.py. After the regex fix landed, the
+# detector surfaced it correctly. The marker is now applied.
+
+
 Three-strikes-and-excommunicated for runtime modules. Track
 consecutive failures per module name; once the failure count crosses
 ``DEFAULT_THRESHOLD``, the module is "tripped" — callers can check

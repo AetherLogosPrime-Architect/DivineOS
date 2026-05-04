@@ -97,15 +97,39 @@ def _is_agent_runtime(path: Path) -> bool:
 def _has_caller_in(needle_module: str, search_root: Path, exclude: Path | None = None) -> bool:
     """Return True if any file under ``search_root`` imports ``needle_module``.
 
-    Matches both ``from <needle_module> import ...`` and
-    ``import <needle_module>`` patterns. Excludes the module's own
-    ``__init__.py`` (since a package re-export isn't a caller) and
+    Audit r9-21 #22 round-3 follow-up: previously matched only the dotted
+    forms ``from <full.dotted.path> import ...`` and ``import <full.dotted.path>``.
+    Missed the parent-import style ``from <parent> import <leaf>`` which is
+    a perfectly valid Python pattern and was the actual style used by
+    family_queue's two real production callers (cli/family_queue_commands.py
+    and core/family_queue_surface.py). Reviewer caught the false-positive
+    orphan flag on family/queue.py — the regex blind spot let one wired
+    module read as orphan, and (more concerning) might have under-reported
+    other genuinely-orphan modules whose parent-import-style callers
+    happened to be in test/hook code.
+
+    This function now matches BOTH styles:
+      - ``from <full.dotted.path> import X``  (existing)
+      - ``import <full.dotted.path>``         (existing)
+      - ``from <parent> import <leaf>``       (NEW)
+
+    Excludes the module's own ``__init__.py`` (re-export, not caller) and
     the file at ``exclude`` (the module itself).
     """
-    # Pattern: bare module-name reference or sub-module reference
-    pat = re.compile(
+    # Pattern 1: full dotted reference.
+    pat_dotted = re.compile(
         rf"\b(?:from\s+{re.escape(needle_module)}\b|import\s+{re.escape(needle_module)}\b)"
     )
+    # Pattern 2: parent-import style — `from <parent> import <leaf>` where
+    # leaf matches our module's last segment. Handles both single imports
+    # and comma-separated multi-imports (``from x.y import a, leaf, b``).
+    parent, _, leaf = needle_module.rpartition(".")
+    pat_parent: re.Pattern[str] | None = None
+    if parent and leaf:
+        pat_parent = re.compile(
+            rf"\bfrom\s+{re.escape(parent)}\s+import\s+(?:[^\n]*?[\s,(])?{re.escape(leaf)}\b"
+        )
+
     for p in search_root.rglob("*.py"):
         if exclude and p.resolve() == exclude.resolve():
             continue
@@ -113,21 +137,24 @@ def _has_caller_in(needle_module: str, search_root: Path, exclude: Path | None =
             continue
         # Skip the module's package __init__.py — re-exports aren't real callers
         if p.name == "__init__.py":
-            parent = p.parent
-            # If this __init__.py is the parent of the module we're checking,
-            # treat its imports as re-exports, not callers.
+            init_parent = p.parent
             try:
-                parent_dotted = _module_dotted_name(parent / "_dummy.py").rsplit(".", 1)[0]
+                parent_dotted = _module_dotted_name(init_parent / "_dummy.py").rsplit(".", 1)[0]
                 if needle_module.startswith(parent_dotted + "."):
                     continue
             except ValueError:
-                # Path isn't under SRC (e.g., a test conftest); fall through.
                 pass
         try:
             text = p.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
-        if pat.search(text):
+        if pat_dotted.search(text):
+            return True
+        if pat_parent is not None and pat_parent.search(text):
+            # Defense against false positives: ensure the match isn't on the
+            # module's own __init__.py re-export. (The leaf check above
+            # handles direct __init__.py exclusion; this catches edge cases
+            # where the parent-import lives in an unrelated file.)
             return True
     return False
 

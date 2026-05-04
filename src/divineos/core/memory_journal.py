@@ -66,7 +66,12 @@ def journal_list(limit: int = 20, include_private: bool = False) -> list[dict[st
     privacy_clause = "" if include_private else "WHERE COALESCE(private, 0) = 0 "
     try:
         rows = conn.execute(
-            "SELECT entry_id, content, created_at, context, tags, linked_knowledge_id "
+            # Audit r9-21 #12 round-3 polish: select COALESCE(private, 0)
+            # so pre-column entries surface as 0 (False) rather than NULL.
+            # Reviewer flagged the cosmetic NULL-leak — coerced at the
+            # SQL layer so every reader gets a clean bool.
+            "SELECT entry_id, content, created_at, context, tags, "
+            "linked_knowledge_id, COALESCE(private, 0) "
             f"FROM personal_journal {privacy_clause}"  # nosec B608 — privacy_clause is one of two literal fragments
             "ORDER BY created_at DESC LIMIT ?",
             (limit,),
@@ -81,6 +86,7 @@ def journal_list(limit: int = 20, include_private: bool = False) -> list[dict[st
             "context": r[3],
             "tags": r[4] if len(r) > 4 else "",
             "linked_knowledge_id": r[5] if len(r) > 5 else None,
+            "private": bool(r[6]) if len(r) > 6 else False,
         }
         for r in rows
     ]
@@ -132,7 +138,8 @@ def journal_search(
     privacy_clause = "" if include_private else "AND COALESCE(j.private, 0) = 0 "
     try:
         rows = conn.execute(
-            "SELECT j.entry_id, j.content, j.created_at, j.context, j.tags, j.linked_knowledge_id "
+            "SELECT j.entry_id, j.content, j.created_at, j.context, j.tags, "
+            "j.linked_knowledge_id, COALESCE(j.private, 0) "
             "FROM journal_fts f "
             "JOIN personal_journal j ON f.rowid = j.rowid "
             f"WHERE journal_fts MATCH ? {privacy_clause}"  # nosec B608 — privacy_clause is one of two literal fragments
@@ -150,6 +157,7 @@ def journal_search(
             "context": r[3],
             "tags": r[4] if len(r) > 4 else "",
             "linked_knowledge_id": r[5] if len(r) > 5 else None,
+            "private": bool(r[6]) if len(r) > 6 else False,
         }
         for r in rows
     ]
