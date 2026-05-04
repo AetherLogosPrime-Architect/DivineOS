@@ -662,3 +662,26 @@ class TestAuditReviewNoise:
             "I was corrected: always check return values before using them.",
             "PRINCIPLE",
         )
+
+    def test_user_confirmed_template(self):
+        """Auto-extraction was wrapping conversational acks in this exact suffix
+        and storing them as PRINCIPLE-typed knowledge. The corroboration_count
+        metric self-Goodharts because the same template matches across many
+        sessions. Discovered 2026-05-04: 18 entries in TESTED, 29 across all
+        maturities, top entry at corrob=49."""
+        assert _is_extraction_noise(
+            "I fixed and pushed and the user confirmed this was the right approach.",
+            "PRINCIPLE",
+        )
+
+    def test_user_confirmed_template_with_prefix(self):
+        assert _is_extraction_noise(
+            "I burn-in complete and the user confirmed this was the right approach.",
+            "PRINCIPLE",
+        )
+
+    def test_user_confirmed_template_case_insensitive(self):
+        assert _is_extraction_noise(
+            "Setup complete AND THE USER CONFIRMED THIS WAS THE RIGHT APPROACH.",
+            "PRINCIPLE",
+        )

@@ -780,6 +780,18 @@ def _is_extraction_noise(content: str, knowledge_type: str) -> bool:
     if _CONVERSATIONAL_NOISE.match(stripped_lower):
         return True
 
+    # Templated extraction-tail noise: "[fragment] and the user confirmed
+    # this was the right approach". Auto-extraction has been wrapping
+    # session conversational acks in this suffix and storing them as
+    # PRINCIPLE-typed knowledge. The corroboration_count metric then
+    # self-Goodharts because the same template matches across many
+    # sessions. Discovered 2026-05-04 during TESTED-tier curation:
+    # 18 entries in TESTED, 29 across all maturities, top entry at
+    # corrob=49. No legitimate principle ends in a meta-affirmation
+    # about user agreement; the suffix is a dead giveaway.
+    if "and the user confirmed this was the right approach" in stripped_lower:
+        return True
+
     # Questions directed at the AI — prompts, not knowledge
     if stripped_lower.endswith("?"):
         is_tag_question = stripped_lower.rstrip().endswith(("ok?", "right?", "yes?", "no?"))
