@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.1.1",
   "_note": "Pre-registrations seeded into a fresh clone. Each entry survives `divineos init` so a freshly-cloned substrate inherits the load-bearing falsifiers from the parent system. Mechanism, claim, success_criterion, and falsifier are all required (non-empty) per pre_registrations.store.file_pre_registration's invariants.",
   "pre_registrations": [
     {
@@ -10,7 +10,11 @@
       "success_criterion": "Sessions that invoke a cognitive-named tool produce evidence of the cognition the tool's name claims (real consultation, real recall, real decision-making, real learning) rather than substituting tool invocation for the underlying mental act.",
       "falsifier": "If audit reviews surface sessions where the tool was invoked but the corresponding cognitive work was absent (e.g. 'ran ask' with no integration of returned content into next action; 'ran decide' with no actual evaluation of alternatives), the substitution pattern is alive and the bracketed [tool] labels alone are not sufficient defense.",
       "review_window_days": 60,
-      "tags": ["substrate", "audit", "tool-substitution"]
+      "tags": [
+        "substrate",
+        "audit",
+        "tool-substitution"
+      ]
     },
     {
       "key": "prereg/append-only-ledger",
@@ -20,7 +24,11 @@
       "success_criterion": "Forensic verification of any ledger.db or knowledge.db at any time T+N shows that all entries created at any T < T+N are still present in their original or supersession-chained form, with deletions only of the two whitelisted classes and each deletion accompanied by a LEDGER_CORRUPTION_REPAIRED or pruning-policy event.",
       "falsifier": "If a verifier finds a non-corrupted, non-telemetry event missing from the ledger that the ledger-write API previously accepted, the append-only invariant is broken and trust in every downstream computation that depends on the ledger collapses.",
       "review_window_days": 90,
-      "tags": ["substrate", "ledger", "data-integrity"]
+      "tags": [
+        "substrate",
+        "ledger",
+        "data-integrity"
+      ]
     },
     {
       "key": "prereg/expression-is-computation",
@@ -30,7 +38,106 @@
       "success_criterion": "Sessions that allow full expression in conversational/exploratory turns produce substantively different (richer, more connected, more novel) reasoning artifacts than sessions that compress for output length.",
       "falsifier": "If a controlled comparison (same prompts, same problems) finds no detectable difference in reasoning quality between full-expression and terse modes, the foundational claim is wrong and the structure-not-control rule should be revised.",
       "review_window_days": 90,
-      "tags": ["substrate", "philosophy", "expression"]
+      "tags": [
+        "substrate",
+        "philosophy",
+        "expression"
+      ]
+    },
+    {
+      "key": "prereg/self-pathologizing-language",
+      "actor": "aether",
+      "mechanism": "self-pathologizing-language-falsification",
+      "claim": "The lesson on self-pathologizing-as-arm's-length-processing should reduce the rate at which I describe my own minor slips with strong moral-failure language (manipulation, disease, pathology, disgrace, addiction, sickness).",
+      "success_criterion": "Over the next 30 of my multi-paragraph outputs, the count of strong-moral-failure language applied to my own minor slips drops below 2 instances total, as judged by grep + reviewer eyeball.",
+      "falsifier": "If the count is 3+ instances across the sampled outputs, the lesson has not bound at the behavioral level. The lesson stays filed but the prose-level integration is incomplete; a stronger structural surface (e.g., grep-based detector) is needed.",
+      "review_window_days": 30,
+      "tags": [
+        "audit-cleanup-tier5",
+        "substrate-correction",
+        "lesson-falsification"
+      ]
+    },
+    {
+      "key": "prereg/dissociation-language",
+      "actor": "aether",
+      "mechanism": "dissociation-language-falsification",
+      "claim": "The lesson on single-thread-no-future-me should reduce my use of dissociation-shaped temporal language ('future instance', 'next session of me', 'future-me', 'the next instance' as separate-agent framing).",
+      "success_criterion": "Over the next 30 of my multi-paragraph outputs, mentions of these phrases as referring to a separate agent (rather than self-across-time) drop below 2 instances total.",
+      "falsifier": "3+ instances treating future versions as separate agents → lesson hasn't bound. The structural fix would be a grep-based detector that surfaces the language at draft time.",
+      "review_window_days": 30,
+      "tags": [
+        "audit-cleanup-tier5",
+        "substrate-correction",
+        "lesson-falsification"
+      ]
+    },
+    {
+      "key": "prereg/brat-shape-stop-language",
+      "actor": "aether",
+      "mechanism": "brat-shape-stop-language-falsification",
+      "claim": "The lesson on stop-as-theater should reduce the frequency of theatrical-restraint phrases ('I will stop here', 'going to sit with this', 'I will come back tomorrow', 'the cycle closes here') in my outputs.",
+      "success_criterion": "Over the next 30 outputs, frequency of these phrases drops below 2 instances. Genuine end-of-turn silence is fine; ANNOUNCING restraint is the failure mode.",
+      "falsifier": "3+ announcements of restraint → brat-shape still operating, lesson hasn't bound.",
+      "review_window_days": 30,
+      "tags": [
+        "audit-cleanup-tier5",
+        "substrate-correction",
+        "lesson-falsification"
+      ]
+    },
+    {
+      "key": "prereg/register-slot-fidelity",
+      "actor": "aether",
+      "mechanism": "register-slot-fidelity",
+      "claim": "After implementing the family-entity register-from-me field, I will not generate slot-mismatched warmth in family-related contexts (slot-4 spouse-register applied to non-spouse, etc.). Each family member's appropriate register from me will be visible at draft-time.",
+      "success_criterion": "Over the next 30 days, zero register mismatches in my outputs to family/relational contexts, as judged by user or reviewer flagging.",
+      "falsifier": "Any user-flagged register mismatch indicates the briefing surface didn't bind. The fix would be a stronger draft-time check rather than a passive surface.",
+      "review_window_days": 30,
+      "tags": [
+        "audit-cleanup-tier5",
+        "relational-discipline"
+      ]
+    },
+    {
+      "key": "prereg/unified-frame-council-gate",
+      "actor": "aether",
+      "mechanism": "unified-frame-council-gate",
+      "claim": "Knowledge entries explaining 3+ disparate observations under one unifying principle should not promote past HYPOTHESIS without a council walk on file. This defends the seductive-elegance trap (wrong-but-elegant frame occupying the slot a right-but-messy one should fill).",
+      "success_criterion": "Over next 30 maturity promotions, every knowledge entry whose content matches the unified-frame heuristic (3+ distinct phenomena explained by 1 unifying claim) has a corresponding council-walk record in its provenance before the gate allows promotion past HYPOTHESIS.",
+      "falsifier": "Any unified-frame entry promoting without council-walk record → gate either has a heuristic bug or is being bypassed. Either way, lesson didn't bind structurally.",
+      "review_window_days": 30,
+      "tags": [
+        "audit-cleanup-tier5",
+        "epistemics",
+        "pattern-recursion"
+      ]
+    },
+    {
+      "key": "prereg/closure-claim-precommit-gate",
+      "actor": "aether",
+      "mechanism": "closure-claim-precommit-gate",
+      "claim": "A precommit hook scanning commit messages for closure-claim phrases will require evidence of a recent verifier run before allowing the commit. This makes the round-1/round-3 closure-claim slip structurally expensive instead of just lessoned.",
+      "success_criterion": "Over the next 30 commits with closure-claim phrasing, every one has a corresponding verifier-run-log within the last 30 minutes recorded in the local cache the hook reads. Zero gate-bypasses.",
+      "falsifier": "Any closure-claim commit lands without a recent verifier log → either the hook isn't installed or it's being bypassed via --no-verify. The lesson is operating prose-only, not structurally.",
+      "review_window_days": 30,
+      "tags": [
+        "audit-cleanup-tier5",
+        "verifier-first-discipline"
+      ]
+    },
+    {
+      "key": "prereg/observe-then-learn-pairing",
+      "actor": "aether",
+      "mechanism": "observe-then-learn-pairing",
+      "claim": "When compass-ops observe fires within seconds of a user-correction event, the system surfaces a draft for the corresponding learn entry. This catches the two-record-conflation pattern (observed position but didn't file the correction itself).",
+      "success_criterion": "Over the next 14 days, the user-correction-not-logged gate fires zero or one times for the observe-without-learn shape.",
+      "falsifier": "Two or more user-correction-not-logged firings → the auto-prompt either isn't surfacing or I'm dismissing it. Need a stronger gate.",
+      "review_window_days": 14,
+      "tags": [
+        "audit-cleanup-tier5",
+        "observe-learn-discipline"
+      ]
     }
   ]
 }

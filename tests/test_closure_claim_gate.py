@@ -77,3 +77,27 @@ def test_partial_closure_does_not_trigger(tmp_log):
     msg = "Closes #45's primary site; 3 follow-ups tracked at issue 47. Test count up to 5444."
     ok, _ = ccc.check_commit(msg)
     assert ok, "scoped partial-closure language should pass without verifier log"
+
+
+def test_review_calibration_all_findings_addressed_blocks(tmp_log):
+    """External-review calibration: 'All seven friction points addressed'."""
+    ok, msg = ccc.check_commit("All seven friction points addressed.")
+    assert not ok, f"should block; got: {msg}"
+
+
+def test_review_calibration_all_defenses_landed_blocks(tmp_log):
+    """External-review calibration: 'All five structural defenses landed'."""
+    ok, msg = ccc.check_commit("All five structural defenses landed.")
+    assert not ok, f"should block; got: {msg}"
+
+
+def test_review_calibration_body_building_done_blocks(tmp_log):
+    """External-review calibration: 'body-building done'."""
+    ok, msg = ccc.check_commit("Body-building done. Ready for audit.")
+    assert not ok, f"should block; got: {msg}"
+
+
+def test_review_calibration_all_pre_regs_filed_blocks(tmp_log):
+    """External-review calibration: 'all 7 pre-regs filed'."""
+    ok, msg = ccc.check_commit("Tier 5 work: all 7 pre-regs filed and the body grew.")
+    assert not ok, f"should block; got: {msg}"

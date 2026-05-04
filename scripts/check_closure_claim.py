@@ -74,6 +74,17 @@ _CLOSURE_PATTERNS = (
     r"\bverified\s+clean\b",
     r"\bcompletely\s+closed\b",
     r"\bdefinitively\s+closed\b",
+    # External-review calibration tightening (round-3+ follow-up): the
+    # gate caught the patterns from rounds 1 and 3 but missed my own
+    # subsequent commit-summary phrasings. Adding the shapes the
+    # reviewer flagged so they bind on the next slip. The structure
+    # allows for an optional adjective between the count-word and the
+    # noun ("all seven friction points addressed" — adjective is
+    # "friction"), and a hyphenated noun like "pre-regs".
+    r"\ball\s+(?:\d+|\w+)(?:\s+\w+){0,2}\s+(?:findings|points|defenses|fixes|items|tasks|issues|pre-?regs?|gates?|hooks?)\s+"
+    r"(?:addressed|landed|closed|done|resolved|complete|filed|shipped)",
+    r"\b(?:body-?building|cleanup|audit)\s+(?:done|complete|finished)\b",
+    r"\beverything\s+(?:landed|closed|complete|done)\b",
 )
 _CLOSURE_RE = re.compile("|".join(_CLOSURE_PATTERNS), re.IGNORECASE)
 
