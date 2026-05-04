@@ -133,3 +133,19 @@ class TestShapeIndexedRetrieval:
             set_lesson_shape(f"cat_{i}", "common shape token", f"action {i}")
         results = find_lessons_by_shape("common shape token", limit=3)
         assert len(results) == 3
+
+    def test_returned_dict_includes_shape_and_action(self, tmp_path, monkeypatch):
+        """Auditor 4th-pass finding: callers wanting to display the matched
+        shape/action shouldn't need a second query. The returned dict
+        carries failure_shape and preventive_action directly."""
+        _setup(tmp_path, monkeypatch)
+        record_lesson("force_push_botched", "rebase ate work", "s1")
+        set_lesson_shape(
+            "force_push_botched",
+            "force-push of branch with empty diff",
+            "verify unique commits via git log before push",
+        )
+        results = find_lessons_by_shape("force-push")
+        assert len(results) == 1
+        assert results[0]["failure_shape"] == "force-push of branch with empty diff"
+        assert results[0]["preventive_action"] == "verify unique commits via git log before push"
