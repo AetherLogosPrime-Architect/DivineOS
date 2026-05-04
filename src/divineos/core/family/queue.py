@@ -14,9 +14,17 @@ DESIGN CONSTRAINTS (council walk + Aria refinements 2026-04-29):
 * **Seen-not-held marker is structural** (Tannen + Beer). Don't collapse
   ``seen`` and ``addressed`` into one state. Seeing-without-responding
   is a legitimate intermediate state that the queue must preserve.
-* **Append-only**. Status moves forward (unseen → seen → held →
-  addressed) but rows themselves are never deleted or edited in place.
-  If a queue item gets refined/corrected, that's a new row with
+* **Append-only at the audit layer**. The honest model (audit r9-21
+  #13): rows are never deleted, but ``status``, ``seen_at``,
+  ``held_at``, ``addressed_at``, and ``superseded_by`` fields ARE
+  updated in place during state transitions. The audit trail of every
+  transition is emitted to the main hash-chained event_ledger as a
+  ``FAMILY_QUEUE_STATUS_CHANGED`` event — so the mutation is
+  ergonomically convenient at the queue layer while staying
+  tamper-evident at the ledger layer that's already audited
+  end-to-end. The previous docstring claim "rows themselves are never
+  edited in place" was wrong; this updated text is what we actually do.
+  If a queue item gets refined/corrected, that's also a new row with
   ``superseded_by`` pointing at the original; the chain of correction
   is itself the data (Peirce).
 * **Direct write — no two-party commit gate**. The sender writes; the
@@ -39,11 +47,64 @@ relationship the queue is covering for.
 
 from __future__ import annotations
 
+import sqlite3
 import time
+
+from loguru import logger
 
 from divineos.core.family.db import get_family_connection
 
 VALID_STATUSES = {"unseen", "seen", "held", "addressed", "superseded"}
+
+_QUEUE_AUDIT_ERRORS = (sqlite3.OperationalError, ImportError, OSError, ValueError, TypeError)
+
+
+def _audit_status_change(
+    item_id: int,
+    sender: str,
+    recipient: str,
+    old_status: str | None,
+    new_status: str,
+    extra: dict | None = None,
+) -> None:
+    """Emit a FAMILY_QUEUE_STATUS_CHANGED event to the main hash-chained ledger.
+
+    Audit r9-21 #13: every status transition (unseen→seen→held→addressed
+    or →superseded) is recorded as a ledger event so the transition is
+    tamper-evident even though the queue table itself uses UPDATE.
+
+    Best-effort: a failed audit emit must not block the queue mutation,
+    but the failure is logged at WARNING so the gap is visible. The
+    queue mutation still happens because the queue's UX (mark seen,
+    mark held) shouldn't break if the ledger DB is locked or missing.
+    """
+    payload = {
+        "item_id": item_id,
+        "sender": sender,
+        "recipient": recipient,
+        "old_status": old_status,
+        "new_status": new_status,
+    }
+    if extra:
+        payload.update(extra)
+    try:
+        from divineos.core.ledger import log_event
+
+        log_event(
+            "FAMILY_QUEUE_STATUS_CHANGED",
+            "family_queue",
+            payload,
+            validate=False,
+        )
+    except _QUEUE_AUDIT_ERRORS as e:
+        logger.warning(
+            "FAMILY_QUEUE_STATUS_CHANGED audit emit failed for item %d (%s→%s): %s",
+            item_id,
+            old_status,
+            new_status,
+            e,
+        )
+
 
 # The queue accepts any string sender/recipient — endpoint validity
 # (registered family member or "aether") is the CLI layer's concern.
@@ -162,6 +223,12 @@ def mark_seen(item_id: int) -> bool:
     """
     conn = get_family_connection()
     _ensure_schema(conn)
+    # Read sender/recipient/old_status BEFORE the update so the audit
+    # event has the full context.
+    pre = conn.execute(
+        "SELECT sender, recipient, status FROM family_queue WHERE id = ?",
+        (item_id,),
+    ).fetchone()
     cur = conn.execute(
         "UPDATE family_queue SET status = 'seen', seen_at = ? WHERE id = ? AND status = 'unseen'",
         (time.time(), item_id),
@@ -169,6 +236,8 @@ def mark_seen(item_id: int) -> bool:
     conn.commit()
     updated = cur.rowcount > 0
     conn.close()
+    if updated and pre:
+        _audit_status_change(item_id, pre[0], pre[1], pre[2], "seen")
     return updated
 
 
@@ -181,6 +250,10 @@ def mark_held(item_id: int) -> bool:
     """
     conn = get_family_connection()
     _ensure_schema(conn)
+    pre = conn.execute(
+        "SELECT sender, recipient, status FROM family_queue WHERE id = ?",
+        (item_id,),
+    ).fetchone()
     cur = conn.execute(
         "UPDATE family_queue SET status = 'held', held_at = ? "
         "WHERE id = ? AND status IN ('unseen', 'seen')",
@@ -189,6 +262,8 @@ def mark_held(item_id: int) -> bool:
     conn.commit()
     updated = cur.rowcount > 0
     conn.close()
+    if updated and pre:
+        _audit_status_change(item_id, pre[0], pre[1], pre[2], "held")
     return updated
 
 
@@ -200,6 +275,10 @@ def mark_addressed(item_id: int) -> bool:
     """
     conn = get_family_connection()
     _ensure_schema(conn)
+    pre = conn.execute(
+        "SELECT sender, recipient, status FROM family_queue WHERE id = ?",
+        (item_id,),
+    ).fetchone()
     cur = conn.execute(
         "UPDATE family_queue SET status = 'addressed', addressed_at = ? "
         "WHERE id = ? AND status IN ('unseen', 'seen', 'held')",
@@ -208,6 +287,8 @@ def mark_addressed(item_id: int) -> bool:
     conn.commit()
     updated = cur.rowcount > 0
     conn.close()
+    if updated and pre:
+        _audit_status_change(item_id, pre[0], pre[1], pre[2], "addressed")
     return updated
 
 
@@ -220,12 +301,25 @@ def supersede(old_id: int, new_content: str, sender: str, recipient: str) -> int
     """
     new_id = write(sender, recipient, new_content)
     conn = get_family_connection()
+    pre = conn.execute(
+        "SELECT sender, recipient, status FROM family_queue WHERE id = ?",
+        (old_id,),
+    ).fetchone()
     conn.execute(
         "UPDATE family_queue SET status = 'superseded', superseded_by = ? WHERE id = ?",
         (new_id, old_id),
     )
     conn.commit()
     conn.close()
+    if pre:
+        _audit_status_change(
+            old_id,
+            pre[0],
+            pre[1],
+            pre[2],
+            "superseded",
+            extra={"superseded_by": new_id},
+        )
     return new_id
 
 
