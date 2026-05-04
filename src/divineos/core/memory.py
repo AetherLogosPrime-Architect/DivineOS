@@ -78,6 +78,11 @@ def init_memory_tables() -> None:
         for col, defn in [
             ("linked_knowledge_id", "TEXT DEFAULT NULL"),
             ("tags", "TEXT NOT NULL DEFAULT ''"),
+            # Audit r9-21 #12: privacy column. When 1, the entry is
+            # excluded from FTS5 search by default. Templated on the
+            # holding_room privacy model. Default 0 preserves the
+            # current behavior for all existing entries.
+            ("private", "INTEGER NOT NULL DEFAULT 0"),
         ]:
             try:
                 conn.execute(f"ALTER TABLE personal_journal ADD COLUMN {col} {defn}")
