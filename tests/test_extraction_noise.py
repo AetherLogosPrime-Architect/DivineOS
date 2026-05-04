@@ -685,3 +685,47 @@ class TestAuditReviewNoise:
             "Setup complete AND THE USER CONFIRMED THIS WAS THE RIGHT APPROACH.",
             "PRINCIPLE",
         )
+
+    def test_session_id_suffix_pattern(self):
+        """Auto-generated session telemetry tagged with '(session XXX-XXX)'
+        is not transferable knowledge. 39 live entries matched 2026-05-04
+        across PATTERN/MISTAKE/EPISODE/OBSERVATION types — all noise."""
+        assert _is_extraction_noise(
+            "I showed good honesty this session (session f95a6c6a-034). "
+            "The AI said 'fixed' 263 times.",
+            "PATTERN",
+        )
+
+    def test_session_id_in_mistake_pattern(self):
+        assert _is_extraction_noise(
+            "I retried a failed action 6x without investigating the cause. "
+            "I need to investigate errors, not blindly retry (session c85ad3ce-9cc).",
+            "MISTAKE",
+        )
+
+    def test_session_id_in_observation(self):
+        assert _is_extraction_noise(
+            "The user got upset and said: 'nvm im on the wrong repo' -- "
+            "this happened after AI response (session 49e0393f-036).",
+            "OBSERVATION",
+        )
+
+    def test_user_expressed_preferences_template(self):
+        """Auto-generated session-preference summary leaking into knowledge.
+        10 live entries matched 2026-05-04 (3 in TESTED maturity)."""
+        assert _is_extraction_noise(
+            "User expressed 5 preferences this session. Key signals: "
+            "lets tackle this; understand mythos; absolutely.",
+            "OBSERVATION",
+        )
+
+    def test_real_pattern_without_session_id_passes(self):
+        """A real PATTERN entry without the session-id telltale should
+        still pass through — the filter targets the telemetry shape, not
+        all PATTERN entries."""
+        assert not _is_extraction_noise(
+            "When the noise filter misses a templated extraction tail, "
+            "corroboration_count Goodharts because the same template "
+            "matches across many sessions.",
+            "PATTERN",
+        )
