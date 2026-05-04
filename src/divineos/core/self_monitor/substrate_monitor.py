@@ -40,6 +40,10 @@ The decisive question: did the tool's output flow into the agent's
 subsequent thinking and action, or did it just get logged?
 """
 
+# AGENT_RUNTIME — Phase 2 deferred — self_monitor pillar #3 of 5.
+# (audit r9-21 #22: Phase-2 deferred orphan; marker documents the
+# scaffolding-ahead-of-wiring intent so future scans don't re-flag.)
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

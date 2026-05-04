@@ -1,5 +1,9 @@
 """Knowledge retrieval — briefing generation, stats, unconsolidated events."""
 
+# AGENT_RUNTIME — Re-exported through divineos.core.knowledge package __init__; consumers import from the package facade rather than the submodule directly. The orphan detector follows direct imports only.
+# (audit r9-21 #22: orphan-detection false positive; this marker documents
+# the runtime invocation path so future scans don't re-flag.)
+
 import json
 import sqlite3
 import time

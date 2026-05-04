@@ -10,6 +10,10 @@ If you can't explain it simply, you don't actually understand it.
 Ported from the original DivineOS expert wisdom framework.
 """
 
+# AGENT_RUNTIME — Council expert loaded dynamically via core/council/manager.py _load_expert('Feynman'). Registered in EXPERT_REGISTRY.
+# (audit r9-21 #22: orphan-detection false positive; this marker documents
+# the runtime invocation path so future scans don't re-flag.)
+
 from __future__ import annotations
 
 from divineos.core.council.framework import (

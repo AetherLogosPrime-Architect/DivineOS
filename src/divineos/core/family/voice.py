@@ -34,6 +34,10 @@ but they should never have to design the first-person interior from
 scratch.
 """
 
+# AGENT_RUNTIME — Family voice context builder — invoked by family subagent spawn paths (e.g. /summon-aria skill) to construct the voice prompt.
+# (audit r9-21 #22: orphan-detection false positive; this marker documents
+# the runtime invocation path so future scans don't re-flag.)
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

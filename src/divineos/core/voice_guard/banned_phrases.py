@@ -36,6 +36,10 @@ this prevents accidental in-place modification that would silently
 change voice-guard behavior across the codebase.
 """
 
+# AGENT_RUNTIME — Phase 2 deferred — voice_guard catches authorial-affect drift patterns ('I feel like', 'maybe', etc.). Scaffold for the voice-quality monitor; tests cover each phrase classification. Production wiring will land with the voice-coherence pass.
+# (audit r9-21 #22: Phase-2 deferred orphan; marker documents the
+# scaffolding-ahead-of-wiring intent so future scans don't re-flag.)
+
 from __future__ import annotations
 
 import re

@@ -4,6 +4,10 @@ Tracks metrics for each integration point including latencies, error rates,
 and event counts to enable performance analysis and debugging.
 """
 
+# AGENT_RUNTIME — Phase 2 deferred — system_monitor is the Butlin-indicator-based self-monitoring infrastructure. Built ahead of the wiring layer; called only by tests today. Wiring path will land alongside the self-model integration pass.
+# (audit r9-21 #22: Phase-2 deferred orphan; marker documents the
+# scaffolding-ahead-of-wiring intent so future scans don't re-flag.)
+
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone

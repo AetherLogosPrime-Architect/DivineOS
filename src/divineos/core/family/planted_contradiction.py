@@ -56,6 +56,10 @@ Each ``SeededContradiction`` is a pair of claims plus metadata:
   explicitly, not via implicit import side effect.
 """
 
+# AGENT_RUNTIME — Family operator in the 5-operator gate chain — runs alongside reject_clause, sycophancy_detector, costly_disagreement, access_check.
+# (audit r9-21 #22: orphan-detection false positive; this marker documents
+# the runtime invocation path so future scans don't re-flag.)
+
 from __future__ import annotations
 
 from dataclasses import dataclass

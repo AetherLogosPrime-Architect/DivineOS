@@ -79,6 +79,10 @@ data.
 smriti. This is each family member's.
 """
 
+# AGENT_RUNTIME — Per-member hash-chained ledger — written by family subagent invocations and read by family-state introspection commands. Cross-session-owned, not call-graph-reachable from a single CLI command.
+# (audit r9-21 #22: orphan-detection false positive; this marker documents
+# the runtime invocation path so future scans don't re-flag.)
+
 from __future__ import annotations
 
 import hashlib

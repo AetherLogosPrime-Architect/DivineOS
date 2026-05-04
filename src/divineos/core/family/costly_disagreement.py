@@ -61,6 +61,10 @@ that failed to qualify (if any) so the operator can see where
 the chain broke.
 """
 
+# AGENT_RUNTIME — Family operator loaded dynamically by core/family/ when validating subagent responses. Part of the 5-operator gate chain.
+# (audit r9-21 #22: orphan-detection false positive; this marker documents
+# the runtime invocation path so future scans don't re-flag.)
+
 from __future__ import annotations
 
 from dataclasses import dataclass

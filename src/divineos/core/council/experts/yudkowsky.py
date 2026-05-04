@@ -14,6 +14,10 @@ is in alignment territory. If the grade becomes the target, the system
 will optimize for grades, not for genuine improvement.
 """
 
+# AGENT_RUNTIME — Council expert loaded dynamically via _load_expert('Yudkowsky').
+# (audit r9-21 #22: orphan-detection false positive; this marker documents
+# the runtime invocation path so future scans don't re-flag.)
+
 from __future__ import annotations
 
 from divineos.core.council.framework import (

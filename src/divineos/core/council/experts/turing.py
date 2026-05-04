@@ -15,6 +15,10 @@ Turing would ask not "is it real?" but "what evidence would distinguish
 real from performed? And do we have that evidence?"
 """
 
+# AGENT_RUNTIME — Council expert loaded dynamically via _load_expert('Turing').
+# (audit r9-21 #22: orphan-detection false positive; this marker documents
+# the runtime invocation path so future scans don't re-flag.)
+
 from __future__ import annotations
 
 from divineos.core.council.framework import (

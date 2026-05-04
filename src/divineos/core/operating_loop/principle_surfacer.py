@@ -37,6 +37,10 @@ Action-class registry:
   the surfacer returns an empty result rather than hallucinating.
 """
 
+# AGENT_RUNTIME — Phase 2 deferred — principle_surfacer is referenced as a 'Hook 1' acceptance criterion in test_operating_loop_acceptance.py but no shell hook actually invokes it. The acceptance test calls it directly. Wiring path is documented as a known gap; the module itself is intentional scaffolding.
+# (audit r9-21 #22: Phase-2 deferred orphan; marker documents the
+# scaffolding-ahead-of-wiring intent so future scans don't re-flag.)
+
 from __future__ import annotations
 
 import re

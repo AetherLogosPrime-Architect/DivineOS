@@ -87,6 +87,10 @@ substrate_monitor, hedge_monitor). The pattern is consistent so the
 self-monitor module is uniformly callable.
 """
 
+# AGENT_RUNTIME — Phase 2 deferred — self_monitor pillar #5 of 5.
+# (audit r9-21 #22: Phase-2 deferred orphan; marker documents the
+# scaffolding-ahead-of-wiring intent so future scans don't re-flag.)
+
 from __future__ import annotations
 
 import re

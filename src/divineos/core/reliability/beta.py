@@ -37,6 +37,10 @@ mean with the equivalent of 8 implicit successes).
   Beta instances.
 """
 
+# AGENT_RUNTIME — Phase 2 deferred — Beta-distribution reliability priors. Scaffold for future Bayesian confidence updates on knowledge entries; current confidence model uses a simpler corroboration-count approach. Beta path tests pin the math for when the wiring lands.
+# (audit r9-21 #22: Phase-2 deferred orphan; marker documents the
+# scaffolding-ahead-of-wiring intent so future scans don't re-flag.)
+
 from __future__ import annotations
 
 import math

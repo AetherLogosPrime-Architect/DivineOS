@@ -80,13 +80,18 @@ def _module_dotted_name(path: Path) -> str:
 
 def _is_agent_runtime(path: Path) -> bool:
     """Modules marked AGENT_RUNTIME are intentionally unwired into the
-    CLI/import graph but invoked from a separate runtime context."""
+    CLI/import graph but invoked from a separate runtime context.
+
+    Audit r9-21 #22 round-3: window extended from 2000 to 8000 chars
+    so the marker is detected on modules with long header docstrings
+    (the family ledger module's docstring alone is ~1900 chars).
+    """
     try:
         text = path.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return False
     # Match "AGENT_RUNTIME" near the top of the file (in a docstring/comment)
-    return bool(re.search(r"AGENT_RUNTIME", text[:2000]))
+    return bool(re.search(r"AGENT_RUNTIME", text[:8000]))
 
 
 def _has_caller_in(needle_module: str, search_root: Path, exclude: Path | None = None) -> bool:

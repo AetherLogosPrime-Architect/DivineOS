@@ -1,5 +1,9 @@
 """Decision journal commands — record, browse, and search the reasoning behind choices."""
 
+# AGENT_RUNTIME — Registered via decision_commands.register(cli) in cli/__init__.py:248. The orphan detector counts only direct function-call edges; module-level registration is invisible to it.
+# (audit r9-21 #22: orphan-detection false positive; this marker documents
+# the runtime invocation path so future scans don't re-flag.)
+
 import datetime
 import re
 

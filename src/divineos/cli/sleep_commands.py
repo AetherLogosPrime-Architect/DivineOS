@@ -1,5 +1,9 @@
 """CLI commands for Sleep — offline consolidation between sessions."""
 
+# AGENT_RUNTIME — Registered via sleep_commands.register(cli) in cli/__init__.py:265. Same shape as decision_commands — dynamic CLI registration.
+# (audit r9-21 #22: orphan-detection false positive; this marker documents
+# the runtime invocation path so future scans don't re-flag.)
+
 import sqlite3
 
 import click

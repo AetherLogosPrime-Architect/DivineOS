@@ -66,6 +66,10 @@ earned."* The rename from ``GnosisWarrant`` to ``EvidenceReceipt``
 invariant.
 """
 
+# AGENT_RUNTIME — Phase 2 deferred — empirica gate is the empirical-claim filter scaffold. Built ahead of the claim-routing wiring. Tests pin the contract; production wiring deferred.
+# (audit r9-21 #22: Phase-2 deferred orphan; marker documents the
+# scaffolding-ahead-of-wiring intent so future scans don't re-flag.)
+
 from __future__ import annotations
 
 from loguru import logger

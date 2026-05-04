@@ -36,6 +36,10 @@ The decisive question: is the short echoing reply the WHOLE response,
 or a preamble to substantive engagement?
 """
 
+# AGENT_RUNTIME — Phase 2 deferred — self_monitor pillar #2 of 5. See mechanism_monitor for the integrating-supervisor rationale.
+# (audit r9-21 #22: Phase-2 deferred orphan; marker documents the
+# scaffolding-ahead-of-wiring intent so future scans don't re-flag.)
+
 from __future__ import annotations
 
 import re

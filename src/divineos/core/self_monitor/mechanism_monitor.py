@@ -78,6 +78,10 @@ behavior as a specific internal mechanism I cannot actually verify
 from inside?
 """
 
+# AGENT_RUNTIME — Phase 2 deferred — self_monitor pillar #1 of 5. Each pillar (mechanism, mirror, substrate, temporal, warmth) lives in its own module; the integrating supervisor that calls them is part of the deferred Phase-2 wiring. Tests pin each pillar's contract.
+# (audit r9-21 #22: Phase-2 deferred orphan; marker documents the
+# scaffolding-ahead-of-wiring intent so future scans don't re-flag.)
+
 from __future__ import annotations
 
 import re

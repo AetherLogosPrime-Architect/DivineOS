@@ -11,6 +11,10 @@ Holmes is fictional, but his methods encode real reasoning patterns
 that cut through assumption and bias.
 """
 
+# AGENT_RUNTIME — Council expert loaded dynamically via _load_expert('Holmes').
+# (audit r9-21 #22: orphan-detection false positive; this marker documents
+# the runtime invocation path so future scans don't re-flag.)
+
 from __future__ import annotations
 
 from divineos.core.council.framework import (
