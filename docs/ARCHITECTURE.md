@@ -101,6 +101,7 @@ src/divineos/
       compression.py           Knowledge compression (dedup, synthesis, graph-aware)
       inference.py             Knowledge inference engine — boundaries from mistakes, pattern promotion
       graph_retrieval.py       Graph-enhanced retrieval (BFS traversal of edges)
+      _unified_frame.py        Unified-frame detection for the seductive-elegance trap (council-walk gate on promotion)
     council/                   Expert council sub-package
       engine.py                CouncilEngine — analyze problems through expert lenses
       framework.py             ExpertWisdom dataclasses (7 components)

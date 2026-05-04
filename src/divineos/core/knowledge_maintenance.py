@@ -686,10 +686,14 @@ def _passes_validity_gate(
 def promote_maturity(knowledge_id: str) -> str | None:
     """Check and apply maturity promotion for a knowledge entry.
 
-    Three gates (in order):
+    Four gates (in order):
       1. Corroboration / maturity transition logic (check_promotion)
       2. Warrant-based validity (_passes_validity_gate)
-      3. EMPIRICA evidence ledger — only on transitions to CONFIRMED
+      3. Unified-frame council-walk gate — only on promotions past
+         HYPOTHESIS for entries that explain 3+ disparate phenomena
+         under one unifying principle (audit r9-21 round-3+,
+         prereg-a8e2f3f06fbe)
+      4. EMPIRICA evidence ledger — only on transitions to CONFIRMED
 
     The third gate is the first production caller of the EMPIRICA
     pipeline (audit r9-21 round-3+ wiring). Per the caller contract
@@ -751,7 +755,28 @@ def promote_maturity(knowledge_id: str) -> str | None:
             )
             return None
 
-        # Third gate: EMPIRICA evidence ledger (first opt-in caller).
+        # Third gate: unified-frame council-walk requirement
+        # (audit r9-21 round-3+, prereg-a8e2f3f06fbe). Defends the
+        # seductive-elegance trap. Knowledge entries that explain
+        # 3+ disparate phenomena under one unifying principle cannot
+        # promote past HYPOTHESIS without council-walk evidence —
+        # the multi-perspective filter that smooth-but-wrong frames
+        # cannot satisfy all of at once.
+        from divineos.core.knowledge._unified_frame import check_promotion_gate
+
+        unified_ok, unified_reason = check_promotion_gate(
+            knowledge_id, entry["content"], new_maturity
+        )
+        if not unified_ok:
+            logger.info(
+                "Unified-frame gate held promotion of {} to {}: {}",
+                knowledge_id[:12],
+                new_maturity,
+                unified_reason,
+            )
+            return None
+
+        # Fourth gate: EMPIRICA evidence ledger (first opt-in caller).
         # Only fires on TESTED→CONFIRMED transitions where stakes are
         # highest. Other transitions (RAW→HYPOTHESIS, HYPOTHESIS→TESTED)
         # are not gated by EMPIRICA in Phase 1.
