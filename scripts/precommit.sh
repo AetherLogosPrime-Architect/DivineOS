@@ -171,6 +171,18 @@ if [ -n "$STAGED_SRC" ]; then
     fi
 fi
 
+# 6c. Verifier-run stamp. Audit r9-21 round-3+ (prereg-e30878ce3f09):
+# precommit running successfully constitutes a verifier run, so we
+# stamp the run-log here. The closure-claim commit-msg hook reads
+# this log to gate closure-language commit messages on recent
+# verification evidence. Without the stamp, "fully closed" / "0
+# remaining" / "no remaining surface" phrasing in the commit message
+# blocks the commit (round-1 + round-3 audit-cleanup slips both had
+# that exact shape).
+if [ $ERRORS -eq 0 ]; then
+    python3 scripts/check_closure_claim.py --record "precommit:$(git rev-parse --abbrev-ref HEAD)" 2>/dev/null || true
+fi
+
 # 7. Shellcheck on staged .sh files (line endings already normalized in step 0)
 if [ -n "$STAGED_SH" ] && command -v shellcheck &>/dev/null; then
     echo "=== Shellcheck ==="
