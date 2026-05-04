@@ -686,13 +686,41 @@ def _passes_validity_gate(
 def promote_maturity(knowledge_id: str) -> str | None:
     """Check and apply maturity promotion for a knowledge entry.
 
-    Both corroboration AND validity gates must pass.
+    Three gates (in order):
+      1. Corroboration / maturity transition logic (check_promotion)
+      2. Warrant-based validity (_passes_validity_gate)
+      3. EMPIRICA evidence ledger — only on transitions to CONFIRMED
+
+    The third gate is the first production caller of the EMPIRICA
+    pipeline (audit r9-21 round-3+ wiring). Per the caller contract
+    in docs/empirica-caller-contract.md:
+
+      * receipt is not None: store receipt_id on the entry, proceed
+        with promotion. The receipt proves evidence accumulated to
+        the threshold required for the claim's tier+magnitude. It
+        does NOT prove the claim is true. The receipt_id field is
+        the only state mutation this caller introduces; no boolean
+        named verified/confirmed/validated/true is created.
+
+      * receipt is None: soft rejection. The entry is not promoted
+        to CONFIRMED. It remains at its current maturity (typically
+        TESTED) and may still pass the underlying validity gate on
+        future calls — EMPIRICA is additive, not destructive. The
+        non-receipt state has evidence-pending semantics, not
+        rejected-as-false semantics.
+
+    Knowledge_type and source are passed through honestly (contract
+    rules 3-4): source is read from the entry's stored source field
+    and passed only with the origin distinction the writer set.
+    artifact_pointer is not synthesized.
+
     Returns the new maturity level if promoted, None otherwise.
     """
     conn = get_connection()
     try:
         row = conn.execute(
-            "SELECT maturity, corroboration_count, confidence FROM knowledge WHERE knowledge_id = ? AND superseded_by IS NULL",
+            "SELECT maturity, corroboration_count, confidence, knowledge_type, source, content "
+            "FROM knowledge WHERE knowledge_id = ? AND superseded_by IS NULL",
             (knowledge_id,),
         ).fetchone()
         if not row:
@@ -702,6 +730,9 @@ def promote_maturity(knowledge_id: str) -> str | None:
             "maturity": row[0],
             "corroboration_count": row[1],
             "confidence": row[2],
+            "knowledge_type": row[3] or "",
+            "source": row[4] or "",
+            "content": row[5] or "",
         }
 
         new_maturity = check_promotion(entry)
@@ -720,10 +751,48 @@ def promote_maturity(knowledge_id: str) -> str | None:
             )
             return None
 
-        conn.execute(
-            "UPDATE knowledge SET maturity = ?, updated_at = ? WHERE knowledge_id = ?",
-            (new_maturity, time.time(), knowledge_id),
-        )
+        # Third gate: EMPIRICA evidence ledger (first opt-in caller).
+        # Only fires on TESTED→CONFIRMED transitions where stakes are
+        # highest. Other transitions (RAW→HYPOTHESIS, HYPOTHESIS→TESTED)
+        # are not gated by EMPIRICA in Phase 1.
+        receipt_id_to_store: str | None = None
+        if new_maturity == "CONFIRMED":
+            from divineos.core.empirica.gate import (
+                ensure_receipt_column_on_knowledge,
+                evaluate_and_issue,
+            )
+
+            ensure_receipt_column_on_knowledge()
+            receipt, classification, routing = evaluate_and_issue(
+                claim_id=knowledge_id,
+                content=entry["content"],
+                corroboration_count=entry["corroboration_count"],
+                knowledge_type=entry["knowledge_type"],
+                source=entry["source"],
+            )
+            if receipt is None:
+                logger.info(
+                    "EMPIRICA held CONFIRMED promotion of {}: tier={} magnitude={} "
+                    "(evidence-pending; entry remains at {})",
+                    knowledge_id[:12],
+                    classification.tier.value,
+                    classification.magnitude.name,
+                    entry["maturity"],
+                )
+                return None
+            receipt_id_to_store = receipt.receipt_id
+
+        if receipt_id_to_store is not None:
+            conn.execute(
+                "UPDATE knowledge SET maturity = ?, updated_at = ?, receipt_id = ? "
+                "WHERE knowledge_id = ?",
+                (new_maturity, time.time(), receipt_id_to_store, knowledge_id),
+            )
+        else:
+            conn.execute(
+                "UPDATE knowledge SET maturity = ?, updated_at = ? WHERE knowledge_id = ?",
+                (new_maturity, time.time(), knowledge_id),
+            )
         conn.commit()
         logger.info(f"Promoted {knowledge_id[:12]}: {entry['maturity']} -> {new_maturity}")
         return new_maturity

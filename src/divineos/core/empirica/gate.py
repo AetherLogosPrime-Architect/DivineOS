@@ -1,15 +1,14 @@
 """EMPIRICA gate — single entry point orchestrating classify + burden + route + issue.
 
-# PHASE_1_STAGED — Zero non-test callers by design. The gate is
-# intentionally not called from production code paths in Phase 1; it
-# is available for per-call-site opt-in. Adding the first caller is
-# a deliberate step that must follow the caller contract in
-# docs/empirica-caller-contract.md BEFORE it ships. The contract
-# must be reviewed by external audit because the first caller sets
-# the pattern every subsequent caller will copy. This marker signals
-# to dead-architecture sweeps that the absent-callers state is
-# intentional-for-now, not overlooked. When the first opt-in lands,
-# remove this marker.
+# PHASE_2_LIVE — First production caller landed (audit r9-21 round-3+):
+# knowledge_maintenance.promote_maturity routes TESTED→CONFIRMED
+# transitions through this gate. Per the caller contract in
+# docs/empirica-caller-contract.md, the first caller's pattern is
+# what every subsequent caller copies — so additional opt-ins should
+# study that one first, and any deviation from its shape (storing
+# receipt_id only, returning None on no-receipt, no truth-implying
+# booleans, honest source/knowledge_type passthrough) needs explicit
+# justification reviewed against the contract checklist.
 
 This is the wiring layer. The four core modules (types, classifier,
 burden, routing, receipt) each do one thing well. This module
@@ -66,9 +65,12 @@ earned."* The rename from ``GnosisWarrant`` to ``EvidenceReceipt``
 invariant.
 """
 
-# AGENT_RUNTIME — Phase 2 deferred — empirica gate is the empirical-claim filter scaffold. Built ahead of the claim-routing wiring. Tests pin the contract; production wiring deferred.
-# (audit r9-21 #22: Phase-2 deferred orphan; marker documents the
-# scaffolding-ahead-of-wiring intent so future scans don't re-flag.)
+# AGENT_RUNTIME — empirica gate is now wired: knowledge_maintenance.
+# promote_maturity calls evaluate_and_issue on TESTED→CONFIRMED
+# transitions. The marker stays because the call is from production
+# code into this module (which the orphan detector tracks correctly
+# now via the parent-import regex fix from round-3); the rationale
+# changed from "Phase 2 deferred" to "wired, first-caller landed."
 
 from __future__ import annotations
 
