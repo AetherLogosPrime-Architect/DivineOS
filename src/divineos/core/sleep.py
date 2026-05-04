@@ -662,10 +662,23 @@ def _phase_recombination(report: DreamReport) -> None:
                                         getattr(existing, "confidence", 0.0) or 0.0
                                     ):
                                         strengthened_count += 1
-                            except Exception:  # noqa: BLE001
+                            except Exception as exc:  # noqa: BLE001
                                 # Hebbian update is opportunistic; failures
                                 # must never block recombination itself.
-                                pass
+                                # But: log at debug so operational issues
+                                # surface without blocking the path.
+                                # Audit finding 2026-05-04 (auditor 4th
+                                # pass, lesson 37d0ea3b): silent exception
+                                # swallowing was the exact shape audit
+                                # r9-21 round-1 lessons named. Apply the
+                                # discipline here too — opportunistic
+                                # semantics PLUS visibility, not
+                                # opportunistic semantics ALONE.
+                                logger.debug(
+                                    "Hebbian strengthen failed for edge %s: %s",
+                                    edge_id_attr,
+                                    exc,
+                                )
                             continue
 
                         connections.append(
