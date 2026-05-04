@@ -371,6 +371,16 @@ def _load_compass_guidance() -> dict[tuple[str, str], str]:
         import json
         from pathlib import Path
 
+        # Audit r9-21 #5 round-2 review note: this site uses graceful
+        # no-op (existence check + fallback) rather than visible failure.
+        # Rationale: compass guidance is optional metadata, not load-
+        # bearing — a missing seed.json (likely under wheel install
+        # without package-data) is correctly handled by returning the
+        # in-memory fallback rather than crashing the briefing path.
+        # Contrast with admin_reset_template, which raises because
+        # 'reset-template' has no meaningful behavior without the
+        # source tree. Per-site rationale matters more than uniform
+        # failure mode.
         seed_path = Path(__file__).parent.parent.parent / "seed.json"
         if seed_path.exists():
             data = json.loads(seed_path.read_text(encoding="utf-8"))

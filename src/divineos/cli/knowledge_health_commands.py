@@ -911,6 +911,15 @@ def register(cli: click.Group) -> None:
             format_audit_report,
         )
 
+        # Audit r9-21 #5 round-2 review note: graceful no-op chosen
+        # over visible failure here because ``audit-tests`` is a
+        # diagnostic command, not load-bearing. Under wheel install
+        # (no source tree) the red "not found" message + early return
+        # is the right user-facing behavior — the operator learns the
+        # command isn't applicable to their install layout, but the
+        # CLI session continues. Contrast with admin_reset_template,
+        # which raises because reset-template has no meaningful
+        # behavior at all without the source tree.
         test_dir = Path(__file__).parent.parent.parent.parent / "tests"
         if not test_dir.is_dir():
             click.secho(f"Test directory not found: {test_dir}", fg="red")

@@ -84,6 +84,17 @@ def verify_enforcement() -> dict[str, Any]:
             # TOOL_CALL events would still report "healthy" — pair-completeness
             # is satisfied vacuously (no calls → no orphans). A non-trivial
             # session with zero events of a critical capture type is degraded.
+            #
+            # Scope note (round-2 review): this gate fires only on
+            # ``rate == 0.0`` for any critical event type — silent-disable.
+            # It does NOT fire on severe-degrade (e.g. 0.7% capture in a
+            # session of 700 events): that case remains "healthy" because
+            # the count is non-zero. The original round-12 audit found a
+            # 0.7% case that this gate intentionally does not catch — the
+            # honest closure is silent-disable only. If silent-degrade
+            # becomes a recurring problem, add a percentage-threshold check
+            # here (with a pre-reg + review window so the threshold isn't
+            # set by intuition).
             capture_rates = check_event_capture_rate()
             capture_failures: list[str] = []
             total_events = len(all_events)
