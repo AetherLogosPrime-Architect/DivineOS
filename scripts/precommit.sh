@@ -157,6 +157,20 @@ if [ -n "$STAGED_SRC" ] && command -v vulture &>/dev/null; then
     fi
 fi
 
+# 6b. Bandit security scan — MEDIUM+ severity. Audit r9-21 #28 wired
+# this in after the 12 false-positive B608 findings were marked with
+# # nosec on a per-site rationale. Strict mode here means: if a NEW
+# medium-severity finding lands without an explicit nosec marker, the
+# commit is blocked and the operator must either add the marker (with
+# rationale) or fix the SQL composition. Closes the path where bandit
+# was a deferred run-this-yourself script no one ran.
+if [ -n "$STAGED_SRC" ]; then
+    echo "=== Bandit (MEDIUM+) ==="
+    if ! python3 scripts/run_bandit.py --strict 2>/dev/null; then
+        ERRORS=$((ERRORS + 1))
+    fi
+fi
+
 # 7. Shellcheck on staged .sh files (line endings already normalized in step 0)
 if [ -n "$STAGED_SH" ] && command -v shellcheck &>/dev/null; then
     echo "=== Shellcheck ==="

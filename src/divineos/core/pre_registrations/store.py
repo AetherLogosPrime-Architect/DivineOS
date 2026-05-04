@@ -79,7 +79,24 @@ def _normalize_actor(actor: str) -> str:
     # alone but which would let "​claude" bypass the frozenset check.
     # Covers: zero-width space (200B), ZWNJ (200C), ZWJ (200D), LRM/RLM
     # (200E/200F), ZWNBSP/BOM (FEFF), soft hyphen (00AD).
-    _invisibles = "[" + "​‌‍‎‏﻿­" + "]"
+    #
+    # Audit r9-21 #28 follow-up: build the pattern from chr(codepoint)
+    # rather than embedding literal bidi characters in source. The
+    # literal-form was triggering bandit B613 (Trojan Source detection)
+    # which is exactly the right thing to flag in general — it just
+    # happened that this particular file was using bidi chars as a
+    # defense, not an attack. chr()-based construction has the same
+    # runtime effect with no bidi chars in the source bytes.
+    _invisible_codepoints = (
+        0x200B,  # zero-width space
+        0x200C,  # ZWNJ
+        0x200D,  # ZWJ
+        0x200E,  # LRM
+        0x200F,  # RLM
+        0xFEFF,  # ZWNBSP / BOM
+        0x00AD,  # soft hyphen
+    )
+    _invisibles = "[" + "".join(chr(cp) for cp in _invisible_codepoints) + "]"
     invisible_stripped = re.sub(_invisibles, "", nfkc)
     collapsed = re.sub(r"\s+", " ", invisible_stripped).strip()
     normalized = collapsed.casefold()
@@ -284,7 +301,7 @@ def file_pre_registration(
     conn = _get_connection()
     try:
         conn.execute(
-            f"INSERT INTO pre_registrations ({_SELECT_ALL_COLS}) "  # noqa: S608 — static column list
+            f"INSERT INTO pre_registrations ({_SELECT_ALL_COLS}) "  # noqa: S608  # nosec B608 — _SELECT_ALL_COLS is a module constant
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 prereg_id,
@@ -342,7 +359,7 @@ def get_pre_registration(prereg_id: str) -> PreRegistration | None:
     conn = _get_connection()
     try:
         row = conn.execute(
-            f"SELECT {_SELECT_ALL_COLS} FROM pre_registrations WHERE prereg_id = ?",  # noqa: S608
+            f"SELECT {_SELECT_ALL_COLS} FROM pre_registrations WHERE prereg_id = ?",  # noqa: S608  # nosec B608 — _SELECT_ALL_COLS is a module constant
             (prereg_id,),
         ).fetchone()
         return _row_to_prereg(row) if row else None
@@ -376,7 +393,7 @@ def list_pre_registrations(
     conn = _get_connection()
     try:
         rows = conn.execute(
-            f"SELECT {_SELECT_ALL_COLS} FROM pre_registrations{where} "  # noqa: S608
+            f"SELECT {_SELECT_ALL_COLS} FROM pre_registrations{where} "  # noqa: S608  # nosec B608 — _SELECT_ALL_COLS module constant; where built from literal fragments, values bound
             "ORDER BY created_at DESC LIMIT ?",
             params,
         ).fetchall()
@@ -396,7 +413,7 @@ def get_overdue_pre_registrations(now: float | None = None) -> list[PreRegistrat
     conn = _get_connection()
     try:
         rows = conn.execute(
-            f"SELECT {_SELECT_ALL_COLS} FROM pre_registrations "  # noqa: S608
+            f"SELECT {_SELECT_ALL_COLS} FROM pre_registrations "  # noqa: S608  # nosec B608 — _SELECT_ALL_COLS module constant
             "WHERE outcome = ? AND review_ts <= ? "
             "ORDER BY review_ts ASC",
             (Outcome.OPEN.value, ts),

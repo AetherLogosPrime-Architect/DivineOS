@@ -484,7 +484,7 @@ def mark_lesson_improving(
         params.append(lesson_id)
 
         conn.execute(
-            f"UPDATE lesson_tracking "  # noqa: S608 — static column list
+            f"UPDATE lesson_tracking "  # noqa: S608  # nosec B608 — last_seen_update is one of two literal fragments; values bound below
             f"SET status = ?, sessions = ?, positive_evidence_sessions = ?{last_seen_update} "
             f"WHERE lesson_id = ?",
             params,

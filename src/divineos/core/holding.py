@@ -212,7 +212,10 @@ def get_holding(
         clauses.append("private = 0")
 
     where = " AND ".join(clauses)
-    query = f"SELECT * FROM holding_room WHERE {where} ORDER BY arrived_at DESC"
+    # nosec B608 — clauses are literal SQL fragments built from a closed
+    # column allowlist; user-supplied values are bound via params, not
+    # interpolated into the WHERE.
+    query = f"SELECT * FROM holding_room WHERE {where} ORDER BY arrived_at DESC"  # nosec B608
 
     conn = _get_connection()
     try:
