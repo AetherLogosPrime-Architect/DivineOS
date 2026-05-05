@@ -99,43 +99,42 @@ the other needs to be updated deliberately, not silently."""
 
 
 # Base corroboration counts per tier. These are the starting points —
-# magnitude multiplies on top. Phase 1 values; tuning is a pre-reg
-# review artifact at BURDEN_CALIBRATION_REVIEW_DAYS.
+# magnitude multiplies on top. Tuning is a pre-reg review artifact at
+# BURDEN_CALIBRATION_REVIEW_DAYS.
+#
+# Tier.ADVERSARIAL base = 3 because the original spec calls for an
+# adversarial claim to survive multiple persona attacks (the Abyss
+# Sandbox / VOID's persona roster has 6 personas: jailbreaker, mirror,
+# nyarlathotep, phisher, reductio, sycophant). Three survivals across
+# distinct personas is the minimum that exercises the spec's
+# "anti-fragility through diversity" principle — surviving one persona
+# is luck; surviving three different attack-shapes is evidence.
 _TIER_BASE_CORROBORATION: dict[Tier, int] = {
     Tier.FALSIFIABLE: 2,  # repeatable test → needs independent repro
     Tier.OUTCOME: 3,  # mechanism-opaque → more observations
     Tier.PATTERN: 4,  # coincidence-rule-out → more instances
-    # Tier.ADVERSARIAL intentionally absent — handled by explicit raise
-    # in required_corroboration() rather than silent default. Failing
-    # loudly beats silent fallback for an unimplemented tier.
+    Tier.ADVERSARIAL: 3,  # multi-persona survival → 3 distinct attack-shapes
 }
 
 
 def required_corroboration(tier: Tier, magnitude: ClaimMagnitude) -> int:
     """Compute the minimum corroboration needed for a claim.
 
-    Raises ``NotImplementedError`` for ``Tier.ADVERSARIAL`` — Phase 1
-    does not implement adversarial burden (that requires the VOID
-    module, not yet shipped). Until VOID exists, a caller asking for
-    ADVERSARIAL burden is asking for something the system can't honestly
-    provide; the honest answer is to fail loudly rather than return a
-    number that pretends the stress-test happened.
-
     The multiplier ``(1 + magnitude.value)`` means TRIVIAL (value=0)
     gives the base unmodified, and each magnitude step adds one full
     base's worth of required corroboration. FOUNDATIONAL claims need
     4x the base of the same tier — the architecture is built on them,
     so mistakes propagate and the threshold should reflect that.
+
+    Tier IV ADVERSARIAL: the corroborations counted here are
+    ``VOID_SURVIVAL`` events recorded against the claim. The integration
+    pattern: a void engine attack completes; if no HIGH/CRITICAL
+    findings emerged on the target claim, the caller records a
+    VOID_SURVIVAL corroboration with the persona as the actor.
+    EMPIRICA's distinct-actor count then enforces that the survivals
+    came from DIFFERENT personas, not the same persona attacking 3x.
+    See provenance.py and core/void/ for the producer side.
     """
-    if tier is Tier.ADVERSARIAL:
-        raise NotImplementedError(
-            "Tier.ADVERSARIAL burden requires the VOID module "
-            "(adversarial sandbox / steelman sparring), which has "
-            "not shipped. Phase 1 EMPIRICA deliberately fails loudly "
-            "rather than return a number that would misrepresent "
-            "un-stress-tested claims as adversarially-verified. "
-            "See prereg-ce8998194943 for the scoping."
-        )
     base = _TIER_BASE_CORROBORATION[tier]
     return base * (1 + magnitude.value)
 
@@ -149,7 +148,7 @@ def burden_matrix() -> dict[tuple[Tier, ClaimMagnitude], int]:
     to a single value, the calculator is decorative).
     """
     matrix: dict[tuple[Tier, ClaimMagnitude], int] = {}
-    for tier in (Tier.FALSIFIABLE, Tier.OUTCOME, Tier.PATTERN):
+    for tier in Tier:
         for magnitude in ClaimMagnitude:
             matrix[(tier, magnitude)] = required_corroboration(tier, magnitude)
     return matrix
