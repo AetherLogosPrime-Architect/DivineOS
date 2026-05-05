@@ -76,8 +76,18 @@ _REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
     # cost-restructuring: make rebuilding-from-scratch more expensive
     # than reaching-for-existing-substrate by surfacing what's already
     # there *before* I start composing.
+    # The non-capturing group consumes the connector word ("of",
+    # "behind", "for", "about") so the captured group is just the
+    # noun-phrase. Auditor-Claude (PR #260) caught that "name the
+    # principle behind that" was capturing "behind that" instead of
+    # "that". Root cause: the 5-char minimum on the capture forced
+    # the regex engine to backtrack and skip the connector when the
+    # noun was short ("that" is 4 chars). Fixed by lowering the
+    # minimum to 3, which lets the connector get consumed before
+    # the capture in the short-noun case. Substrate FTS handles
+    # short queries fine.
     re.compile(
-        r"\b(?:articulate|name|explain) the (?:principle|lesson|insight|pattern) (?:of |behind |for )?(.{5,80})",
+        r"\b(?:articulate|name|explain) the (?:principle|lesson|insight|pattern)\s+(?:of\s+|behind\s+|for\s+|about\s+)?(.{3,80})",
         re.IGNORECASE,
     ),
     re.compile(
