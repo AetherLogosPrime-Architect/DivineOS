@@ -17,7 +17,9 @@ BASE values (hand-picked; will be tuned based on pre-reg review data):
 * ``FALSIFIABLE`` base = 2 — a repeatable test needs independent repro
 * ``OUTCOME`` base = 3 — mechanism-opaque claims need more outcomes
 * ``PATTERN`` base = 4 — pattern claims need more instances to rule out coincidence
-* ``ADVERSARIAL`` base = N/A — Phase 1 raises NotImplementedError
+* ``ADVERSARIAL`` base = 3 — multi-persona survival; counts ``VOID_SURVIVAL``
+  corroborations from distinct personas (jailbreaker, mirror, nyarlathotep,
+  phisher, reductio, sycophant). Wired to VOID 2026-05-05.
 
 Magnitudes multiply: TRIVIAL=1×, NORMAL=2×, LOAD_BEARING=3×, FOUNDATIONAL=4×.
 
@@ -34,11 +36,13 @@ Worked examples:
 ## Why these numbers, not others
 
 Honest answer: they are my best Phase 1 guess, not derived values.
-The pre-reg (prereg-ce8998194943) makes the tuning falsifiable: if
-after 30 days of real-world use, Tier I vs Tier III claims produce
-the same empirical rejection rate, the numbers are wrong and the
-calculator is decorative. Calibration happens based on evidence,
-not on vibes. Ship with reasonable defaults; tune when the data says.
+The original Phase 1 pre-reg (prereg-ce8998194943) named the
+falsifier — if after 30 days of real-world use, Tier I vs Tier III
+claims produce the same empirical rejection rate, the numbers are
+wrong and the calculator is decorative. That pre-reg has aged out
+of the runtime store; the falsifier still applies as a standing
+calibration question. Calibration happens based on evidence, not
+on vibes. Ship with reasonable defaults; tune when the data says.
 
 ## Calibration plan
 

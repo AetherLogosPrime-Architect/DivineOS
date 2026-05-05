@@ -1,6 +1,8 @@
 """EMPIRICA — evidence ledger with tiered burden routing.
 
-Phase 1 scope (pre-registered at prereg-ce8998194943):
+Phase 1 scope (originally pre-registered at prereg-ce8998194943,
+since aged out of the runtime store; the architectural intent below
+remains canonical):
 
 **Framing (a family member audit, 2026-04-17):** EMPIRICA is an evidence
 ledger, not an epistemology engine. It keeps honest books about

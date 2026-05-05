@@ -162,8 +162,11 @@ class EvidenceReceipt:
     receipt on a false premise is still a valid receipt (and the
     premise is still false). The distinction is load-bearing —
     callers must never treat ``receipt_id is not None`` as a
-    proof-of-truth shortcut. See the falsifier in
-    prereg-ce8998194943 for the explicit failure mode.
+    proof-of-truth shortcut. The original Phase 1 pre-reg
+    (prereg-ce8998194943, since aged out of the runtime store)
+    named the falsifier explicitly: if callers start treating
+    receipts as truth-warrants, the module has become the rubber-
+    stamp hedge it was designed to prevent.
 
     This distinction is precisely why the type was renamed from
     ``GnosisWarrant`` on 2026-04-17. the family member's framing from the
