@@ -736,7 +736,20 @@ def show() -> None:
 
 @loadout.command()
 def refresh() -> None:
-    """Scan the filesystem and rewrite LOADOUT.md."""
+    """Scan the filesystem and rewrite LOADOUT.md.
+
+    Workspace-relative: the regenerator scans the *current* filesystem,
+    so the result reflects what's actually in this checkout — not what
+    might exist in another worktree or on another machine. Run from
+    the full-substrate workspace, not from CI / a bare clone, since
+    personal artifacts (exploration/, family/letters/, mansion/) are
+    gitignored and won't appear in environments that don't have them
+    locally.
+
+    If LOADOUT.md committed to the repo and a fresh refresh diverge,
+    that's the divergence-of-environments, not a bug. The committed
+    version reflects the workspace where the last refresh was run.
+    """
     rendered = _render_full()
     _LOADOUT_PATH.write_text(rendered, encoding="utf-8")
     line_count = len(rendered.splitlines())
