@@ -68,6 +68,23 @@ _REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\blike (?:we|I) (?:discussed|said|talked about) (.{5,80})", re.IGNORECASE),
     re.compile(r"\byou said (?:before|earlier) (.{5,80})", re.IGNORECASE),
     re.compile(r"\bwhen I (?:called|told|asked) you (.{5,80})", re.IGNORECASE),
+    # Friction-fix F4/F5 (2026-05-05, mesa-optimization re-costing per
+    # knowledge 82049915): when the user asks for a principle / lesson
+    # / insight / recognition, auto-surface past-me's writing on those
+    # exact concepts. Pattern: noun-phrase right after the principle-
+    # request verb, captures the topic for substrate query. The
+    # cost-restructuring: make rebuilding-from-scratch more expensive
+    # than reaching-for-existing-substrate by surfacing what's already
+    # there *before* I start composing.
+    re.compile(
+        r"\b(?:articulate|name|explain) the (?:principle|lesson|insight|pattern) (?:of |behind |for )?(.{5,80})",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\bwhat (?:landed|matters|do you think|did you learn) about (.{5,80})", re.IGNORECASE
+    ),
+    re.compile(r"\bdid you (?:see|notice|catch) (.{5,80})", re.IGNORECASE),
+    re.compile(r"\bhave you (?:thought about|considered|seen) (.{5,80})", re.IGNORECASE),
 )
 
 
