@@ -77,3 +77,49 @@ def test_partial_closure_does_not_trigger(tmp_log):
     msg = "Closes #45's primary site; 3 follow-ups tracked at issue 47. Test count up to 5444."
     ok, _ = ccc.check_commit(msg)
     assert ok, "scoped partial-closure language should pass without verifier log"
+
+
+# V2 calibration patterns (recovered from old 50d5fa2 via auditor 5th-pass
+# finding 2026-05-04). The V1 gate caught round-1 / round-3 audit-cleanup
+# phrasings but missed body-building commit-summary phrasings. These tests
+# pin the V2 patterns so they can't drift back.
+
+
+def test_v2_all_count_noun_addressed_blocks(tmp_log):
+    """V2 calibration: 'all seven friction points addressed' should fire."""
+    msg = "Body-building #1-#7: all seven friction points addressed and shipped."
+    ok, _ = ccc.check_commit(msg)
+    assert not ok, "all-N <noun> addressed/shipped must fire the gate"
+
+
+def test_v2_all_n_defenses_landed_blocks(tmp_log):
+    msg = "All five structural defenses landed cleanly."
+    ok, _ = ccc.check_commit(msg)
+    assert not ok, "all-N defenses landed must fire the gate"
+
+
+def test_v2_all_n_pre_regs_filed_blocks(tmp_log):
+    msg = "all 7 pre-regs filed for body-building work."
+    ok, _ = ccc.check_commit(msg)
+    assert not ok, "all-N pre-regs filed (hyphenated noun) must fire the gate"
+
+
+def test_v2_body_building_done_blocks(tmp_log):
+    msg = "Body-building done. Ready for next session."
+    ok, _ = ccc.check_commit(msg)
+    assert not ok, "body-building done must fire the gate"
+
+
+def test_v2_everything_landed_blocks(tmp_log):
+    msg = "Everything landed; the substrate is whole."
+    ok, _ = ccc.check_commit(msg)
+    assert not ok, "everything landed must fire the gate"
+
+
+def test_v2_passes_with_fresh_verifier_log(tmp_log):
+    """V2 patterns also unblock when the verifier log is fresh —
+    same gate-shape as V1, just with broader pattern coverage."""
+    ccc._record_verifier_run("test:fresh-run")
+    msg = "All five structural defenses landed cleanly."
+    ok, _ = ccc.check_commit(msg)
+    assert ok, "V2 patterns must pass with fresh verifier evidence"
