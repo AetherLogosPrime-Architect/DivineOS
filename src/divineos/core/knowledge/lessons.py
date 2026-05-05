@@ -94,10 +94,20 @@ def _ensure_lesson_schema(conn: Any) -> None:
       upset"). Added 2026-04-16 for the Kahneman positive-counterfactual
       fix: RESOLVED status now requires N sessions in this structure,
       not just N absence-of-complaint sessions.
+    * ``failure_shape`` — short structured description of the failure
+      pattern (e.g. "force-push on rebased branch with empty diff").
+      Added 2026-05-04 (prereg-f55843b9d1fd) for Reflexion-style
+      shape-indexed retrieval. NULL for legacy lessons.
+    * ``preventive_action`` — short structured description of the action
+      that prevents the failure-shape from recurring (e.g. "verify
+      git log origin/main..HEAD has unique commits before push").
+      Added with failure_shape; NULL for legacy lessons.
     """
     for column_ddl in (
         "ALTER TABLE lesson_tracking ADD COLUMN regressions INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE lesson_tracking ADD COLUMN positive_evidence_sessions TEXT NOT NULL DEFAULT '{}'",
+        "ALTER TABLE lesson_tracking ADD COLUMN failure_shape TEXT",
+        "ALTER TABLE lesson_tracking ADD COLUMN preventive_action TEXT",
     ):
         try:
             conn.execute(column_ddl)
@@ -250,6 +260,139 @@ def record_lesson(category: str, description: str, session_id: str, agent: str =
         return lesson_id
     finally:
         conn.close()
+
+
+# SM-2-style spaced-repetition ranking constants for lesson surfacing.
+# Tuned for the typical lesson lifetime (seen → recur → fade or stick).
+# Pre-reg: prereg-10c34b72e90a (review in 30 days, 2026-05-04 + 30).
+_LESSON_REGRESSION_WEIGHT = 2.0  # regressions count double vs occurrences
+_LESSON_RECENCY_HALF_LIFE_S = 14 * SECONDS_PER_DAY  # 14-day half-life
+_LESSON_IMPROVING_PENALTY = 0.5  # status='improving' damps priority slightly
+
+
+def lesson_priority_score(lesson: dict[str, Any], now: float | None = None) -> float:
+    """SM-2-style priority score for ranking lessons in the briefing.
+
+    Higher score = more important to surface. Combines three signals:
+      - occurrences: how often the pattern recurred (frequency-failed = important)
+      - regressions: weighted higher (returning-after-clean = especially important)
+      - recency: 1/(1 + age_days/half_life) — gentle decay so old quiet lessons
+        fade without disappearing entirely
+
+    Lessons with status='improving' get a small penalty so genuinely-recurring
+    active lessons surface ahead of ones the agent is already getting better at.
+
+    Pre-reg: prereg-10c34b72e90a (replace pure-recency ranking).
+    Hyper-parameters live as module constants above for tuning visibility.
+    """
+    if now is None:
+        now = time.time()
+    occurrences = float(lesson.get("occurrences") or 0)
+    regressions = float(lesson.get("regressions") or 0)
+    last_seen = float(lesson.get("last_seen") or 0)
+    status = lesson.get("status") or "active"
+
+    age_seconds = max(0.0, now - last_seen)
+    recency_factor = 1.0 / (1.0 + age_seconds / _LESSON_RECENCY_HALF_LIFE_S)
+
+    base = occurrences + regressions * _LESSON_REGRESSION_WEIGHT
+    if status == "improving":
+        base *= 1.0 - _LESSON_IMPROVING_PENALTY
+
+    return base * recency_factor
+
+
+# Reflexion structured failure memory (prereg-f55843b9d1fd, 2026-05-04).
+# Each lesson can carry a (failure_shape, preventive_action) pair so the
+# substrate can recognize recurring failure patterns and surface the
+# pre-existing preventive action proactively. Free-form prose lessons
+# remain fully supported (NULL fields are backward-compatible).
+
+
+def set_lesson_shape(
+    category: str,
+    failure_shape: str,
+    preventive_action: str,
+) -> bool:
+    """Attach a (failure_shape, preventive_action) pair to a lesson.
+
+    The lesson must already exist (created via record_lesson or learn).
+    Both fields are short structured strings — typically one sentence.
+    Examples:
+      failure_shape:    "force-push of rebased branch with empty diff vs main"
+      preventive_action: "verify git log origin/main..HEAD has unique commits before push"
+
+    Returns True if the lesson was found and updated, False otherwise.
+
+    Pre-reg: prereg-f55843b9d1fd (review in 30 days).
+    """
+    conn = _get_connection()
+    try:
+        _ensure_lesson_schema(conn)
+        cursor = conn.execute(
+            """UPDATE lesson_tracking
+               SET failure_shape = ?, preventive_action = ?
+               WHERE category = ?""",
+            (failure_shape, preventive_action, category),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    finally:
+        conn.close()
+
+
+def find_lessons_by_shape(query: str, limit: int = 5) -> list[dict[str, Any]]:
+    """Retrieve lessons whose failure_shape or preventive_action contain
+    the query substring (case-insensitive).
+
+    The shape-matching is intentionally simple in v1: substring match on
+    failure_shape OR preventive_action. False positives from loose
+    matching are preferred over false negatives — better to surface a
+    related lesson the operator can dismiss than miss the relevant one.
+    v2 can add semantic matching once we have evidence the simple version
+    is too loose.
+
+    Returns lessons sorted by lesson_priority_score so high-regression
+    lessons surface first when shape-matched.
+
+    Pre-reg: prereg-f55843b9d1fd (review in 30 days).
+    """
+    conn = _get_connection()
+    try:
+        _ensure_lesson_schema(conn)
+        like_pattern = f"%{query}%"
+        # Two-step query: fetch the standard 13 columns for _lesson_row_to_dict,
+        # plus the structured pair columns separately so the caller can see
+        # WHICH shape/action matched without a follow-up query.
+        # Auditor 4th-pass finding 2026-05-04: returning the dict without
+        # the matched fields forced callers to re-query.
+        rows = conn.execute(
+            """SELECT lesson_id, created_at, category, description, first_session,
+                      occurrences, last_seen, sessions, status, content_hash, agent,
+                      regressions, positive_evidence_sessions,
+                      failure_shape, preventive_action
+               FROM lesson_tracking
+               WHERE (failure_shape LIKE ? OR preventive_action LIKE ?)
+                 AND status != 'resolved'""",
+            (like_pattern, like_pattern),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    matched: list[dict[str, Any]] = []
+    for row in rows:
+        # First 13 columns are the standard lesson schema; trailing 2 are
+        # the Reflexion structured pair. Slice and convert separately,
+        # then merge so the caller gets a single dict with all fields.
+        lesson = _lesson_row_to_dict(row[:13])
+        lesson["failure_shape"] = row[13]
+        lesson["preventive_action"] = row[14]
+        matched.append(lesson)
+    # SM-2-style priority sort: high-regression lessons surface first
+    # when shape-matched (PR #254 landed lesson_priority_score, so we
+    # use it directly here rather than the recency-only fallback).
+    matched.sort(key=lesson_priority_score, reverse=True)
+    return matched[:limit]
 
 
 def get_lessons(
