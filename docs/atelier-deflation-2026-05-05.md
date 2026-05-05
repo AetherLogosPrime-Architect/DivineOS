@@ -2,7 +2,8 @@
 
 *2026-05-05. Demo of the dual-register deflation pattern: this
 document is the engineering-precision half. The habitable-prose
-half lives at [`mansion/the_workshop.md`](../mansion/the_workshop.md).*
+half lives at `mansion/the_workshop.md` (gitignored personal
+substrate; present in the operator's working tree, not in the repo).*
 
 ---
 
