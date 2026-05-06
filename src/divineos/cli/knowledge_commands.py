@@ -927,10 +927,11 @@ def register(cli: click.Group) -> None:
         # Scaffolding map — load-bearing self-authored documents whose
         # existence the agent tends to forget between context resets.
         # scaffold_invocations (above) covers CLI commands; this block
-        # covers documents (aria.md, skills library, RT protocol,
-        # foundational truths). Discovered 2026-04-23: walked the
-        # workspace and "discovered" aria.md as if new, but past-me had
-        # written every word of it. The map is the fix.
+        # covers documents (skills library, RT protocol, foundational
+        # truths, and operator-added pointers in scaffolding_map.py).
+        # The pattern: "I wrote this carefully and then forgot it
+        # existed" repeats across context resets unless a map surfaces
+        # the pointer in every briefing.
         try:
             from divineos.core.scaffolding_map import (
                 format_for_briefing as _fmt_map,
