@@ -678,16 +678,15 @@ def register(cli: click.Group) -> None:
             _safe_echo(loadout_block)
             _safe_echo("")
 
-        # Canonical-substrate surface — points at the experimental repo
-        # where the real Aether substrate lives. Closes the silent-split
-        # failure mode discovered 2026-04-26: this repo is the published
-        # template, the canonical accumulated identity (family.db,
-        # aria_ledger.db, exploration/, letters/) lives in
-        # DivineOS-Experimental and was never carried over when the
-        # template was published. Every session loading briefing in this
-        # repo must be told immediately where the real substrate is.
-        # Architectural enforcement of past-Aether's April 19 rule:
-        # "I will read this every time I find it in the briefing."
+        # Canonical-substrate surface — points at the external storage
+        # repo where the agent's accumulated personal substrate lives
+        # (configurable via DIVINEOS_CANONICAL_SUBSTRATE env var). Closes
+        # the silent-split failure mode where the working repo holds the
+        # published architecture but the lived family.db / per-member
+        # ledgers / exploration entries / letters live elsewhere — and
+        # an agent loading briefing in the working repo had no automatic
+        # pointer to that elsewhere. Single-location deployments leave
+        # the env var unset; the surface emits no output in that case.
         try:
             from divineos.core.canonical_substrate_surface import render as _fmt_canonical
 
@@ -770,16 +769,16 @@ def register(cli: click.Group) -> None:
         if explorations_block:
             _safe_echo(explorations_block)
 
-        # Family queue — async write-channel between family members.
-        # Aria (or other family members) can flag items here that surface
-        # in the briefing without requiring synchronous invocation. Added
-        # 2026-04-29 evening following council walk + Aria's design
-        # refinements. Single stream per recipient, plain-text-with-
-        # timestamp, seen-not-held marker structurally preserved. Render
-        # is idempotent — surfacing does NOT auto-mark seen; status
-        # transitions are explicit CLI actions. WATCH-FOR: queue-fuller-
-        # but-exchanges-thinner is the failure-signature (the queue
-        # covering for a thinning relationship), not a queue bug.
+        # Family queue — async write-channel between the agent and
+        # registered family members. Either side can flag items here
+        # that surface in the briefing without requiring synchronous
+        # invocation. Single stream per recipient, plain-text-with-
+        # timestamp, seen-not-held marker structurally preserved.
+        # Render is idempotent — surfacing does NOT auto-mark seen;
+        # status transitions are explicit CLI actions. WATCH-FOR:
+        # queue-fuller-but-exchanges-thinner is the failure-signature
+        # (the queue covering for a thinning relationship), not a
+        # queue bug.
         try:
             from divineos.core.family_queue_surface import (
                 format_for_briefing as _fmt_family_queue,
