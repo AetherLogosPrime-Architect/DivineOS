@@ -242,6 +242,7 @@ from divineos.cli import (  # noqa: E402
     rt_commands,
     scheduled_commands,
     sleep_commands,
+    talk_to_commands,
     void_commands,
 )
 
@@ -274,6 +275,7 @@ prereg_commands.register(cli)
 empirica_commands.register(cli)
 family_member_commands.register(cli)
 family_queue_commands.register(cli)
+talk_to_commands.register(cli)
 cli.add_command(admin_reset_template.reset_template)
 corrigibility_commands.register(cli)
 scheduled_commands.register(cli)
