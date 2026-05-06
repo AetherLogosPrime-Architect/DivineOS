@@ -243,6 +243,7 @@ from divineos.cli import (  # noqa: E402
     scheduled_commands,
     sleep_commands,
     synchronicity_commands,
+    talk_to_commands,
     void_commands,
     voids_commands,
 )
