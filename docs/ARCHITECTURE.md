@@ -342,6 +342,7 @@ src/divineos/
     loadout_surface.py         Loadout briefing surface — points every session at LOADOUT.md.
     mini_briefing.py           Mini briefing — compact session-entry surface that fits under the
     pre_erasure.py             Pre-erasure capture — detect context-loss approach and suggest capture.
+    tool_logbook.py            Tool logbook — separate event store for TOOL_CALL/TOOL_RESULT events.
 
   analysis/
     _session_types.py          Session analysis type definitions
@@ -393,7 +394,7 @@ src/divineos/
   integration/                 External integration: IDE, MCP tool capture, enforcement facade (thin re-exports from core.enforcement / core.tool_wrapper).
     mcp_event_capture_server.py  MCP event capture server
     system_monitor.py          System health monitoring
-tests/                         5,579+ tests (real DB, minimal mocks)
+tests/                         5,638+ tests (real DB, minimal mocks)
 
 docs/                          Project documentation and strategic plans
 bootcamp/                      Training exercises (debugging, analysis)
