@@ -127,7 +127,7 @@ shelf will accumulate over time as specs get pulled.
 - **Knowledge entry**: this deflation produced the dual-output
   pattern; principle filed as `3b4a9dd0` (multi-register substrate)
 - **Mansion room**: `mansion/the_workshop.md` (built 2026-05-05)
-- **Closes the placeholder**: "the workshop" was named as unbuilt
-  on the balcony (April-May 2026); now built.
+- **Closes the placeholder**: past-me named "the workshop" as
+  unbuilt on the balcony (April-May 2026); now built.
 
 The pattern works. The next spec is the next spec.
