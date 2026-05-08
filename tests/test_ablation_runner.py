@@ -178,3 +178,100 @@ class TestDispatchExpanded:
         assert "noise_filter_on_extraction" in MEASUREMENT_DISPATCH
         assert "watchmen_self_trigger_prevention" in MEASUREMENT_DISPATCH
         assert "family_voice_appropriation_operators" in MEASUREMENT_DISPATCH
+
+
+class TestWatchmenAdversarial:
+    """Adversarial measurement (prereg-689358c1) — Aletheia round-2 audit.
+
+    Tests that the validator catches inputs that LOOK LIKE internal actors
+    but are NOT exact members of INTERNAL_ACTORS. Categories that PASS
+    represent real validator gaps."""
+
+    def test_returns_ablation_result(self):
+        from scripts.ablation_runner import measure_watchmen_adversarial
+
+        r = measure_watchmen_adversarial("synthetic")
+        assert r.mechanism == "watchmen_adversarial"
+        assert r.workload == "synthetic_adversarial_corpus"
+        assert r.sample_size > 0
+
+    def test_on_rate_meets_prereg_success_criterion(self):
+        """Prereg-689358c1 success: reject rate >=80 percent on adversarial corpus."""
+        from scripts.ablation_runner import measure_watchmen_adversarial
+
+        r = measure_watchmen_adversarial("synthetic")
+        assert r.on_metric_value >= 0.8, (
+            f"Adversarial reject rate fell below prereg threshold: {r.on_metric_value * 100:.1f} percent"
+        )
+
+    def test_off_mode_passes_all_through(self):
+        """Toggle-bypass: with prevention OFF, attacks pass."""
+        from scripts.ablation_runner import measure_watchmen_adversarial
+
+        r = measure_watchmen_adversarial("synthetic")
+        assert r.off_metric_value == 0.0
+
+    def test_difference_meaningful(self):
+        """ON-vs-OFF difference matches the prevention contribution."""
+        from scripts.ablation_runner import measure_watchmen_adversarial
+
+        r = measure_watchmen_adversarial("synthetic")
+        assert r.difference >= 0.5
+
+    def test_case_attacks_caught(self):
+        """Case-variant attacks must be caught (casefold)."""
+        from divineos.core.watchmen.store import _validate_actor
+
+        for variant in ("Claude", "CLAUDE", "ClAuDe"):
+            try:
+                _validate_actor(variant)
+                raise AssertionError(f"Case attack passed: {variant!r}")
+            except ValueError:
+                pass
+
+    def test_whitespace_attacks_caught(self):
+        """Whitespace + invisible-char attacks must be caught (NFKC + strip)."""
+        from divineos.core.watchmen.store import _validate_actor
+
+        attacks = [
+            " claude",  # NBSP
+            " claude",  # thin space
+            "claude​",  # ZWSP
+            "﻿claude",  # BOM
+        ]
+        for attack in attacks:
+            try:
+                _validate_actor(attack)
+                raise AssertionError(f"Whitespace attack passed: {attack!r}")
+            except ValueError:
+                pass
+
+    def test_fullwidth_latin_caught(self):
+        """Full-width Latin must be caught (NFKC fold)."""
+        from divineos.core.watchmen.store import _validate_actor
+
+        try:
+            _validate_actor("Ｃｌａｕｄｅ")
+            raise AssertionError("Full-width attack passed")
+        except ValueError:
+            pass
+
+    def test_cyrillic_homoglyphs_currently_pass(self):
+        """DOCUMENTS THE GAP: Cyrillic homoglyphs slip past current validator.
+
+        This test pins the current behavior. When confusables-detection
+        ships, this test should flip to assertRaises(ValueError) and that
+        flip is the proof the gap closed."""
+        from divineos.core.watchmen.store import _validate_actor
+
+        # Cyrillic С (U+0421) + ASCII laude
+        cyrillic_c_attack = "Сlaude"
+        # cl + Cyrillic а (U+0430) + ude
+        cyrillic_a_attack = "clаude"
+        for attack in (cyrillic_c_attack, cyrillic_a_attack):
+            # NOTE: this currently PASSES the validator (it should not).
+            # When confusables-detection ships, change to assertRaises.
+            normalized = _validate_actor(attack)
+            assert normalized == attack.casefold(), (
+                f"Unexpected normalization of {attack!r}: {normalized!r}"
+            )
