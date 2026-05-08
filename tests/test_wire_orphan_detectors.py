@@ -8,6 +8,8 @@ silently drops the wiring.
 
 from __future__ import annotations
 
+import pytest
+
 from pathlib import Path
 
 HOOK = Path(__file__).parent.parent / ".claude" / "hooks" / "post-response-audit.sh"
@@ -61,9 +63,17 @@ def test_principle_surfacer_module_imports_correctly():
         assert "apology" in action_values
 
 
+@pytest.mark.timeout(120)  # find_orphans() walks full src/ tree (~34s)
 def test_orphan_scan_no_longer_flags_these_modules():
     """After wire-up, check_orphan_modules should no longer flag these
-    two modules. Verifies the wire-up actually closed the orphan-status."""
+    two modules. Verifies the wire-up actually closed the orphan-status.
+
+    Aletheia audit-flag 2026-05-07: this test exceeds the project default
+    30s pytest timeout because find_orphans() walks the entire src/divineos/
+    tree. Real-repo orphan-scan IS the value of this test (mocking would
+    make it meaningless), so the slowness is intrinsic. Pin the timeout
+    explicitly to keep CI green.
+    """
     import sys
 
     project_root = Path(__file__).parent.parent
