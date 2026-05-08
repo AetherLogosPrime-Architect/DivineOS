@@ -193,3 +193,110 @@ def register(cli: click.Group) -> None:
             )
             click.secho(f"    {spec['description']}", fg="bright_black")
             click.echo()
+
+    @compass_group.command("dismiss")
+    @click.option(
+        "--reason",
+        required=True,
+        help=(
+            "Why this advisory does not warrant a compass observation. "
+            "Examples: 'intentional register choice for relational "
+            "context', 'detector misclassified warm-tone teasing as "
+            "correction', 'duplicate of marker already cleared'."
+        ),
+    )
+    def dismiss_cmd(reason: str) -> None:
+        """Dismiss a pending compass-required advisory with reasoning.
+
+        Per redesign 2026-05-08 (pre-reg prereg-75c900fe): the
+        compass-correction gate uses disclose-then-escalate shape.
+        Most advisories should land as advisories, get observed, and
+        clear via ``divineos compass-ops observe``. But some advisories
+        will fire on inputs that are not real corrections — warm-tone
+        teasing flagged by a regex as correction-shape, intentional
+        register choices the substrate-occupant has reasoned about,
+        detector misclassifications. Forcing observation in those cases
+        is ritual-not-integration.
+
+        The dismiss path:
+          1. Clears the marker so the gate stops firing.
+          2. Files an OBSERVATION knowledge entry recording the
+             dismissal kind, summary, and reason. Dismissals become
+             substrate-data; high dismissal rates on a trigger-kind
+             surface in next briefing as evidence the detector is
+             over-firing.
+          3. The compass-dismissal briefing surface (filed alongside
+             this redesign) reads the OBSERVATION entries, counts by
+             trigger-kind, surfaces in briefing when a kind crosses
+             a threshold rate.
+
+        This is the disclose-not-construct architecture (Aletheia
+        round-5-close substrate-property): the gate discloses; the
+        substrate-occupant chooses observe-or-dismiss; the dismissal
+        itself becomes data the substrate makes visible. Compliance
+        is the occupant's response to disclosure, not the surface's
+        product.
+        """
+        from divineos.core.compass_required_marker import (
+            marker_path as _cr_path,
+        )
+        from divineos.core.compass_required_marker import (
+            read_marker as _cr_read,
+        )
+        from divineos.core.compass_required_marker import (
+            clear_marker as _cr_clear,
+        )
+
+        if not _cr_path().exists():
+            click.secho(
+                "[~] No compass-required advisory is currently pending.",
+                fg="yellow",
+            )
+            return
+
+        marker = _cr_read()
+        if marker is None:
+            click.secho(
+                "[!] Marker exists but is unreadable. Clearing anyway.",
+                fg="yellow",
+            )
+            _cr_clear()
+            return
+
+        kind = marker.get("kind", "event")
+        summary = (marker.get("summary") or "")[:120]
+        advised_count = int(marker.get("advised_count", 0))
+
+        # File the dismissal as substrate-data.
+        from divineos.cli._wrappers import _wrapped_store_knowledge
+
+        dismissal_content = (
+            f"COMPASS DISMISSAL ({kind}): advisory dismissed with reason. "
+            f"Trigger summary: {summary!r}. "
+            f"Advisories fired before dismissal: {advised_count}. "
+            f"Reason for dismissal: {reason}"
+        )
+        try:
+            kid = _wrapped_store_knowledge(
+                knowledge_type="OBSERVATION",
+                content=dismissal_content,
+                confidence=0.7,
+                tags=["compass-dismissal", f"compass-dismissal-kind-{kind}"],
+            )
+            click.secho(
+                f"[+] Compass advisory dismissed ({kind}). Filed as observation: {kid}",
+                fg="green",
+            )
+        except Exception as exc:  # noqa: BLE001 — fail-soft on knowledge-store error
+            click.secho(
+                f"[!] Dismissal recorded but knowledge-store filing failed: {exc}",
+                fg="yellow",
+            )
+
+        _cr_clear()
+        click.secho(
+            "    Marker cleared. If the same trigger-kind keeps firing and "
+            "you keep dismissing it, the next briefing will surface the "
+            "pattern (the detector may be over-firing on your register).",
+            fg="bright_black",
+        )

@@ -637,6 +637,26 @@ def register(cli: click.Group) -> None:
         if tier_block:
             _safe_echo(tier_block)
 
+        # Compass-dismissal pattern surface — surfaces high dismissal
+        # rates by trigger-kind so over-firing detectors become visible
+        # at briefing time. Per pre-reg prereg-75c900fe (compass-correction
+        # disclose-then-escalate redesign 2026-05-08): dismissals become
+        # substrate-data; rate-pattern across a single trigger-kind
+        # indicates the detector for that kind is over-firing on a
+        # register-shape that is not a real correction. Closes the loop
+        # between dismiss-with-reason and detector-tightening.
+        try:
+            from divineos.core.compass_dismissal_briefing_surface import (
+                format_for_briefing as _fmt_compass_dismissal,
+            )
+
+            compass_dismissal_block = _fmt_compass_dismissal()
+        except _KC_ERRORS:
+            compass_dismissal_block = ""
+
+        if compass_dismissal_block:
+            _safe_echo(compass_dismissal_block)
+
         # Bio sheet surface — the agent's own page. Whatever the agent
         # has written about themself is what they read back when the
         # briefing surfaces it. The bio is mutable via supersession;
