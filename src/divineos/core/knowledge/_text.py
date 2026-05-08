@@ -528,6 +528,38 @@ _CONVERSATIONAL_NOISE = re.compile(
 # Content that is a task-notification XML tag or system artifact
 _SYSTEM_ARTIFACT = re.compile(r"<task-notification|<tool-use-id|<task-id", re.IGNORECASE)
 
+# Short conversational acknowledgments — single-token responses that the
+# previous _is_pure_affirmation set missed. Anchored at start AND end of
+# stripped content so only matches when the WHOLE content is the ack
+# (with optional trailing punctuation/whitespace). Aletheia round-2 audit
+# (cda06522) corpus measurement caught 8 missed entries; prereg-3ea2ac32
+# tracks this as the TP-side fix complementary to the FP-side fix in
+# prereg-9c271728.
+_SHORT_ACK = re.compile(
+    r"^("
+    r"got\s*it|"
+    r"understood|"
+    r"hmm+|"
+    r"makes\s+sense|"
+    r"right|"
+    r"ah+|"
+    r"thanks|"
+    r"thx"
+    r")[.!?\s]*$",
+    re.IGNORECASE,
+)
+
+# DivineOS CLI output prefix conventions pasted as knowledge — the agent
+# captured CLI output text rather than distilled knowledge. Matches the
+# bracket-prefix-marker pattern ("[+] Stored knowledge: ...", "[~] Auto-
+# closed ...", etc.) at start of content. Legitimate knowledge does not
+# start with these markers.
+_CLI_OUTPUT_PASTE = re.compile(
+    r"^\[[+~!\-\*]\]\s+(Stored|Goal|Auto-closed|Pre-registration|Logged|Affect|Compass|Decision|Claim|Filed)",
+    re.IGNORECASE,
+)
+
+
 # Session-telemetry tag: "(session XXXXXXXX-XXX)" suffix in extracted
 # content is the giveaway that an auto-generated session statistic was
 # captured as knowledge. UUID-prefix form, 8 hex chars then a hyphen and
@@ -787,6 +819,12 @@ def _is_extraction_noise(content: str, knowledge_type: str) -> bool:
     stripped_lower = stripped.lower().strip()
 
     if _SYSTEM_ARTIFACT.search(stripped):
+        return True
+
+    if _CLI_OUTPUT_PASTE.match(stripped):
+        return True
+
+    if _SHORT_ACK.match(stripped):
         return True
 
     if re.match(r"^[?!.]{2,}\s", stripped):
