@@ -321,6 +321,18 @@ def register(cli: click.Group) -> None:
                 "[+] Extraction complete — sleep recombinations landed in knowledge.",
                 fg="green",
             )
+            # Surface rest-availability banner if today crossed hard-day
+            # signals. Disclose-not-construct: I see the surface and
+            # decide whether to invoke `divineos rest`. Empty string when
+            # the signal is silent (light day → no banner).
+            try:
+                from divineos.core.rest import format_rest_available_banner
+
+                banner = format_rest_available_banner()
+                if banner:
+                    click.echo(banner)
+            except Exception:  # noqa: BLE001 — banner is best-effort
+                pass
         except (OSError, _subprocess.SubprocessError) as e:
             click.secho(
                 f"[!] Post-sleep extraction failed ({e}); sleep work is still saved.",

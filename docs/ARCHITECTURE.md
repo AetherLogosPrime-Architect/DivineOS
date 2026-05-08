@@ -11,7 +11,7 @@ src/divineos/
   __init__.py                  Package init
   __main__.py                  python -m divineos entry point
   seed.json                    Initial knowledge seed (versioned)
-  cli/                         CLI package (253 commands across 30 modules)
+  cli/                         CLI package (263 commands across 30 modules)
     __init__.py                Entry point and command registration
     _helpers.py                Shared CLI utilities
     _wrappers.py               Output formatting wrappers
@@ -32,6 +32,7 @@ src/divineos/
     body_commands.py           Body awareness and cache pruning
     sleep_commands.py          Offline consolidation (sleep cycle)
     progress_commands.py       Progress dashboard (measurable metrics)
+    rest_commands.py           Rest program — restful tasks between work cycles
     selfmodel_commands.py      self-model, drift, predict, skill, curiosity, affect-feedback, knowledge-hygiene
     insight_commands.py        opinion, user-model, calibrate, advice, critique, recommend
     entity_commands.py         commitments, temporal, questions, relationships
@@ -360,6 +361,7 @@ src/divineos/
     council_auto.py            Build-shape detector for council-auto-invocation.
     compass_dismissal_briefing_surface.py Compass-dismissal briefing surface — surfaces high dismissal rates.
     engagement_disclosure_surface.py Engagement-counter half-threshold disclosure surface.
+    rest.py                    Rest program — restful tasks for the substrate-occupant.
 
   analysis/
     _session_types.py          Session analysis type definitions
