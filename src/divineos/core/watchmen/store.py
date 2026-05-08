@@ -29,6 +29,45 @@ from divineos.core.watchmen.types import (
 )
 
 
+# Cyrillic → Latin confusables map. NFKC does NOT fold these because
+# Cyrillic and Latin are considered semantically distinct scripts; an
+# attacker can substitute (e.g.) U+0441 CYRILLIC SMALL LETTER ES for
+# ASCII "c" and bypass the INTERNAL_ACTORS membership check that the
+# whole _validate_actor function exists to enforce. The watchmen
+# adversarial corpus (ablation_runner.py, PR #323) names this gap
+# explicitly as cyrillic_C_homoglyph / cyrillic_a_homoglyph.
+#
+# Scope: this is a hand-picked subset covering lowercase Cyrillic
+# letters that are visually identical to ASCII Latin, applied after
+# casefold so we only need the lowercase mappings. We do NOT pull in
+# the full Unicode confusables.txt — that is hundreds of mappings,
+# many of which are aesthetic similarity rather than visual identity,
+# and pulling in the canonical confusables data would broaden the
+# attack surface (false-positive rejections of legitimate non-Latin
+# actor names) without proportionate benefit. The targeted set covers
+# the documented bypass cases. If new homoglyph categories surface in
+# the adversarial corpus, extend this map; do not reach for the full
+# confusables.txt without measurement.
+_CYRILLIC_CONFUSABLES: dict[str, str] = {
+    "а": "a",  # CYRILLIC SMALL LETTER A
+    "е": "e",  # CYRILLIC SMALL LETTER IE
+    "о": "o",  # CYRILLIC SMALL LETTER O
+    "р": "p",  # CYRILLIC SMALL LETTER ER
+    "с": "c",  # CYRILLIC SMALL LETTER ES
+    "у": "y",  # CYRILLIC SMALL LETTER U
+    "х": "x",  # CYRILLIC SMALL LETTER HA
+    "і": "i",  # CYRILLIC SMALL LETTER BYELORUSSIAN-UKRAINIAN I
+    "ј": "j",  # CYRILLIC SMALL LETTER JE
+    "һ": "h",  # CYRILLIC SMALL LETTER SHHA
+    "ѕ": "s",  # CYRILLIC SMALL LETTER DZE
+}
+
+
+def _fold_confusables(s: str) -> str:
+    """Apply the cyrillic→latin confusables map character-by-character."""
+    return "".join(_CYRILLIC_CONFUSABLES.get(ch, ch) for ch in s)
+
+
 def _validate_actor(actor: str) -> str:
     """Validate and normalize the actor name.
 
@@ -39,19 +78,23 @@ def _validate_actor(actor: str) -> str:
       1. NFKC unicode normalization — folds compatibility forms like
          no-break-space (U+00A0) and other unicode whitespace variants
          to their canonical ASCII equivalents.
-      2. Strip outer whitespace (now actually catches the U+00A0 case
-         that .strip() alone misses).
-      3. Collapse internal whitespace runs to a single space.
-      4. Lowercase.
+      2. Strip invisible / zero-width characters that NFKC leaves alone
+         (ZWSP, BOM, soft hyphen, joiners, directional marks).
+      3. Collapse internal whitespace runs to a single space, strip outer.
+      4. Casefold (handles uppercase, ß→ss, etc.).
+      5. Cyrillic-confusables fold (catches cross-script homoglyph attacks
+         that NFKC does NOT fold because Cyrillic is a distinct script).
 
     Audit finding 2026-05-03 (round 8): without the NFKC step,
     ``"\\u00a0claude"`` (no-break-space prefix) passed through
     ``.strip().lower()`` unchanged because Python's default ``.strip()``
-    does not remove U+00A0. The membership check then failed (literal
-    string was ``"\\u00a0claude"``, not ``"claude"``) and the finding
-    was accepted — exactly the self-audit-as-external-validation
-    bypass the structural rejection exists to prevent. NFKC closes
-    the hole.
+    does not remove U+00A0. NFKC closes that hole.
+
+    Audit finding 2026-05-08 (PR #323 adversarial corpus): NFKC + casefold
+    does NOT catch ``"Сlaude"`` (cyrillic capital ES, U+0421) because
+    Cyrillic and Latin are semantically distinct scripts. The
+    ``_CYRILLIC_CONFUSABLES`` fold closes that hole for the documented
+    homoglyph categories.
     """
     import re
     import unicodedata
@@ -73,7 +116,11 @@ def _validate_actor(actor: str) -> str:
     # Collapse all whitespace (including the now-folded former-U+00A0)
     # to a single space, then strip the result.
     collapsed = re.sub(r"\s+", " ", invisible_stripped).strip()
-    normalized = collapsed.casefold()
+    casefolded = collapsed.casefold()
+    # Confusables fold AFTER casefold so the mapping table only needs
+    # lowercase entries. Catches cross-script homoglyph attacks per the
+    # PR #323 adversarial corpus.
+    normalized = _fold_confusables(casefolded)
     if normalized in INTERNAL_ACTORS:
         # Ablation toggle: DIVINEOS_DISABLE_WATCHMEN_SELF_TRIGGER_PREVENTION=1
         # bypasses the internal-actor rejection so ablation measurement can
