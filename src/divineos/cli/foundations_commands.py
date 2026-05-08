@@ -227,7 +227,7 @@ def register(cli) -> None:
             text = path.read_text(encoding="utf-8")
         except _SECONDARY_ERRORS as e:
             click.secho("Could not read " + str(path) + ": " + str(e), fg="red")
-            raise SystemExit(1) from None
+            raise SystemExit(1) from None  # noqa: BLE001
 
         header = _parse_layer_header(text)
 
