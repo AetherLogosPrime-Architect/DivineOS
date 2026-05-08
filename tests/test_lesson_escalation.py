@@ -847,3 +847,95 @@ class TestResolvedWithHistory:
             STATUS_RESOLVED_WITH_HISTORY,
         }
         assert len(all_statuses) == 5, "status constants must be distinct string values"
+
+
+class TestEscalateHintAcknowledgesExistingDirective:
+    """Once a lesson has been auto-escalated to a DIRECTIVE, the briefing
+    hint changes from 'consider making this a directive' to 'ESCALATED to
+    directive — structural enforcement still needed' so the operator gets
+    accurate signal about what's been done vs what remains.
+
+    Without this, the briefing repeatedly suggests an action that's already
+    taken, which is the kind of friction this fix was made to address.
+    """
+
+    def test_categories_with_existing_directive_returns_lesson_tag_categories(self):
+        from divineos.cli._wrappers import _wrapped_store_knowledge
+        from divineos.core.knowledge.lessons import _categories_with_existing_directive
+
+        # Empty case
+        before = _categories_with_existing_directive()
+        assert "test_cat_xyz" not in before
+
+        # File a DIRECTIVE with the lesson-<category> tag shape
+        # (matches what escalate_chronic_lessons writes).
+        _wrapped_store_knowledge(
+            knowledge_type="DIRECTIVE",
+            content="STRUCTURAL ENFORCEMENT: synthetic test directive. Category: test_cat_xyz.",
+            confidence=1.0,
+            source_events=[],
+            tags=["auto-escalated", "lesson-test_cat_xyz", "regression-enforcement"],
+        )
+
+        after = _categories_with_existing_directive()
+        assert "test_cat_xyz" in after, (
+            f"expected test_cat_xyz in escalated categories, got {after}"
+        )
+
+    def test_escalate_suffix_changes_when_directive_exists(self):
+        """The summary string differs based on whether a directive exists
+        for the category. Both regressed-enough lessons get a suffix; the
+        suffix names whether escalation has happened."""
+        from divineos.cli._wrappers import _wrapped_store_knowledge
+        from divineos.core.knowledge.lessons import (
+            REGRESSION_ESCALATION_THRESHOLD,
+            get_lesson_summary,
+            mark_lesson_improving,
+            record_lesson,
+        )
+
+        def _build(cat: str, desc: str) -> None:
+            # Mirror the project's _build_regressed_lesson helper: establish
+            # active with 3 occurrences, then regress past threshold.
+            record_lesson(cat, desc, "b-s1")
+            record_lesson(cat, desc, "b-s2")
+            record_lesson(cat, desc, "b-s3")
+            for i in range(REGRESSION_ESCALATION_THRESHOLD):
+                mark_lesson_improving(cat, f"{cat}-clean-{i}")
+                record_lesson(cat, desc, f"{cat}-r-{i}")
+
+        cat_no_directive = "test_no_dir_xyz"
+        _build(cat_no_directive, "Test description without directive")
+
+        cat_with_directive = "test_with_dir_xyz"
+        _build(cat_with_directive, "Test description with directive")
+        _wrapped_store_knowledge(
+            knowledge_type="DIRECTIVE",
+            content=f"STRUCTURAL ENFORCEMENT: directive for {cat_with_directive}.",
+            confidence=1.0,
+            source_events=[],
+            tags=["auto-escalated", f"lesson-{cat_with_directive}", "regression-enforcement"],
+        )
+
+        summary = get_lesson_summary()
+
+        # Without-directive lesson: original [ESCALATE: consider...] hint.
+        assert "Test description without directive" in summary
+        no_dir_line = next(
+            line for line in summary.split("\n") if "Test description without directive" in line
+        )
+        assert "consider making this a directive" in no_dir_line, (
+            f"expected 'consider making' suffix when no directive exists, got: {no_dir_line!r}"
+        )
+
+        # With-directive lesson: ESCALATED suffix.
+        with_dir_line = next(
+            line for line in summary.split("\n") if "Test description with directive" in line
+        )
+        assert "ESCALATED to directive" in with_dir_line, (
+            f"expected 'ESCALATED to directive' suffix when directive exists, got: {with_dir_line!r}"
+        )
+        # Critical: must NOT also contain the redundant suggestion.
+        assert "consider making this a directive" not in with_dir_line, (
+            f"escalated lesson should not also suggest re-escalation: {with_dir_line!r}"
+        )

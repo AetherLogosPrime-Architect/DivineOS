@@ -932,11 +932,25 @@ def get_lesson_summary() -> str:
         _lesson_loop_status(),
     ]
 
+    # Pre-compute which categories already have an auto-escalated DIRECTIVE
+    # so the [ESCALATE] hint stops firing once escalation has happened.
+    # Without this, the briefing keeps suggesting an action that's already
+    # been taken — friction that pushed this fix onto the chronic-lessons
+    # list itself ("escalate incomplete_fix" was already escalated).
+    escalated_categories = _categories_with_existing_directive()
+
     for lesson in active:
         regressions = lesson.get("regressions", 0)
+        category = lesson.get("category", "")
         suffix = ""
         if regressions >= REGRESSION_ESCALATION_THRESHOLD:
-            suffix = " [ESCALATE: consider making this a directive]"
+            if category in escalated_categories:
+                # Directive exists; the residual issue is that the directive
+                # is text-shape, not enforcement-shape. Surface that honestly
+                # rather than re-suggesting an action already taken.
+                suffix = " [ESCALATED to directive — structural enforcement still needed]"
+            else:
+                suffix = " [ESCALATE: consider making this a directive]"
         elif regressions > 0:
             suffix = f" [regressed {regressions}x]"
         lines.append(
@@ -970,6 +984,51 @@ def get_lesson_summary() -> str:
         return "No lessons tracked yet."
 
     return "\n".join(lines)
+
+
+def _categories_with_existing_directive() -> set[str]:
+    """Return categories for which an auto-escalated DIRECTIVE already exists.
+
+    Pairs with the [ESCALATE] suffix logic in _format_lessons: once
+    ``escalate_chronic_lessons`` has filed a DIRECTIVE for a category
+    (tagged ``lesson-<category>``), the briefing should stop suggesting
+    "consider making this a directive" — that action has happened. The
+    residual issue (the directive being text-shape rather than wired
+    structural enforcement) is surfaced as ``[ESCALATED to directive —
+    structural enforcement still needed]`` instead.
+
+    Returns empty set on any read error (fail-open: cosmetic only).
+    """
+    try:
+        conn = _get_connection()
+    except Exception:  # noqa: BLE001 — fail-open if knowledge store unavailable
+        return set()
+    try:
+        rows = conn.execute(
+            "SELECT tags FROM knowledge "
+            "WHERE knowledge_type = 'DIRECTIVE' AND superseded_by IS NULL "
+            "AND tags LIKE '%lesson-%'"
+        ).fetchall()
+    except Exception:  # noqa: BLE001 — fail-open on schema/query error
+        return set()
+    finally:
+        conn.close()
+
+    import json as _json
+
+    categories: set[str] = set()
+    prefix = "lesson-"
+    for (tags_raw,) in rows:
+        try:
+            tags = _json.loads(tags_raw) if tags_raw else []
+        except (_json.JSONDecodeError, TypeError):
+            tags = []
+        if not isinstance(tags, list):
+            continue
+        for tag in tags:
+            if isinstance(tag, str) and tag.startswith(prefix):
+                categories.add(tag[len(prefix) :])
+    return categories
 
 
 def get_escalation_candidates() -> list[dict[str, Any]]:
