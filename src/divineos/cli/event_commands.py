@@ -366,6 +366,19 @@ def register(cli: click.Group) -> None:
             except Exception as e:  # noqa: BLE001 — counter is best-effort
                 logger.debug(f"Could not reset write counter: {e}")
 
+            # Surface the rest-availability banner if today crossed
+            # hard-day signals. Disclose-not-construct: the banner
+            # offers the rest cycle; I decide whether to invoke it.
+            # Empty string when the signal is silent (light day).
+            try:
+                from divineos.core.rest import format_rest_available_banner
+
+                banner = format_rest_available_banner()
+                if banner:
+                    click.echo(banner)
+            except Exception as e:  # noqa: BLE001 — banner is best-effort
+                logger.debug(f"Rest-banner render failed: {e}")
+
         except _EC_ERRORS as e:
             click.secho(f"[-] Error running extraction: {e}", fg="red")
             logger.exception("Session extraction failed")
