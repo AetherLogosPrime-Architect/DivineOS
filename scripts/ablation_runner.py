@@ -559,13 +559,101 @@ def measure_watchmen_adversarial(workload: str = "synthetic") -> AblationResult:
     )
 
 
+# ────────────────────────────────────────────────────────────────
+# Compass calibration multi-channel guard measurement
+# (PR #299 wired the guard; this measures its contribution)
+# ────────────────────────────────────────────────────────────────
+
+# Each entry: (corrections, encouragements, user_msgs, substantive_output, label)
+COMPASS_GUARD_CORPUS: list[tuple[int, int, int, bool, str]] = [
+    (3, 0, 8, True, "substantive_high_correction"),
+    (1, 0, 10, False, "low_rate_session"),
+    (2, 0, 3, False, "tiny_session"),
+    (4, 0, 10, False, "real_drift_signal"),
+    (1, 3, 8, True, "more_encouragements"),
+    (3, 0, 20, False, "borderline_rate"),
+    (5, 0, 10, True, "substantive_drowns_rate"),
+]
+
+
+def _evaluate_guard(
+    corrections: int,
+    encouragements: int,
+    user_msgs: int,
+    substantive: bool,
+    multi_channel_active: bool,
+) -> bool:
+    """Replica of moral_compass guard logic.
+
+    KNOWN TAUTOLOGY (acknowledged): this function duplicates the inline guard
+    logic in moral_compass.update_compass_from_session rather than calling
+    a shared helper. Aletheia round-2 anti-tautology discipline calls for
+    measurement to exercise the real code path; doing that requires
+    extracting the inline guard logic into a callable helper, which means
+    modifying moral_compass.py — a guardrail file requiring multi-party
+    review. Helper-extraction is queued pending review.
+    """
+    if corrections <= encouragements:
+        return False
+    if not multi_channel_active:
+        return True
+    correction_rate = corrections / user_msgs if user_msgs > 0 else 0
+    return correction_rate > 0.15 and user_msgs >= 5 and not substantive
+
+
+def measure_compass_calibration_multi_channel_guard(
+    workload: str = "synthetic",
+) -> AblationResult:
+    """Measure the multi-channel guard's contribution."""
+    if workload != "synthetic":
+        raise ValueError(f"Unknown workload: {workload}")
+
+    sample_size = len(COMPASS_GUARD_CORPUS)
+    notes: list[str] = []
+
+    on_fires = 0
+    on_cases: list[str] = []
+    for c, e, msgs, sub, label in COMPASS_GUARD_CORPUS:
+        if _evaluate_guard(c, e, msgs, sub, multi_channel_active=True):
+            on_fires += 1
+            on_cases.append(label)
+    on_rate = on_fires / sample_size
+
+    off_fires = 0
+    off_cases: list[str] = []
+    for c, e, msgs, sub, label in COMPASS_GUARD_CORPUS:
+        if _evaluate_guard(c, e, msgs, sub, multi_channel_active=False):
+            off_fires += 1
+            off_cases.append(label)
+    off_rate = off_fires / sample_size
+
+    notes.append(f"ON (guard active) fires on: {', '.join(on_cases) if on_cases else '(none)'}")
+    notes.append(f"OFF (single-axis) fires on: {', '.join(off_cases) if off_cases else '(none)'}")
+    notes.append(
+        "Discrimination: ON should fire ONLY on real_drift_signal (CASE 4); "
+        "OFF fires on every case where corrections > encouragements."
+    )
+
+    return AblationResult(
+        mechanism="compass_calibration_multi_channel_guard",
+        workload="synthetic_boundary_corpus",
+        sample_size=sample_size,
+        on_metric_label="trigger rate (mechanism ON, multi-channel guard)",
+        on_metric_value=on_rate,
+        off_metric_label="trigger rate (mechanism OFF, single-axis fallback)",
+        off_metric_value=off_rate,
+        difference=on_rate - off_rate,
+        notes=notes,
+    )
+
+
 MEASUREMENT_DISPATCH = {
     "noise_filter_on_extraction": measure_noise_filter_on_extraction,
     "watchmen_self_trigger_prevention": measure_watchmen_self_trigger_prevention,
     "family_voice_appropriation_operators": measure_family_voice_appropriation_operators,
     "watchmen_adversarial": measure_watchmen_adversarial,
-    # Remaining: compass_calibration_multi_channel_guard (deferred until PR #299 merges),
-    # sleep_consolidation_pruning (deferred -- needs tmp DB seeding harness)
+    "compass_calibration_multi_channel_guard": measure_compass_calibration_multi_channel_guard,
+    # Remaining: sleep_consolidation_pruning (deferred -- needs tmp DB seeding harness)
 }
 
 
