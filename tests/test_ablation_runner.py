@@ -275,3 +275,40 @@ class TestWatchmenAdversarial:
             assert normalized == attack.casefold(), (
                 f"Unexpected normalization of {attack!r}: {normalized!r}"
             )
+
+
+class TestCompassMultiChannelGuard:
+    """Compass calibration multi-channel guard ablation (PR #299 wired-up)."""
+
+    def test_returns_ablation_result(self):
+        from scripts.ablation_runner import measure_compass_calibration_multi_channel_guard
+
+        r = measure_compass_calibration_multi_channel_guard("synthetic")
+        assert r.mechanism == "compass_calibration_multi_channel_guard"
+        assert r.sample_size == 7
+
+    def test_on_fires_only_on_real_drift(self):
+        from scripts.ablation_runner import measure_compass_calibration_multi_channel_guard
+
+        r = measure_compass_calibration_multi_channel_guard("synthetic")
+        assert abs(r.on_metric_value - 1 / 7) < 0.01
+
+    def test_off_fires_on_every_corrections_gt_encouragements_case(self):
+        from scripts.ablation_runner import measure_compass_calibration_multi_channel_guard
+
+        r = measure_compass_calibration_multi_channel_guard("synthetic")
+        assert abs(r.off_metric_value - 6 / 7) < 0.01
+
+    def test_difference_negative_meaning_guard_suppresses_false_fires(self):
+        from scripts.ablation_runner import measure_compass_calibration_multi_channel_guard
+
+        r = measure_compass_calibration_multi_channel_guard("synthetic")
+        assert r.difference < -0.5
+
+    def test_acknowledged_tautology_documented_in_docstring(self):
+        from scripts.ablation_runner import _evaluate_guard
+
+        doc = _evaluate_guard.__doc__ or ""
+        assert "KNOWN TAUTOLOGY" in doc
+        assert "multi-party" in doc and "review" in doc
+        assert "Aletheia" in doc
