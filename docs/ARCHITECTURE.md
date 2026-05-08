@@ -359,6 +359,7 @@ src/divineos/
     foundations_briefing_surface.py Foundations briefing surface — make my own articulation work findable
     council_auto.py            Build-shape detector for council-auto-invocation.
     compass_dismissal_briefing_surface.py Compass-dismissal briefing surface — surfaces high dismissal rates.
+    engagement_disclosure_surface.py Engagement-counter half-threshold disclosure surface.
 
   analysis/
     _session_types.py          Session analysis type definitions
