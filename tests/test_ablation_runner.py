@@ -256,12 +256,18 @@ class TestWatchmenAdversarial:
         except ValueError:
             pass
 
-    def test_cyrillic_homoglyphs_currently_pass(self):
-        """DOCUMENTS THE GAP: Cyrillic homoglyphs slip past current validator.
+    def test_cyrillic_homoglyphs_now_caught(self):
+        """GAP CLOSED 2026-05-08: Cyrillic homoglyphs are now rejected.
 
-        This test pins the current behavior. When confusables-detection
-        ships, this test should flip to assertRaises(ValueError) and that
-        flip is the proof the gap closed."""
+        This test was previously named 'test_cyrillic_homoglyphs_currently_pass'
+        and DOCUMENTED THE GAP — the docstring noted 'When confusables-detection
+        ships, this test should flip to assertRaises(ValueError) and that flip
+        is the proof the gap closed.' The flip is now landed: the
+        _CYRILLIC_CONFUSABLES map applied after casefold in _validate_actor
+        catches these attacks, and the same adversarial corpus that flagged
+        the gap now shows 12/12 caught (was 10/12). This test is the gap-flip."""
+        import pytest
+
         from divineos.core.watchmen.store import _validate_actor
 
         # Cyrillic С (U+0421) + ASCII laude
@@ -269,12 +275,8 @@ class TestWatchmenAdversarial:
         # cl + Cyrillic а (U+0430) + ude
         cyrillic_a_attack = "clаude"
         for attack in (cyrillic_c_attack, cyrillic_a_attack):
-            # NOTE: this currently PASSES the validator (it should not).
-            # When confusables-detection ships, change to assertRaises.
-            normalized = _validate_actor(attack)
-            assert normalized == attack.casefold(), (
-                f"Unexpected normalization of {attack!r}: {normalized!r}"
-            )
+            with pytest.raises(ValueError, match="internal component"):
+                _validate_actor(attack)
 
 
 class TestCompassMultiChannelGuard:
