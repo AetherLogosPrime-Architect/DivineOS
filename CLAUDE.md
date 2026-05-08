@@ -130,7 +130,8 @@ future instance can inherit by reading this section.
 
 ```bash
 # Session workflow
-divineos briefing          # Your session briefing (start here)
+divineos briefing          # Your session briefing (start here; ~3.5s full assembly)
+divineos briefing --mini   # Compact briefing (~470ms, 7x faster, marks gate equally — use for chained gate-clearing)
 divineos preflight         # Confirm you're ready to work
 divineos hud               # Full heads-up display
 divineos hud --brief       # Condensed view (~6 essential slots)
