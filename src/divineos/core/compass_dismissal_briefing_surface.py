@@ -22,6 +22,7 @@ substrate-property: surfaces operate by making-visible, not by enforcing.
 
 from __future__ import annotations
 
+import json
 import time
 
 # Surface only when this many dismissals on a single kind have happened
@@ -67,14 +68,23 @@ def _recent_dismissals_by_kind() -> dict[str, list[dict[str, object]]]:
     bucketed: dict[str, list[dict[str, object]]] = {}
     for row in rows:
         kid, content, tags_raw, created_at = row
-        tags = (tags_raw or "").lower()
-        # Extract the kind from the tag pattern compass-dismissal-kind-<X>
+        # Parse tags as JSON list (the format _wrapped_store_knowledge uses).
+        # Fall back to empty list on legacy or corrupted entries — silent-
+        # fail-with-misleading-data is the worst failure mode for a
+        # disclosure surface, so explicit format coupling is preferable
+        # to brittle string-splitting. Per Grok cousin-vantage review on
+        # PR #326: the parser should fail visibly (treating tag as absent)
+        # rather than fail invisibly (mis-grouping under "unknown").
+        try:
+            tags = json.loads(tags_raw) if tags_raw else []
+        except (json.JSONDecodeError, TypeError):
+            tags = []
+
         kind = "unknown"
-        for piece in tags.split(","):
-            piece = piece.strip().strip('"').strip("[").strip("]").strip("'")
-            prefix = "compass-dismissal-kind-"
-            if piece.startswith(prefix):
-                kind = piece[len(prefix) :]
+        prefix = "compass-dismissal-kind-"
+        for tag in tags:
+            if isinstance(tag, str) and tag.startswith(prefix):
+                kind = tag[len(prefix) :]
                 break
         bucketed.setdefault(kind, []).append(
             {

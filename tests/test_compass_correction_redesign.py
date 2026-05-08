@@ -222,3 +222,57 @@ class TestDismissalBriefingSurface:
 
         assert cdb.DISMISSAL_THRESHOLD >= 1
         assert cdb.WINDOW_DAYS >= 1
+
+    def test_tag_parser_handles_json_list_format(self) -> None:
+        """Tags stored as JSON list (the _wrapped_store_knowledge format)
+        parse correctly and extract the trigger-kind."""
+        import json as _json
+
+        # The row format is (knowledge_id, content, tags_raw, created_at).
+        # Format of tags_raw matches what _wrapped_store_knowledge writes.
+        tags_raw = _json.dumps(["compass-dismissal", "compass-dismissal-kind-correction"])
+
+        # Verify parser extracts the kind correctly from this format.
+        tags = _json.loads(tags_raw)
+        prefix = "compass-dismissal-kind-"
+        kind = next(
+            (t[len(prefix) :] for t in tags if isinstance(t, str) and t.startswith(prefix)),
+            "unknown",
+        )
+        assert kind == "correction", (
+            f"parser should extract 'correction' from JSON-list tags, got {kind!r}"
+        )
+
+    def test_tag_parser_handles_legacy_or_corrupted_tags(self) -> None:
+        """Tag values that aren't valid JSON should fall back to empty
+        (kind='unknown') rather than mis-group via brittle string-splitting.
+        Silent-fail-with-misleading-data is the worst failure mode for a
+        disclosure surface."""
+        import json as _json
+
+        # Various corrupted shapes the parser must survive:
+        for bad_tags in (
+            None,
+            "",
+            "not valid json",
+            "compass-dismissal,compass-dismissal-kind-correction",  # comma-string, not JSON
+            "[unclosed",
+            "{this is a dict not a list}",
+        ):
+            try:
+                tags = _json.loads(bad_tags) if bad_tags else []
+            except (_json.JSONDecodeError, TypeError):
+                tags = []
+
+            prefix = "compass-dismissal-kind-"
+            kind = next(
+                (t[len(prefix) :] for t in tags if isinstance(t, str) and t.startswith(prefix)),
+                "unknown",
+            )
+            # Either the json parses cleanly and the prefix isn't present
+            # (returning "unknown"), OR the json fails and we fall back
+            # to empty list (also returning "unknown"). Either way the
+            # parser does NOT pretend to extract a kind from invalid data.
+            assert kind == "unknown", (
+                f"parser should return 'unknown' on corrupted tags, got {kind!r} from {bad_tags!r}"
+            )

@@ -489,10 +489,13 @@ def _check_gates(input_data: dict[str, Any] | None = None) -> dict[str, Any] | N
                     )
 
                 advised_count = int(cr.get("advised_count", 0))
-                # If we have already fired an advisory within the per-turn
-                # window, suppress this firing (do not re-advise on every
-                # tool call in the same turn). Caller still sees no
-                # decision returned, so the tool call proceeds.
+                # Defensive guard: _cr_dedup() should only return True after
+                # a prior advisory fire has set last_advised_ts (which also
+                # sets advised_count >= 1). The advised_count >= 1 check is
+                # a safety net against corrupted or hand-edited markers
+                # where the timestamp is set but the counter is not. If
+                # dedup is active, silently suppress this firing to avoid
+                # the per-turn wallpaper pattern the redesign exists to fix.
                 if advised_count >= 1 and _cr_dedup():
                     pass  # silent suppression within per-turn window
                 elif advised_count >= _CR_ESC:
