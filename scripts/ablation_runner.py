@@ -526,7 +526,7 @@ def measure_watchmen_adversarial(workload: str = "synthetic") -> AblationResult:
     importlib.reload(watchmen_store)
     off_rejected = 0
     for raw_input, target, category in WATCHMEN_ADVERSARIAL_CORPUS:
-        actor = raw_input.encode().decode("unicode_escape")
+        actor = raw_input  # symmetric with ON-mode (Aletheia round-4 finding)
         try:
             watchmen_store._validate_actor(actor)
         except ValueError:
