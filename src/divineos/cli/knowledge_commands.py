@@ -442,8 +442,19 @@ def register(cli: click.Group) -> None:
         Default shows urgent + active layers (focused, actionable).
         Use --deep for the full picture including stable knowledge.
         Use --layer archive to see archived/resolved entries.
-        Use --mini for the compact auto-inject version.
+        Use --mini for the compact auto-inject version (~7x faster, same gate-clear).
+
+        Performance budget: full briefing should complete under
+        BRIEFING_LATENCY_BUDGET_MS (1500ms). When it exceeds, a warning is
+        emitted at the end of output. This is disclosure-not-construction
+        substrate-discipline: the surface makes the regression visible at
+        briefing-time so accumulating-cost can't drift silently. Filed
+        2026-05-08 after the latency degraded from 0.77s baseline (per
+        load-briefing.sh comment) to 3.6s as surfaces accumulated.
         """
+        import time as _time
+
+        _briefing_t0 = _time.perf_counter()
         if mini:
             try:
                 from contextlib import suppress as _suppress
@@ -1014,6 +1025,25 @@ def register(cli: click.Group) -> None:
         else:
             click.secho("[*] No knowledge entries match your filters.", fg="yellow")
             click.secho('    Try: divineos learn "..." to add knowledge first.', fg="bright_black")
+
+        # Latency disclosure — substrate-discipline-as-surface (2026-05-08).
+        # Briefing degraded from 0.77s baseline to 3.6s as surfaces accumulated;
+        # each new surface looked free in isolation. Making the cost visible
+        # at briefing-time forces accumulating-cost to be loud-in-experience
+        # rather than silent-drift. Threshold 1500ms is the budget; cross it
+        # and the warning fires. Suggests --mini (~470ms) for fast paths.
+        _briefing_elapsed_ms = (_time.perf_counter() - _briefing_t0) * 1000
+        _BRIEFING_BUDGET_MS = 1500
+        if _briefing_elapsed_ms > _BRIEFING_BUDGET_MS:
+            click.secho(
+                f"\n[!] Briefing took {_briefing_elapsed_ms:.0f}ms "
+                f"(budget {_BRIEFING_BUDGET_MS}ms). Latency drift — surfaces "
+                "accumulating without per-surface cost ceiling. Use "
+                "`divineos briefing --mini` (~470ms) for gate-clearing paths "
+                "that don't need full assembly.",
+                fg="yellow",
+                bold=True,
+            )
 
     @cli.command("forget")
     @click.argument("knowledge_id")
