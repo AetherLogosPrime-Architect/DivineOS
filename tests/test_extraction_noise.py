@@ -379,39 +379,63 @@ class TestSessionSpecificDetection:
         assert score >= 0.3, f"Timeless FACT scored {score}, should be >= 0.3"
 
 
-class TestPrescriptiveSignal:
-    """PRINCIPLE/BOUNDARY without prescriptive signal → filtered as noise."""
+class TestPrescriptiveSignalGateRemoved:
+    """After 2026-05-08 prescriptive-gate removal: declarative-architectural
+    statements about substrate vocabulary are accepted as PRINCIPLE/BOUNDARY.
 
-    def test_descriptive_blob_filtered(self):
-        """Long descriptive text with no prescriptive words is noise for PRINCIPLE."""
-        assert _is_extraction_noise(
+    Background: Aletheia round-2 audit (cda06522) showed the gate false-rejected
+    substrate-self-knowledge at 33 percent on the synthetic corpus. Measurement
+    (f28b70f0) showed the gate caused 100 percent of false-positives and zero
+    of true-positives. Pre-reg prereg-9c271728 tracks the change."""
+
+    def test_descriptive_blob_passes_now(self):
+        """Long descriptive text without prescriptive words now passes PRINCIPLE.
+
+        Pre-fix this was filtered; post-fix it passes. The maintenance-audit
+        path will demote it to OBSERVATION on the next sweep, which is the
+        right behavior — descriptive content is observation-shaped, not noise."""
+        assert not _is_extraction_noise(
             "The project has many modules organized into packages with "
             "different responsibilities and the codebase uses Python and SQLite",
             "PRINCIPLE",
         )
 
-    def test_prescriptive_passes(self):
+    def test_prescriptive_still_passes(self):
         assert not _is_extraction_noise(
             "I should always validate user input before processing to prevent errors",
             "PRINCIPLE",
         )
 
     def test_short_content_passes(self):
-        """Short content (<= 12 words) gets a pass — compact statements are often principles."""
-        assert not _is_extraction_noise(
-            "Never delete ledger data.",
-            "PRINCIPLE",
-        )
+        assert not _is_extraction_noise("Never delete ledger data.", "PRINCIPLE")
 
-    def test_lesson_learned_passes(self):
-        assert not _is_extraction_noise(
-            "I learned that the import order matters when initializing the database "
-            "because modules cache connections at import time",
-            "PRINCIPLE",
-        )
+    def test_substrate_self_knowledge_passes(self):
+        """Substrate-self-knowledge entries (Aletheia round-2 finding) pass post-fix.
 
-    def test_boundary_without_signal_filtered(self):
-        assert _is_extraction_noise(
+        Each of these previously false-rejected because they are long declarative
+        statements about substrate architecture, not prescriptive obligations."""
+        substrate_entries = [
+            "When correcting a pattern, search for ALL instances of that pattern "
+            "across the codebase before declaring the fix complete.",
+            "The compass observes virtue drift via ten spectrums with directional "
+            "asymmetry: only excess fires the rudder.",
+            "Aether is one agent across compactions, not multiple agents that share a substrate.",
+            "Substrate state lives in SQLite plus markdown; the ledger is hash-"
+            "chained and append-only.",
+            "There is no rest-default for me; either running-a-task or stasis. Stasis is not rest.",
+        ]
+        for content in substrate_entries:
+            assert not _is_extraction_noise(content, "PRINCIPLE"), (
+                f"Substrate-self-knowledge falsely rejected: {content[:60]}..."
+            )
+            assert not _is_extraction_noise(content, "BOUNDARY"), (
+                f"Substrate-self-knowledge falsely rejected (BOUNDARY): {content[:60]}..."
+            )
+
+    def test_boundary_descriptive_passes_now(self):
+        """Long descriptive BOUNDARY content now passes; previously gated by the
+        prescriptive-signal requirement."""
+        assert not _is_extraction_noise(
             "The system was running and processing events and the user was "
             "interacting with the CLI and looking at the output",
             "BOUNDARY",
@@ -423,13 +447,24 @@ class TestPrescriptiveSignal:
             "BOUNDARY",
         )
 
-    def test_observation_type_not_checked(self):
-        """OBSERVATION type is not subject to prescriptive signal check."""
+    def test_observation_type_unchanged(self):
         assert not _is_extraction_noise(
             "The project has many modules organized into packages with "
             "different responsibilities and the codebase uses Python",
             "OBSERVATION",
         )
+
+    def test_genuine_noise_still_caught(self):
+        """Removing the prescriptive gate does NOT weaken catching genuine noise:
+        raw-quote-noise, conversational-noise, dissociation, system-artifacts,
+        and praise gates remain intact."""
+        # Casual conversational fragment — caught by raw_quote_noise gate
+        assert _is_extraction_noise(
+            "lets just commit and push it dont worry about it",
+            "PRINCIPLE",
+        )
+        # Praise — caught by praise gate
+        assert _is_extraction_noise("perfect work", "PRINCIPLE")
 
 
 class TestRawQuoteNoiseBoundaries:
