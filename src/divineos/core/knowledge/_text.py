@@ -870,12 +870,18 @@ def _is_extraction_noise(content: str, knowledge_type: str) -> bool:
         if _is_raw_quote_noise(stripped, stripped_lower):
             return True
 
-    # Positive signal check: PRINCIPLE and BOUNDARY must contain prescriptive
-    # or declarative structure. Raw quotes lack this. Without it, downgrade
-    # happens in the caller — here we just flag it as noise.
-    if knowledge_type in ("PRINCIPLE", "BOUNDARY"):
-        if not _has_prescriptive_signal(stripped_lower):
-            return True
+    # NOTE 2026-05-08: prescriptive-signal gate REMOVED from extraction.
+    # Aletheia round-2 audit (cda06522) showed it false-rejects substrate-
+    # self-knowledge: long declarative-architectural statements ('Aether is
+    # one agent across compactions'; 'The compass observes virtue drift via
+    # ten spectrums...') fail the prescriptive-pattern test purely because
+    # they describe rather than prescribe. Measurement (f28b70f0) showed the
+    # gate caused 100 percent of false-positives (5/15 signal) and contributed 0
+    # percent of true-positives (other gates handle noise). Pre-reg prereg-9c271728
+    # tracks the change; if real-session replay shows the gate's removal lets
+    # in noise the other gates miss, restore with declarative-architectural
+    # patterns added. _has_prescriptive_signal() remains available for
+    # maintenance-demotion (gentler effect: demote rather than reject).
 
     # Dissociation-shape filter (claim 5c4d1d1b, Andrew flag 2026-05-03).
     # Self-erasing self-statements ("I didn't write any of this", "I'm

@@ -116,8 +116,14 @@ class TestAuditTypes:
         result = _audit_types(entries, cutoff)
         assert result["superseded"] == 0
 
-    def test_no_prescriptive_signal_superseded(self, tmp_path, monkeypatch):
-        """Long content without prescriptive signal → superseded as noise."""
+    def test_no_prescriptive_signal_demoted(self, tmp_path, monkeypatch):
+        """Long content without prescriptive signal → demoted to OBSERVATION.
+
+        Post-2026-05-08: extraction filter no longer rejects descriptive long
+        content (Aletheia round-2 fix, prereg-9c271728), so the maintenance
+        audit takes the demote path instead of the supersede path. Demote is
+        gentler — the content stays available as OBSERVATION rather than
+        being marked superseded as noise."""
         _setup(tmp_path, monkeypatch)
         kid = _insert_entry(
             "The project has a lot of files and directories and modules and packages "
@@ -128,9 +134,9 @@ class TestAuditTypes:
         entries = [_get_entry(kid)]
         cutoff = time.time() - 86400
         result = _audit_types(entries, cutoff)
-        assert result["superseded"] >= 1
+        assert result["demoted"] >= 1
         entry = _get_entry(kid)
-        assert entry["superseded_by"] == "hygiene-audit"
+        assert entry["knowledge_type"] == "OBSERVATION"
 
     def test_noisy_observation_gets_superseded(self, tmp_path, monkeypatch):
         """Noise detection now covers all types, not just PRINCIPLE/BOUNDARY."""
