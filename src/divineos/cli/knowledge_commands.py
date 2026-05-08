@@ -602,6 +602,22 @@ def register(cli: click.Group) -> None:
         if drift_block:
             _safe_echo(drift_block)
 
+        # Engagement-checkpoint disclosure — soft signal at half-threshold,
+        # filling the gap between "silent gate" and "blocked gate" so the
+        # firing isn't a binary surprise. Disclose-not-construct: surface
+        # makes-visible, gate enforces.
+        try:
+            from divineos.core.engagement_disclosure_surface import (
+                format_for_briefing as _fmt_engagement_disclosure,
+            )
+
+            engagement_disclosure_block = _fmt_engagement_disclosure()
+        except _KC_ERRORS:
+            engagement_disclosure_block = ""
+
+        if engagement_disclosure_block:
+            _safe_echo(engagement_disclosure_block)
+
         # Theater/fabrication observation surface — replaces gate 1.46
         # which was removed 2026-05-01 per the free-speech principle.
         # The marker file (~/.divineos/theater_unresolved.json) is still
