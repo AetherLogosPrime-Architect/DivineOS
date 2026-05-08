@@ -130,6 +130,22 @@ fi
 echo "=== Orphan Modules (informational) ==="
 python scripts/check_orphan_modules.py 2>/dev/null || true
 
+# 5a-bis. ADR-0001 boundary checker (PR #325). The checker shipped but
+# was not wired into any pre-commit pipeline at filing-time — pure
+# orphan-code, despite prereg-ed736cac6594 explicitly naming
+# "integrating into pre-commit" as part of the success condition.
+# Wired here 2026-05-08 (warning-only) as the structural-enforcement
+# layer the prereg committed to. Surfaces ADR-0001 violations on every
+# commit; doesn't block on legacy state pending the strip-pass cleanup
+# (genericize attributions, move named-history to Experimental's
+# authorship-history.md, etc.). Once the cleanup PR lands and main is
+# at zero violations, this can be promoted from warning to blocking.
+# Tracking: the falsifier on prereg-ed736cac6594 fires if any NEW
+# violation lands post-wiring without being caught — warning-mode
+# still produces visible signal at commit-time.
+echo "=== ADR-0001 Boundary Violations (informational) ==="
+python scripts/check_boundary_violations.py 2>/dev/null || true
+
 # 5b. Pre-reg gate (un-gameable): new mechanisms require a filed pre-reg.
 # The gate reads the staged diff and blocks when a new mechanism lacks a
 # matching OPEN pre-registration in the ledger. Discipline from the
