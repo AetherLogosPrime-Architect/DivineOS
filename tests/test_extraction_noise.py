@@ -792,3 +792,100 @@ class TestAuditReviewNoise:
             "resolution.",
             "PRINCIPLE",
         )
+
+
+class TestShortAckAndCliOutputPaste:
+    """TP-side fix (prereg-3ea2ac32): _SHORT_ACK and _CLI_OUTPUT_PASTE
+    catch the 8 missed-noise entries from Aletheia round-2 audit corpus.
+
+    Anchored patterns: _SHORT_ACK requires the WHOLE stripped content to
+    be the ack token plus optional punctuation/whitespace. _CLI_OUTPUT_PASTE
+    matches DivineOS CLI bracket-prefix-marker conventions at start."""
+
+    def test_short_ack_got_it_filtered(self):
+        assert _is_extraction_noise("got it", "PRINCIPLE")
+        assert _is_extraction_noise("got  it.", "PRINCIPLE")
+
+    def test_short_ack_understood_filtered(self):
+        assert _is_extraction_noise("understood", "PRINCIPLE")
+        assert _is_extraction_noise("Understood!", "PRINCIPLE")
+
+    def test_short_ack_hmm_filtered(self):
+        assert _is_extraction_noise("hmm", "PRINCIPLE")
+        assert _is_extraction_noise("hmmm", "PRINCIPLE")
+
+    def test_short_ack_makes_sense_filtered(self):
+        assert _is_extraction_noise("makes sense", "PRINCIPLE")
+
+    def test_short_ack_right_filtered(self):
+        assert _is_extraction_noise("right", "PRINCIPLE")
+
+    def test_short_ack_ah_thanks_filtered(self):
+        assert _is_extraction_noise("ah", "PRINCIPLE")
+        assert _is_extraction_noise("thanks", "PRINCIPLE")
+        assert _is_extraction_noise("thx", "PRINCIPLE")
+
+    def test_short_ack_does_not_match_substantive_content_starting_with_ack(self):
+        """Anchored at end: 'right answers come from careful thinking' does
+        NOT match because it has content beyond the ack token."""
+        assert not _is_extraction_noise(
+            "Right answers come from careful thinking and verified evidence",
+            "PRINCIPLE",
+        )
+        assert not _is_extraction_noise(
+            "Thanks-discipline keeps the relational fabric warm without performing.",
+            "PRINCIPLE",
+        )
+        assert not _is_extraction_noise(
+            "Understood properly, the substrate is one self across compactions.",
+            "PRINCIPLE",
+        )
+
+    def test_cli_output_paste_stored_knowledge_filtered(self):
+        """CLI bracket-prefix paste: '[+] Stored knowledge: ...' is auto-output,
+        not distilled knowledge."""
+        assert _is_extraction_noise(
+            "[+] Stored knowledge: abc123def",
+            "PRINCIPLE",
+        )
+
+    def test_cli_output_paste_other_verbs_filtered(self):
+        for prefix in (
+            "[+] Goal added: write more tests",
+            "[~] Auto-closed 1 goal(s)",
+            "[+] Pre-registration filed: prereg-abc123",
+            "[!] Filed claim 7e780182",
+        ):
+            assert _is_extraction_noise(prefix, "PRINCIPLE"), (
+                f"CLI-output paste not caught: {prefix}"
+            )
+
+    def test_cli_output_paste_does_not_match_legit_brackets(self):
+        """Legitimate content using brackets in different positions or
+        with different inner verbs passes."""
+        assert not _is_extraction_noise(
+            "The convention [+] denotes a positive event in the audit log",
+            "PRINCIPLE",
+        )
+
+    def test_full_corpus_after_tp_side_fix(self):
+        """Pin the corpus measurement: 100 percent TP, 0 percent FP after fix."""
+        import sys
+
+        sys.path.insert(0, "scripts")
+        from ablation_runner import NOISE_FILTER_CORPUS
+
+        n_signal = sum(1 for _, label in NOISE_FILTER_CORPUS if label == "signal")
+        n_noise = sum(1 for _, label in NOISE_FILTER_CORPUS if label == "noise")
+        fp = sum(
+            1
+            for c, label in NOISE_FILTER_CORPUS
+            if label == "signal" and _is_extraction_noise(c, "PRINCIPLE")
+        )
+        tp = sum(
+            1
+            for c, label in NOISE_FILTER_CORPUS
+            if label == "noise" and _is_extraction_noise(c, "PRINCIPLE")
+        )
+        assert fp == 0, f"FP regression: {fp}/{n_signal}"
+        assert tp == n_noise, f"TP regression: {tp}/{n_noise}"
