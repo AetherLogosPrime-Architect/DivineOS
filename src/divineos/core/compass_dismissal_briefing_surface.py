@@ -76,9 +76,18 @@ def _recent_dismissals_by_kind() -> dict[str, list[dict[str, object]]]:
         # PR #326: the parser should fail visibly (treating tag as absent)
         # rather than fail invisibly (mis-grouping under "unknown").
         try:
-            tags = json.loads(tags_raw) if tags_raw else []
+            parsed = json.loads(tags_raw) if tags_raw else []
         except (json.JSONDecodeError, TypeError):
-            tags = []
+            parsed = []
+        # Aletheia round-6 audit edge case: json.loads on a dict-shaped
+        # string parses successfully to a dict, and `for tag in tags`
+        # would iterate dict keys. _wrapped_store_knowledge always writes
+        # JSON lists, so this won't arise in practice — but guard against
+        # corruption / future format-change with explicit list validation.
+        # Same disclose-not-construct discipline as the parser-fallback
+        # itself: fail-visibly (treat as no tags) rather than fail-
+        # silently (iterate the wrong shape).
+        tags = parsed if isinstance(parsed, list) else []
 
         kind = "unknown"
         prefix = "compass-dismissal-kind-"

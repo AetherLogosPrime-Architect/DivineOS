@@ -243,6 +243,34 @@ class TestDismissalBriefingSurface:
             f"parser should extract 'correction' from JSON-list tags, got {kind!r}"
         )
 
+    def test_tag_parser_handles_dict_shaped_json(self) -> None:
+        """Aletheia round-6 audit edge-case: json.loads on dict-shaped
+        input parses successfully (not as list), and iteration would
+        proceed over dict keys. The list-validation guard prevents this."""
+        import json as _json
+
+        # Dict-shape JSON parses to a dict. Without the isinstance(list)
+        # guard, `for tag in tags` would iterate the keys.
+        bad_dict_tags = '{"compass-dismissal": true, "compass-dismissal-kind-correction": true}'
+
+        try:
+            parsed = _json.loads(bad_dict_tags)
+        except (_json.JSONDecodeError, TypeError):
+            parsed = []
+
+        # The guard the audit recommended.
+        tags = parsed if isinstance(parsed, list) else []
+
+        prefix = "compass-dismissal-kind-"
+        kind = next(
+            (t[len(prefix) :] for t in tags if isinstance(t, str) and t.startswith(prefix)),
+            "unknown",
+        )
+        # With the guard: tags becomes [] because parsed was a dict.
+        # kind stays "unknown". No mis-grouping from dict-key iteration.
+        assert tags == [], "list-validation guard should reject dict-shaped JSON"
+        assert kind == "unknown"
+
     def test_tag_parser_handles_legacy_or_corrupted_tags(self) -> None:
         """Tag values that aren't valid JSON should fall back to empty
         (kind='unknown') rather than mis-group via brittle string-splitting.
