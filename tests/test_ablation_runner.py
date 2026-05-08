@@ -305,10 +305,48 @@ class TestCompassMultiChannelGuard:
         r = measure_compass_calibration_multi_channel_guard("synthetic")
         assert r.difference < -0.5
 
-    def test_acknowledged_tautology_documented_in_docstring(self):
+    def test_tautology_resolved_via_helper_extraction(self):
+        """The earlier acknowledged-tautology was closed 2026-05-08 when the
+        helper-extraction shipped through multi-party-review. The replica
+        now delegates to the real ``negative_helpfulness_should_fire``
+        helper in ``moral_compass``. This test pins the resolution: doc
+        names the closure, and the implementation imports the helper."""
+        import inspect
+
         from scripts.ablation_runner import _evaluate_guard
 
         doc = _evaluate_guard.__doc__ or ""
-        assert "KNOWN TAUTOLOGY" in doc
-        assert "multi-party" in doc and "review" in doc
-        assert "Aletheia" in doc
+        # Resolution-shape: docstring names the tautology was REMOVED.
+        assert "KNOWN TAUTOLOGY" in doc and "removed" in doc, (
+            "docstring should record the tautology-was-resolved history"
+        )
+        # Implementation: source must import + call the helper.
+        src = inspect.getsource(_evaluate_guard)
+        assert "negative_helpfulness_should_fire" in src, (
+            "implementation must delegate to the real helper, not a replica"
+        )
+
+    def test_evaluate_guard_results_match_real_helper(self):
+        """Behavior preservation: _evaluate_guard ON-mode should produce
+        the same boolean as calling negative_helpfulness_should_fire
+        directly. If they diverge, the ablation measurement is no longer
+        measuring the real call-path."""
+        from divineos.core.moral_compass import negative_helpfulness_should_fire
+        from scripts.ablation_runner import COMPASS_GUARD_CORPUS, _evaluate_guard
+
+        for corrections, encouragements, user_msgs, substantive, _label in COMPASS_GUARD_CORPUS:
+            real = negative_helpfulness_should_fire(
+                corrections, encouragements, user_msgs, substantive
+            )
+            ablation_on = _evaluate_guard(
+                corrections,
+                encouragements,
+                user_msgs,
+                substantive,
+                multi_channel_active=True,
+            )
+            assert ablation_on == real, (
+                f"ablation ON-mode diverged from helper for "
+                f"({corrections}, {encouragements}, {user_msgs}, {substantive}): "
+                f"helper={real} ablation={ablation_on}"
+            )
