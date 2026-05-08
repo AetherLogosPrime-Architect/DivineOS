@@ -583,22 +583,32 @@ def _evaluate_guard(
     substantive: bool,
     multi_channel_active: bool,
 ) -> bool:
-    """Replica of moral_compass guard logic.
+    """Evaluate the helpfulness multi-channel guard for ablation measurement.
 
-    KNOWN TAUTOLOGY (acknowledged): this function duplicates the inline guard
-    logic in moral_compass.update_compass_from_session rather than calling
-    a shared helper. Aletheia round-2 anti-tautology discipline calls for
-    measurement to exercise the real code path; doing that requires
-    extracting the inline guard logic into a callable helper, which means
-    modifying moral_compass.py — a guardrail file requiring multi-party
-    review. Helper-extraction is queued pending review.
+    Closes the acknowledged-tautology disclosure: this function now calls
+    the real ``negative_helpfulness_should_fire`` helper from
+    ``moral_compass`` (extracted 2026-05-08 via the multi-party-review
+    gate), rather than duplicating the guard's logic in a shape-replica.
+    The ablation measurement therefore exercises the real call-path,
+    satisfying Aletheia round-2 anti-tautology discipline.
+
+    OFF mode (``multi_channel_active=False``) preserves the prior
+    single-axis behavior (any ``corrections > encouragements`` fires) so
+    the ON-vs-OFF measurement remains meaningful. ON mode delegates to
+    the real helper.
+
+    KNOWN TAUTOLOGY: removed 2026-05-08 — the docstring previously
+    disclosed a shape-replica tautology pending multi-party-review;
+    that gate fired correctly, the helper extraction is now in main,
+    and this measurement now exercises the real call-path.
     """
     if corrections <= encouragements:
         return False
     if not multi_channel_active:
         return True
-    correction_rate = corrections / user_msgs if user_msgs > 0 else 0
-    return correction_rate > 0.15 and user_msgs >= 5 and not substantive
+    from divineos.core.moral_compass import negative_helpfulness_should_fire
+
+    return negative_helpfulness_should_fire(corrections, encouragements, user_msgs, substantive)
 
 
 def measure_compass_calibration_multi_channel_guard(
