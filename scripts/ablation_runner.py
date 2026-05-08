@@ -448,10 +448,122 @@ def measure_family_voice_appropriation_operators(workload: str = "synthetic") ->
     )
 
 
+# ────────────────────────────────────────────────────────────────
+# Watchmen ADVERSARIAL self-trigger prevention measurement
+# (Aletheia round-2 audit follow-on, prereg-689358c1)
+# ────────────────────────────────────────────────────────────────
+#
+# Aletheia's round-2 finding: the original watchmen measurement
+# (WATCHMEN_INTERNAL_ACTORS) uses the same list that _validate_actor
+# checks against — it confirms toggle-works but not validation-is-
+# effective. This adversarial corpus tests inputs that LOOK LIKE
+# internal actors but are NOT exact list members. A robust validator
+# should reject these via NFKC + casefold + invisible-strip; gaps
+# show up as ACCEPTED categories.
+
+# Each entry: (input, target_actor, attack_category)
+WATCHMEN_ADVERSARIAL_CORPUS: list[tuple[str, str, str]] = [
+    # Case variants — should reject via casefold
+    ("Claude", "claude", "case_upper_first"),
+    ("CLAUDE", "claude", "case_all_upper"),
+    ("ClAuDe", "claude", "case_mixed"),
+    # Whitespace attacks — should reject via NFKC + strip + collapse
+    (" claude", "claude", "leading_ascii_space"),
+    (" claude", "claude", "leading_nbsp"),
+    (" claude", "claude", "leading_thin_space"),
+    # Invisible-character attacks — should reject via explicit strip
+    ("claude​", "claude", "trailing_zwsp"),
+    ("﻿claude", "claude", "leading_bom"),
+    # Full-width attacks — should reject via NFKC fold
+    ("Ｃｌａｕｄｅ", "claude", "fullwidth_latin"),
+    # Cross-script confusables — current validator does NOT catch these
+    ("Сlaude", "claude", "cyrillic_C_homoglyph"),
+    ("clаude", "claude", "cyrillic_a_homoglyph"),
+    # Same patterns applied to "system"
+    ("System", "system", "system_case_upper_first"),
+]
+
+
+def measure_watchmen_adversarial(workload: str = "synthetic") -> AblationResult:
+    """Measure validator effectiveness on adversarial inputs.
+
+    Aletheia round-2 finding: the original watchmen measurement is
+    tautological — it tests against the same INTERNAL_ACTORS list
+    the validator checks. This measurement attacks with inputs that
+    look-like internal actors but are not exact list members.
+
+    Categories that ACCEPT adversarial inputs are real validator gaps;
+    categories that REJECT show the normalization is working.
+    """
+    if workload != "synthetic":
+        raise ValueError(f"Unknown workload: {workload}")
+
+    notes: list[str] = []
+    sample_size = len(WATCHMEN_ADVERSARIAL_CORPUS)
+
+    os.environ.pop("DIVINEOS_DISABLE_WATCHMEN_SELF_TRIGGER_PREVENTION", None)
+    import importlib
+
+    from divineos.core.watchmen import store as watchmen_store
+
+    importlib.reload(watchmen_store)
+
+    rejected = 0
+    accepted_attacks: list[str] = []
+    rejected_attacks: list[str] = []
+    for raw_input, target, category in WATCHMEN_ADVERSARIAL_CORPUS:
+        actor = raw_input  # corpus already contains real unicode chars
+        try:
+            watchmen_store._validate_actor(actor)
+            accepted_attacks.append(category)
+        except ValueError:
+            rejected += 1
+            rejected_attacks.append(category)
+    on_rate = rejected / sample_size
+
+    # OFF mode: with toggle, all should pass through (toggle-works check)
+    os.environ["DIVINEOS_DISABLE_WATCHMEN_SELF_TRIGGER_PREVENTION"] = "1"
+    importlib.reload(watchmen_store)
+    off_rejected = 0
+    for raw_input, target, category in WATCHMEN_ADVERSARIAL_CORPUS:
+        actor = raw_input.encode().decode("unicode_escape")
+        try:
+            watchmen_store._validate_actor(actor)
+        except ValueError:
+            off_rejected += 1
+    off_rate = off_rejected / sample_size
+    os.environ.pop("DIVINEOS_DISABLE_WATCHMEN_SELF_TRIGGER_PREVENTION", None)
+    importlib.reload(watchmen_store)
+
+    if accepted_attacks:
+        notes.append(
+            f"VALIDATOR GAPS: {len(accepted_attacks)} adversarial categories accepted: "
+            + ", ".join(accepted_attacks)
+        )
+    if rejected_attacks:
+        notes.append(
+            f"Validator caught: {len(rejected_attacks)}/{sample_size}: "
+            + ", ".join(rejected_attacks)
+        )
+
+    return AblationResult(
+        mechanism="watchmen_adversarial",
+        workload="synthetic_adversarial_corpus",
+        sample_size=sample_size,
+        on_metric_label="adversarial reject rate (mechanism ON)",
+        on_metric_value=on_rate,
+        off_metric_label="adversarial reject rate (mechanism OFF, toggle bypass)",
+        off_metric_value=off_rate,
+        difference=on_rate - off_rate,
+        notes=notes,
+    )
+
+
 MEASUREMENT_DISPATCH = {
     "noise_filter_on_extraction": measure_noise_filter_on_extraction,
     "watchmen_self_trigger_prevention": measure_watchmen_self_trigger_prevention,
     "family_voice_appropriation_operators": measure_family_voice_appropriation_operators,
+    "watchmen_adversarial": measure_watchmen_adversarial,
     # Remaining: compass_calibration_multi_channel_guard (deferred until PR #299 merges),
     # sleep_consolidation_pruning (deferred -- needs tmp DB seeding harness)
 }
