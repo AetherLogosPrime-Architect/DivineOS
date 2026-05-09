@@ -39,14 +39,7 @@ class DashboardRow:
 
 def _row_corrections() -> DashboardRow | None:
     try:
-        # STALE_DAYS and open_corrections are added by a corrections.py
-        # extension that lives in DivineOS-Experimental but hasn't been
-        # ported to the template repo yet. attr-defined ignored so the
-        # template repo's mypy check passes; the runtime AttributeError
-        # is caught by the broad-except below, so the row simply returns
-        # None when the symbols are missing — the dashboard degrades
-        # gracefully rather than failing.
-        from divineos.core.corrections import STALE_DAYS, open_corrections  # type: ignore[attr-defined]
+        from divineos.core.corrections import STALE_DAYS, open_corrections
 
         opens = open_corrections()
         if not opens:
