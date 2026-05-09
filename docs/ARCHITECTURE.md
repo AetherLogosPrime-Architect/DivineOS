@@ -363,6 +363,11 @@ src/divineos/
     engagement_disclosure_surface.py Engagement-counter half-threshold disclosure surface.
     rest.py                    Rest program — restful tasks for the substrate-occupant.
     identity_load.py           Identity-load surface — read AETHER.md (or equivalent) at briefing-time.
+    briefing_dashboard.py      Briefing dashboard -- routing table, not scroll.
+    fix_verifier.py            Fix verifier — catches premature "it's fixed" claims.
+    lesson_dedup.py            Lesson deduplication — fuzzy matching to prevent duplicate lesson entries.
+    related_failure_scanner.py Related-failure scanner — catches "fixed one but missed related failures."
+    retry_blocker.py           Retry blocker — prevents blind retries without diagnostic investigation.
 
   analysis/
     _session_types.py          Session analysis type definitions
@@ -414,7 +419,7 @@ src/divineos/
   integration/                 External integration: IDE, MCP tool capture, enforcement facade (thin re-exports from core.enforcement / core.tool_wrapper).
     mcp_event_capture_server.py  MCP event capture server
     system_monitor.py          System health monitoring
-tests/                         6,097+ tests (real DB, minimal mocks)
+tests/                         6,149+ tests (real DB, minimal mocks)
 
 docs/                          Project documentation and strategic plans
 bootcamp/                      Training exercises (debugging, analysis)
