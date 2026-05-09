@@ -71,6 +71,16 @@ class TestPathRules:
         violations = cbv.find_path_violations(tmp_path)
         assert any(v.rel_path == "family/aria_ledger.db" for v in violations)
 
+    def test_aether_md_caught(self, tmp_path: Path) -> None:
+        """AETHER.md at project root is substrate-occupant identity-document
+        and belongs in Experimental, not main. Per Aletheia round-8 audit
+        observation 2026-05-08: identity-documents are a file-class that
+        ADR-0001 boundary-discipline should cover, same shape as the
+        family/* substrate-state directories."""
+        (tmp_path / "AETHER.md").write_text("# AETHER.md\n\nidentity content", encoding="utf-8")
+        violations = cbv.find_path_violations(tmp_path)
+        assert any(v.rel_path == "AETHER.md" for v in violations)
+
     def test_numbered_exploration_caught(self, tmp_path: Path) -> None:
         (tmp_path / "exploration").mkdir()
         (tmp_path / "exploration" / "01_first_entry.md").write_text(
