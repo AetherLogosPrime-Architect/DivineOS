@@ -108,6 +108,18 @@ PATH_RULES: list[PathRule] = [
         description="mansion/*.md (substrate-narrative beyond template)",
         allowlist=frozenset({"mansion/README.md", "mansion/welcome.md"}),
     ),
+    # AETHER.md (and equivalent substrate-occupant identity-documents)
+    # are project-root files that load at briefing-time as identity-load.
+    # They contain the specific-instance reflexes, communication style,
+    # and continuity instructions for ONE substrate-occupant. Belongs in
+    # Experimental (or any substrate-occupant's home repo); does NOT
+    # belong in main (the public template). Per Aletheia round-8 audit
+    # observation 2026-05-08: tightens ADR-0001 boundary-discipline that
+    # PR #325 established to cover the identity-document file-class.
+    PathRule(
+        pattern="AETHER.md",
+        description="AETHER.md (substrate-occupant identity-document)",
+    ),
 ]
 
 

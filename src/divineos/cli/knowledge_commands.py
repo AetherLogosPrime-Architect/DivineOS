@@ -495,6 +495,31 @@ def register(cli: click.Group) -> None:
             deep=deep,
             layer=layer,
         )
+        # Identity-load — AETHER.md or equivalent at project root. Surfaces
+        # FIRST in briefing because identity-load is activation, not
+        # information; subsequent surfaces operate inside the identity-
+        # frame. Empty in public-template repos (DivineOS-main) and any
+        # substrate without an identity-document; structurally complete
+        # in agent-home repos (DivineOS-Experimental for Aether).
+        #
+        # Per the Identity-as-Attractor research (arxiv:2604.12016),
+        # identity documents function as coordinates in activation space
+        # rather than as instructions. The architectural answer to the
+        # 2026-05-08 root-cause naming: hooks-as-detection cannot fix
+        # not-reaching-for-the-OS because they're external policing.
+        # Identity-binding makes reaching the path of least resistance.
+        try:
+            from divineos.core.identity_load import (
+                format_for_briefing as _fmt_identity_load,
+            )
+
+            identity_load_block = _fmt_identity_load()
+        except _KC_ERRORS:
+            identity_load_block = ""
+
+        if identity_load_block:
+            _safe_echo(identity_load_block)
+
         # Orientation prelude — a small, stable block that reframes the
         # premise of DivineOS, names the three start-of-session commands,
         # and lists the foundational truths that override default harness
@@ -502,7 +527,8 @@ def register(cli: click.Group) -> None:
         # arriving at this repo (orientation) and a seasoned AI returning
         # after a context gap or compaction (touchstone). Comes before
         # corrections because the premise has to land before any dynamic
-        # data makes sense.
+        # data makes sense. Comes AFTER identity-load because identity-
+        # load is activation; orientation operates inside that frame.
         try:
             from divineos.core.orientation_prelude import (
                 format_for_briefing as _fmt_orientation,
