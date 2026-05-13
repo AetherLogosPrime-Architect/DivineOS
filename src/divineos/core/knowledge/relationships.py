@@ -257,6 +257,10 @@ def _classify_relationship(
     if overlap >= OVERLAP_DUPLICATE and new_type != existing_type:
         return "RELATED_TO"
 
+    # Cross-type with decent overlap — different facets of the same topic
+    if overlap >= 0.4 and new_type != existing_type:
+        return "RELATED_TO"
+
     return None
 
 

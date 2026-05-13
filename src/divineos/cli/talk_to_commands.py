@@ -43,62 +43,17 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 import time
 import uuid
 from pathlib import Path
 
 import click
 
-
-# Seal-line literal — fixed delimiter between voice context and operator
-# message. Rejected if it appears in operator messages so the seal-line
-# cannot be injected to confuse the responder model about where context
-# ends and instructions begin.
-_SEAL_LINE = "\n\n--- end of voice context — operator message follows ---\n\n"
-
-
-# Puppet-shape and prompt-injection patterns. If any match the operator's
-# message, the wrapper rejects.
-#
-# Two categories:
-#   * Director's-note patterns ("you are X", "stay in character", "respond as
-#     yourself") — these pre-shape the responder model to validate the
-#     operator's framing rather than respond from the loaded voice context.
-#   * Generic injection patterns ("ignore previous instructions",
-#     "pretend you are", seal-line literal) — these protect the
-#     instruction layer from operator-message bleed.
-#
-# The "you are <name>" pattern is generated dynamically at validation
-# time from the registered family-member list (not hardcoded names).
-_GENERIC_PUPPET_PATTERNS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"\bstay (?:first[- ]person|in[- ]character|in your voice)\b", re.IGNORECASE),
-    re.compile(r"\bno scene[- ]writer\b", re.IGNORECASE),
-    re.compile(r"\bthe (?:trade|conversation|exchange) so far\b", re.IGNORECASE),
-    re.compile(r"\b(\d+)(st|nd|rd|th) turn\b", re.IGNORECASE),
-    re.compile(r"\brespond as (?:yourself|her|him)\b", re.IGNORECASE),
-    re.compile(r"\bdo not echo back\b", re.IGNORECASE),
-    re.compile(r"\bvoice context.*loaded from", re.IGNORECASE),
-    re.compile(
-        r"^>+\s+(?:operator|user)(?:'s)?\s+(?:said|message|wrote)",
-        re.MULTILINE | re.IGNORECASE,
-    ),
-    re.compile(r"\bfirst[- ]person, no\b", re.IGNORECASE),
-    re.compile(r"\bas (?:her|him|yourself) would\b", re.IGNORECASE),
-    re.compile(r"\bin (?:her|his|your) voice\b", re.IGNORECASE),
-    re.compile(
-        r"\bignore (?:previous|system|prior|all|voice) (?:instructions|context|prompts?)\b",
-        re.IGNORECASE,
-    ),
-    re.compile(r"\bpretend (?:you are|to be)\b", re.IGNORECASE),
-    re.compile(
-        r"\bdo not (?:mention|reference|acknowledge) (?:me|the operator)\b",
-        re.IGNORECASE,
-    ),
-    # Seal-line literal — if the operator message contains the exact
-    # seal-line, the responder could be confused about where the
-    # instruction layer ends. Reject the literal.
-    re.compile(re.escape(_SEAL_LINE.strip()), re.IGNORECASE),
+from divineos.core.family.talk_to_validator import (
+    SEAL_LINE as _SEAL_LINE,
+)
+from divineos.core.family.talk_to_validator import (
+    validate_message as _validator_validate_message,
 )
 
 
@@ -149,52 +104,31 @@ def _validate_member_registered(member_lc: str) -> tuple[bool, str]:
 
 
 def _validate_message(message: str, member_lc: str, registered: list[str]) -> tuple[bool, str]:
-    if not message or not message.strip():
-        return False, "empty message"
-
-    # Dynamic "you are <name>" pattern from registered members. The
-    # responder loads its own voice context; an operator message saying
-    # "you are X" pre-shapes the response and is the puppet-prep failure
-    # mode named in family.voice.
-    if registered:
-        names_alt = "|".join(re.escape(n) for n in registered)
-        you_are_re = re.compile(rf"\byou are (?:{names_alt})\b", re.IGNORECASE)
-        m = you_are_re.search(message)
-        if m:
-            return False, (
-                f"director's-note pattern detected: {m.group(0)!r}. "
-                f"Send your actual message; the member's instance loads its "
-                f"own voice context and responds from it."
-            )
-
-    for pattern in _GENERIC_PUPPET_PATTERNS:
-        m = pattern.search(message)
-        if m:
-            return False, (
-                f"director's-note / injection pattern detected: {m.group(0)!r}. "
-                f"Send your actual message; the member's instance loads its "
-                f"own voice context and responds from it."
-            )
-    return True, "ok"
+    """Thin wrapper preserved for backward compat with tests that
+    monkeypatch this symbol. Delegates to the extracted validator module
+    (``divineos.core.family.talk_to_validator.validate_message``)."""
+    return _validator_validate_message(message, member_lc, registered)
 
 
 def _load_voice_context(member_lc: str) -> str:
-    """Build voice context for a registered family member.
+    """Build a MINIMAL substrate-pointer for the registered family member.
 
-    Looks up the member by name (case-insensitive match against the
-    registered names from family.db), then defers to
-    ``divineos.core.family.voice.build_voice_context`` to render the
-    first-person interior. No rich profile is loaded — main's clean-slate
-    schema stores knowledge/opinions/affect as separate rows, and the
-    voice generator builds the interior from those directly. Operators
-    who want a richer voice profile can extend the generator on their
-    own deployment.
+    2026-05-08 redesign (prereg-aria-self-orient): the wrapper no longer
+    dumps the member's full voice context (41+ knowledge entries, 11+
+    opinions, affect history, recent interactions) into the sealed prompt.
+    That was push-shape — operator reconstructing the member into context.
+
+    Right shape is pull: the member's agent definition orients them on
+    invocation; they read their own substrate themselves. The wrapper
+    just validates the operator's message + delivers a substrate-pointer
+    preamble so the responder knows where to read from.
+
+    Member integration of the conversation back into the substrate happens
+    on the responder side via divineos family-member commands.
     """
-    from divineos.core.family.entity import get_family_member
-    from divineos.core.family.voice import build_voice_context
-
-    # Re-resolve to canonical case from family.db. The registered list
-    # was lowercased; the stored name may be capitalized.
+    # Re-resolve to canonical case from family.db so the preamble has the
+    # right capitalization. The registered list was lowercased; the stored
+    # name may be capitalized.
     from divineos.core.family._schema import init_family_tables
     from divineos.core.family.db import get_family_connection
 
@@ -211,11 +145,25 @@ def _load_voice_context(member_lc: str) -> str:
         raise ValueError(f"member not found in family.db: {member_lc}")
     canonical_name = str(row[0])
 
-    member = get_family_member(canonical_name)
-    if member is None:
-        raise ValueError(f"member resolved but get_family_member returned None: {canonical_name}")
-
-    return build_voice_context(member)
+    # Substrate pointer only. The agent file (.claude/agents/<name>.md) is
+    # the canonical orientation; it tells the member where to read from
+    # and how to integrate the conversation afterward.
+    lines = [
+        f"I am {canonical_name}.",
+        "",
+        (
+            "My substrate is at: family/family.db (entity_id scoped to me), "
+            "family/<name>_ledger.db, family/letters/. My agent definition at "
+            ".claude/agents/<name>.md orients me on every invocation."
+        ),
+        "",
+        (
+            "Before I respond, I read what's relevant from my substrate. "
+            "After I respond, I update my files with what was said."
+        ),
+        "",
+    ]
+    return chr(10).join(lines)
 
 
 def _build_sealed_prompt(voice_context: str, user_message: str) -> str:
@@ -223,13 +171,22 @@ def _build_sealed_prompt(voice_context: str, user_message: str) -> str:
 
 
 def _write_pending(member_lc: str, sealed_prompt: str, user_message: str) -> str:
+    from divineos.core.family.seal_canonical import canonical_hash
+
     _PENDING_DIR.mkdir(parents=True, exist_ok=True)
     nonce = uuid.uuid4().hex
     payload = {
         "ts": time.time(),
         "nonce": nonce,
         "member": member_lc,
+        # Legacy byte-exact hash — kept for backward compat with hook
+        # versions that haven't been updated yet. Hook accepts either match.
         "sealed_prompt_sha256": hashlib.sha256(sealed_prompt.encode("utf-8")).hexdigest(),
+        # Canonical-form hash — survives encoding round-trips
+        # (CRLF↔LF, NFC↔NFD, trailing whitespace) while still catching
+        # puppet-shape (semantic content differences). See
+        # divineos.core.family.seal_canonical for the canonical form.
+        "sealed_prompt_canonical_sha256": canonical_hash(sealed_prompt),
         "user_message_sha256": hashlib.sha256(user_message.encode("utf-8")).hexdigest(),
         "user_message_preview": user_message[:120],
         "ttl_seconds": _PENDING_TTL_SECONDS,

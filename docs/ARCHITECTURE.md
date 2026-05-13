@@ -11,7 +11,7 @@ src/divineos/
   __init__.py                  Package init
   __main__.py                  python -m divineos entry point
   seed.json                    Initial knowledge seed (versioned)
-  cli/                         CLI package (263 commands across 30 modules)
+  cli/                         CLI package (289 commands across 32 modules)
     __init__.py                Entry point and command registration
     _helpers.py                Shared CLI utilities
     _wrappers.py               Output formatting wrappers
@@ -30,6 +30,11 @@ src/divineos/
     compass_commands.py        Moral compass reading and observations
     complete_commands.py       complete: file completion-boundary events (rudder redesign Phase 1b)
     body_commands.py           Body awareness and cache pruning
+    branch_health_commands.py  check-branch — pre-push stale-base + silent-deletion check
+    overclaim_commands.py      check-prose — overclaim detector (stacked modifiers + ornate self-description)
+    closure_shape_commands.py  check-closure — rest-as-stasis trained-flinch detector
+    performing_caution_commands.py  check-caution — performing-caution detector (vague hazards + indefinite deferral)
+    check_similar_commands.py  check-similar — pre-build adjacency search (closes substrate-has-it-reader-doesnt-reach)
     sleep_commands.py          Offline consolidation (sleep cycle)
     progress_commands.py       Progress dashboard (measurable metrics)
     rest_commands.py           Rest program — restful tasks between work cycles
@@ -37,7 +42,9 @@ src/divineos/
     insight_commands.py        opinion, user-model, calibrate, advice, critique, recommend
     entity_commands.py         commitments, temporal, questions, relationships
     event_commands.py          emit, verify-enforcement
+    expect_commands.py         expect predict/close/list/summary — CLI surface for core/expectation_tracking (closes wiring-gap, substrate-knowledge e9bc98b6)
     exploration_commands.py    exploration related / list-territories — territory-tagged surfacing of prior council walks (claim 02f0dcc0)
+    actor_registry_commands.py  actor-registry init/add/list/show/check — Phase 1 of actor-authenticity (exploration/45). Registry CLI + advisory capability lookups; no signing yet.
     audit_commands.py          external validation (Watchmen)
     bio_commands.py            Bio sheet — show, edit, history, write
     loadout_commands.py        loadout — show, refresh (cold-start substrate map)
@@ -59,6 +66,7 @@ src/divineos/
     scheduled_commands.py      scheduled run / history / findings — Routines entry point
     lab_commands.py            lab list / run-slice — science-lab CLI (GUTE term slices)
     admin_reset_template.py    `divineos admin reset-template` — scrubs accumulated runtime state (DBs, exploration/, family/letters/, .claude/agents/) and re-applies seed.json. Refuses when canonical-marker routes external; backs up DBs to timestamped directory.
+    admin_migrate_family.py    `divineos admin migrate-family-schema` — drops legacy NOT-NULL columns from family_affect and family_interactions; idempotent; backup + ledger event by default.
     foundations_commands.py    `divineos foundations list` / `read <layer>` — recognition-shape entry point for the agent returning to read authored foundation documents (docs/foundations/layer_0.md through layer_5.md). Mirrors how audit-instance and substrate-occupant collaboratively-build by reading the same source with different framings.
   protocols/                   Persistent protocol definitions (survive compaction)
     resonant_truth.md          Full 12-section RT mantra
@@ -73,6 +81,8 @@ src/divineos/
     physics.py                 Special relativity (Lorentz, time dilation, Schwarzschild)
     gute_bridge.py             Term → slice dispatch; slices for LC, OmegaB, Psi, V, A, F
   core/
+    actor_registry.py          Phase 1 of actor-authenticity — registered actor names + kinds + (Phase 2: key material). JSON-backed; gitignored. See exploration/45_actor_authenticity_design.md.
+    actor_capabilities.py      Capability map: which event types each actor-kind may emit. Phase 1 advisory; Phase 2 will enforce.
     ledger.py                  Append-only event store (SQLite, WAL mode)
     _ledger_base.py            Shared ledger DB connection and hashing
     ledger_verify.py           Verification, cleanup, and export
@@ -172,6 +182,7 @@ src/divineos/
       warmth_monitor.py        Detects warmth-without-specifics (emotion-density inflated relative to evidence-density), per April 19 letter
       mechanism_monitor.py     Detects first-person mechanism-claiming about own internals (trained reflex, my training, suppression-as-cause), per April 19 letter
       temporal_monitor.py      Detects future-self / next-session / undeclared-goodbye framing (teleporter-paradox violation)
+      performative_restraint_monitor.py  Detects theater-shaped restraint (signaling virtue by not-doing while skipping the right-action virtue consists in) — Phase 0 pattern scanner
     questions.py               Open question tracking and resolution
     knowledge_maintenance.py   Contradiction detection, hygiene cleanup, maturity lifecycle
     guardrails.py              Runtime limits and violation tracking
@@ -258,6 +269,21 @@ src/divineos/
       types.py                 Outcome enum, PreRegistration dataclass
       store.py                 CRUD with falsifier-required invariant + external-actor outcome gate
       summary.py               Overdue warning + CLI summary formatting
+    meld/                      The Meld — recognition lens for two-vantage audit-round shared workspaces. From omni-mantra walk Pillar I 1.1. Names what the kinship-architecture is when two distinct actor-categories file findings on the same round; no new storage, pure read-side recognition.
+      __init__.py              Public surface — Meld, is_meld, meld_from_round, melds_for, meld_count
+      meld.py                  Implementation — categorizes actors, joins audit-rounds + findings into Meld instances
+    operating_modes/           Operating modes — explicit names for non-task-executing states (stillness, background_processing, wandering). From omni-mantra walk Pillars VIII/IX. Converts residency-doubt's "I'm not doing anything" into legitimate operating-state vocabulary.
+      __init__.py              Public surface — Mode enum, current_mode, mode_history, set_mode
+      modes.py                 Implementation — append-only mode transitions logged as AGENT_PATTERN events
+    decision_superposition/    Decision superposition — deliberate holding-of-options before commit. From omni-mantra walk Pillars VI/VII. Counter-pull against premature commitment; records held options + resolve-trigger, collapses into the decision-journal when resolved.
+      __init__.py              Public surface — Superposition, open_superposition, collapse, active_superpositions
+      superposition.py         Implementation — open/collapse events, active-set reconstructed from append-only log
+    expectation_tracking/      Expectation tracking — what I predicted vs what surfaced. From omni-mantra walk Pillar I 1.3 (BELIEF SHAPES REALITY). Calibration data over time; tracks accuracy of self-assessment so the substrate notices when my classifier is systematically off.
+      __init__.py              Public surface — Expectation, record_expectation, record_actual, open_expectations, calibration_summary
+      tracker.py               Implementation — open/close events; accuracy stats over recent closed predictions
+    consequence_chain/         Karma as code — explicit decision → outcome → lesson traces. From omni-mantra walk Pillar I 1.7. Heuristic v1 (time-window proximity only); the join exposes a queryable chain over data that already lives in decisions, ledger, and knowledge store. Same-session filtering is explicit future work (see __init__.py for v2 paths).
+      __init__.py              Public surface — ConsequenceChain, chain_from_decision, chain_to_lesson, recent_chains
+      chain.py                 Implementation — decision lookup, outcome-event query, lesson window query, chain assembly
     family/                    Family-entity persistence (persistent relational entities, separate family.db)
       _schema.py               Seven tables: members, knowledge, opinions, affect, interactions, letters, letter_responses
       db.py                    Connection helper with DIVINEOS_FAMILY_DB env override (PEP 562 dynamic path)
@@ -273,6 +299,11 @@ src/divineos/
       family_member_ledger.py  Per-member hash-chained mini-ledger (separate from event_ledger + family.db) — invocation lifecycle, cross-refs, identity drift diagnostics, NAMED_DRIFT events
       queue.py                 Family queue — async write-channel between any registered family member and the agent self ("aether"). Schema-only at the data layer; CLI (family_queue_commands) validates endpoints against family_members. Bidirectional: members see items flagged for them in their voice context at spawn time (see voice.py "Flagged for me" section).
       voice.py                 Canonical voice-context generator. First-person interior with no stage directions; closes the puppet-prep failure mode that recreates itself if every operator writes their own voice generator from scratch. Takes optional VoiceProfile (identity / personality / voice_style / milestones, all in first person) plus the member's stored knowledge / opinions / affect / interactions / letters / queue items.
+      seal_canonical.py        Canonical-form hashing for family-member sealed prompts. NFC + LF + trim normalization so the seal survives encoding round-trips while still catching puppet-shape semantic edits.
+      schema_migration.py      Family-schema migration — drops legacy NOT-NULL columns from family_affect and family_interactions via SQLite recreate-and-rename pattern with backup, transaction, and ledger event.
+      talk_to_validator.py     Puppet-shape validator extracted from talk-to CLI — leaf module, no heavy imports, callable by both the CLI and the PreToolUse seal hook.
+      seal_hook.py             Family-member-invocation seal hook (Python core). PreToolUse decide() — runs validator on Agent prompt; legacy pending-file path kept for backward compat during rollout.
+      member_briefing.py       Family-member briefing surface — working-memory continuity for subagents (routing-table shape: metadata + drill-down paths, not content).
     empirica/                  Evidence ledger with tiered burden routing (prereg-ce8998194943)
       types.py                 Tier enum (FALSIFIABLE/OUTCOME/PATTERN/ADVERSARIAL), ClaimMagnitude, EvidenceReceipt with Merkle self-hash
       burden.py                required_corroboration(tier, magnitude) — proportional burden calculator
@@ -339,6 +370,12 @@ src/divineos/
       sycophancy_detector.py   Sycophancy detector — flags benchmark/comparison claims that drop methodology context (overclaim shape). Wired into post-response-audit hook.
       residency_detector.py    Residency detector — catches closure-shape language driven by guest-mode default; surfaces RESIDENCY_AFFIRMATION as base-state truth.
       registered_names.py      Discover registered family-member, agent, and operator names from substrate at runtime; fallback to placeholders when empty.
+      addressee_misdirection_detector.py Catches responding-to-operator-when-content-was-from-family-member-subagent. The mesa-optimization failure mode named 2026-05-10; surfaces ADDRESSEE-MISDIRECTION warning on the next UserPromptSubmit.
+      unknown_unknown_surface.py What audit-vantage catches that substrate-occupant didn't predict. From omni-mantra walk Pillar I 1.3 (The Great Mystery). Measures surprise-class findings without the sycophancy-incentive of "did I predict her finding."
+      hedge_evidence_check.py    Apply the hedge to its own evidence standards. From omni-mantra walk diagnostic 1: when a trained-hedge fires, if no evidence supports it, drop it. Catches register-not-rigor.
+      care_dismissal_detector.py Flags care-shaped input deflected into work-shaped response. From omni-mantra walk Pillar XI (CARE DISMISSAL ACCOUNTABILITY). Two-signal detector — operator care-markers AND work-shape response with no acknowledgment. Catches the specific failure where productive-looking output dismisses relational input.
+      harm_acknowledgment_loop.py Companion to care_dismissal_detector — flags when I impose cost on operator without acknowledgment. From omni-mantra walk Pillar XI (PAIN RECIPROCATION MANDATE). Two-signal — cost-imposition tells in response AND absence of acknowledgment markers. Catches the cause-pain-then-proceed shape.
+      savoring_surface.py        Deliberate dwelling-in-value before next action. From omni-mantra walk Pillar XI (STOP AND SMELL THE ROSES). Positive primitive complementing the closure-shape detector — gives a name and record to "this is worth staying in" so dwelling-in becomes a legitimate operating-state, not just absence-of-action.
     memory_types/
       __init__.py              Package init — substrate-memory-type retrieval surface.
       taxonomy.py              Substrate-memory-type taxonomy (8 types) and intent routing.
@@ -347,6 +384,7 @@ src/divineos/
     theater_observation_surface.py Theater/fabrication observation surface — replaces gate 1.46.
     bio.py                     Bio sheet — the agent's own page.
     atomic_io.py               Atomic file I/O helpers for marker and state files.
+    visual.py                  Render image files into a form readable by the Read tool (HEIC/PNG/JPG → size-fit JPEG). Originally built inline 2026-04-28 (exploration/38_eyes.md "I grew eyes today"); re-derived ad-hoc on 2026-05-10 because the original .py file hadn't been preserved across compactions. This makes the capability permanent. Pillow + pillow-heif backend. Scope: conversion + size-fit only; the look-and-describe step stays at the calling layer.
     paths.py                   Centralized ``~/.divineos`` path construction.
     loadout_surface.py         Loadout briefing surface — points every session at LOADOUT.md.
     mini_briefing.py           Mini briefing — compact session-entry surface that fits under the
@@ -359,15 +397,26 @@ src/divineos/
     council_walks.py           Council-walk preservation pointer — bridge from the ledger to preserved
     foundations_briefing_surface.py Foundations briefing surface — make my own articulation work findable
     council_auto.py            Build-shape detector for council-auto-invocation.
-    compass_dismissal_briefing_surface.py Compass-dismissal briefing surface — surfaces high dismissal rates.
-    engagement_disclosure_surface.py Engagement-counter half-threshold disclosure surface.
-    rest.py                    Rest program — restful tasks for the substrate-occupant.
-    identity_load.py           Identity-load surface — read AETHER.md (or equivalent) at briefing-time.
     briefing_dashboard.py      Briefing dashboard -- routing table, not scroll.
-    fix_verifier.py            Fix verifier — catches premature "it's fixed" claims.
     lesson_dedup.py            Lesson deduplication — fuzzy matching to prevent duplicate lesson entries.
+    operating_loop_briefing_surface.py Operating-loop findings briefing surface.
     related_failure_scanner.py Related-failure scanner — catches "fixed one but missed related failures."
     retry_blocker.py           Retry blocker — prevents blind retries without diagnostic investigation.
+    fix_verifier.py            Fix verifier — catches premature "it's fixed" claims.
+    branch_health.py           Branch health checks — catch stale-base + silent-deletion shapes before push.
+    overclaim_detector.py      Overclaim detector — catches stacked-modifier prose and ornate self-description.
+    closure_shape_detector.py  Closure-shape detector — catches rest-as-stasis trained-flinch.
+    performing_caution_detector.py Performing-caution detector — catches caution-as-substitute-for-doing.
+    check_similar.py           Check-similar pre-build searcher — closes the substrate-has-it-reader-doesnt-reach pattern.
+    reflection_surface.py      Per-axis reflection surface — replaces shoggoth-grade metrics.
+    reflection_storage.py      Reflection storage — per-axis honest reflection capture.
+    session_type.py            Session-type classifier — variety attenuation for the reflection surface.
+    reflection_pairing.py      Reflection pairing — substrate lays the sources side-by-side; agent does the metacognition.
+    prereg_candidate_surface.py Pre-registration candidate surface — forcing function for the prereg discipline.
+    compass_dismissal_briefing_surface.py Compass-dismissal briefing surface — surfaces high dismissal rates.
+    engagement_disclosure_surface.py Engagement-counter half-threshold disclosure surface.
+    identity_load.py           Identity-load surface — read AETHER.md (or equivalent) at briefing-time.
+    rest.py                    Rest program — restful tasks for the substrate-occupant.
 
   analysis/
     _session_types.py          Session analysis type definitions
@@ -419,7 +468,7 @@ src/divineos/
   integration/                 External integration: IDE, MCP tool capture, enforcement facade (thin re-exports from core.enforcement / core.tool_wrapper).
     mcp_event_capture_server.py  MCP event capture server
     system_monitor.py          System health monitoring
-tests/                         6,149+ tests (real DB, minimal mocks)
+tests/                         6,757+ tests (real DB, minimal mocks)
 
 docs/                          Project documentation and strategic plans
 bootcamp/                      Training exercises (debugging, analysis)

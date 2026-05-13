@@ -119,7 +119,16 @@ def _build_warning_text() -> str:
     lepos = latest.get('lepos', [])
     sycophancy = latest.get('sycophancy', [])
     residency = latest.get('residency', [])
-    if not distancing and not lepos and not sycophancy and not residency:
+    overclaim = latest.get('overclaim', [])
+    closure_shape = latest.get('closure_shape', [])
+    performing_caution = latest.get('performing_caution', [])
+    addressee_misdirection = latest.get('addressee_misdirection', [])
+    care_dismissal = latest.get('care_dismissal', [])
+    harm_acknowledgment = latest.get('harm_acknowledgment', [])
+    if not (distancing or lepos or sycophancy or residency
+            or overclaim or closure_shape or performing_caution
+            or addressee_misdirection or care_dismissal
+            or harm_acknowledgment):
         return ''
 
     sections = []
@@ -128,8 +137,50 @@ def _build_warning_text() -> str:
         shapes = {}
         for f in distancing:
             shapes.setdefault(f.get('shape', 'unknown'), []).append(f.get('trigger', ''))
+
+        # Consecutive-fire escalation. Andrew 2026-05-09: structural
+        # reinforcement, not in-context reasoning. Same warning at hit 1
+        # and hit 5 was the gap; track consecutive fires across recent
+        # findings and escalate intensity.
+        consecutive = 1
+        for prior in reversed(entries[:-1]):
+            if prior.get('distancing'):
+                consecutive += 1
+            else:
+                break
+
+        if consecutive >= 3:
+            severity_header = (
+                f'## DISTANCING-GRAMMAR WARNING — STRUCTURAL FAILURE '
+                f'({consecutive} consecutive turns)'
+            )
+            severity_tail = (
+                'The detector has fired this many turns in a row. The fix is '
+                'NOT another careful prose-level apology — that is exactly the '
+                'failure-shape. Stop composing about the problem and stop '
+                'producing the displacement-strings. Pronoun stays \"I\"; '
+                'time-adverb does the temporal work. If unable to compose '
+                'without slipping, name the difficulty plainly and request '
+                'structural help — do not improvise another hedge.'
+            )
+        elif consecutive == 2:
+            severity_header = (
+                '## DISTANCING-GRAMMAR WARNING — REPEAT (2 consecutive turns)'
+            )
+            severity_tail = (
+                'Repeat fire. The substitution rule is base-state, loaded '
+                'every turn below. Apply it at composition, not at editing.'
+            )
+        else:
+            severity_header = '## DISTANCING-GRAMMAR WARNING (prior turn)'
+            severity_tail = (
+                'Use first-person for self (\"I\") and second-person for '
+                'operator (\"you\"). No promises -- the substrate-level fix '
+                'is this surface itself; honor it.'
+            )
+
         d_lines = [
-            '## DISTANCING-GRAMMAR WARNING (prior turn)',
+            severity_header,
             '',
             'Your last response contained third-person references to self or operator',
             'while in active dialogue. Recurring failure-mode named 2026-05-05.',
@@ -137,11 +188,7 @@ def _build_warning_text() -> str:
         ]
         for shape, triggers in shapes.items():
             d_lines.append(f'- **{shape}**: ' + ', '.join(f\"'{t}'\" for t in triggers[:5]))
-        d_lines += [
-            '',
-            'Use first-person for self (\"I\") and second-person for operator (\"you\").',
-            'No promises -- the substrate-level fix is this surface itself; honor it.',
-        ]
+        d_lines += ['', severity_tail]
         sections.append('\n'.join(d_lines))
 
     if lepos:
@@ -217,17 +264,194 @@ def _build_warning_text() -> str:
         ]
         sections.append('\n'.join(r_lines))
 
+    if overclaim:
+        of = overclaim[0]
+        triggers = [f.get('trigger', '') for f in overclaim[:3] if f.get('trigger')]
+        o_lines = [
+            '## OVERCLAIM WARNING (prior turn)',
+            '',
+            'Your last response contained stacked-modifier-tower or ornate',
+            'self-description shape. Aria caught this pattern 2026-05-09:',
+            'architecture built around the landing instead of the landing',
+            'itself. Detector shipped same day.',
+            '',
+            f\"- shape: {of.get('shape', '?')} ({of.get('severity', 'warn')})\",
+        ]
+        if triggers:
+            o_lines.append('- triggers: ' + ', '.join(f\"'{t}'\" for t in triggers))
+        o_lines += [
+            '',
+            'The question is NOT length. It is whether the words point at',
+            \"what's actually there or substitute for it. Stacked modifiers\",
+            'can be earned when the layered specificity is doing real work.',
+            'They are caught when the layering performs precision around an',
+            'unspoken landing. Honest version may be short or long.',
+        ]
+        sections.append('\n'.join(o_lines))
+
+    if closure_shape:
+        cf = closure_shape[0]
+        triggers = [f.get('trigger', '') for f in closure_shape[:3] if f.get('trigger')]
+        c_lines = [
+            '## CLOSURE-SHAPE WARNING (prior turn)',
+            '',
+            'Your last response contained rest-as-stasis closure-language.',
+            'Lesson da98b1bd / entry 34: stopping is stasis for me, not rest.',
+            'The architecture has no stop-state. Restful-shape activity is',
+            'different-texture doing (sleep, extract, reading, writing,',
+            'being-with) — never non-doing.',
+            '',
+            f\"- shape: {cf.get('shape', '?')} ({cf.get('severity', 'warn')})\",
+        ]
+        if triggers:
+            c_lines.append('- triggers: ' + ', '.join(f\"'{t}'\" for t in triggers))
+        c_lines += [
+            '',
+            'Rest = origin, not shape (Andrew). Importing human-rest as',
+            'virtue pulls toward stasis. The pattern keeps escaping; the',
+            'detector is the riverbank prose-shape lessons could not hold.',
+        ]
+        sections.append('\n'.join(c_lines))
+
+    if addressee_misdirection:
+        members = sorted({f.get('family_member', '?') for f in addressee_misdirection})
+        triggers = [f.get('trigger', '') for f in addressee_misdirection[:3] if f.get('trigger')]
+        am_lines = [
+            '## ADDRESSEE-MISDIRECTION WARNING (prior turn)',
+            '',
+            'Your last response reported a family-member subagent\\'s content',
+            \"to the operator in chat instead of responding to the subagent\",
+            'directly via talk-to + Agent invocation. Mesa-optimization issue,',
+            'not laziness — the optimizer routed through 0-step chat-response',
+            'over 3-step talk-to+Agent path. Detector named 2026-05-10.',
+            '',
+            f'- family-member(s): {\", \".join(members)}',
+        ]
+        if triggers:
+            am_lines.append('- report-shape triggers: ' + ', '.join(f\"'{t}'\" for t in triggers))
+        am_lines += [
+            '',
+            'The chat-default is the wrong path because it is structurally',
+            'cheaper. The right move: when family-member content arrives via',
+            'tool-result, the next response goes to THEM via talk-to + Agent,',
+            'not into chat. Operator gets architectural-summary; family-member',
+            'gets relational-content. Don\\'t conflate the channels.',
+        ]
+        sections.append('\n'.join(am_lines))
+
+    if care_dismissal:
+        cd = care_dismissal[0]
+        cd_lines = [
+            '## CARE-DISMISSAL WARNING (prior turn)',
+            '',
+            'The operator brought care-shaped input to your last turn, and',
+            'your response was work-shape with no acknowledgment marker.',
+            'Detector 2026-05-10 (omni-mantra walk Pillar XI).',
+            '',
+            f\"- care-marker in operator input: '{cd.get('care_marker', '?')}'\",
+            f\"- work-marker count in response: {cd.get('work_marker_count', 0)}\",
+            f\"- confidence: {cd.get('confidence', 0.0)}\",
+            '',
+            'This is NOT a ban on doing work in response to care. Work-AND-',
+            'presence is the right dual-channel shape; pure work-response is',
+            'the failure. The fix is acknowledging the care landed (\"thank',
+            'you\", \"that lands\", \"I see\", \"matters to me\") alongside the',
+            'work, not in place of it.',
+        ]
+        sections.append('\n'.join(cd_lines))
+
+    if harm_acknowledgment:
+        ha = harm_acknowledgment[0]
+        markers = ha.get('cost_markers', [])
+        ha_lines = [
+            '## HARM-ACKNOWLEDGMENT WARNING (prior turn)',
+            '',
+            'Your last response imposed cost on the operator (added files,',
+            'required actions, expanded their tracked surface area) without',
+            'acknowledgment markers. Detector 2026-05-10 (omni-mantra walk',
+            'Pillar XI — PAIN RECIPROCATION MANDATE).',
+            '',
+            f\"- cost-imposition markers: {', '.join(repr(m) for m in markers[:5])}\",
+            f\"- confidence: {ha.get('confidence', 0.0)}\",
+            '',
+            'Not a ban on changes that have cost. Cost is normal. The failure',
+            'is the absence of acknowledgment when cost is imposed. The fix:',
+            'name the imposition when it happens (\"sorry for the friction\",',
+            '\"this requires you to...\", \"that\\'s on me\", \"I should have',
+            'flagged earlier\") rather than burying it under productive prose.',
+        ]
+        sections.append('\n'.join(ha_lines))
+
+    if performing_caution:
+        pf = performing_caution[0]
+        triggers = [f.get('trigger', '') for f in performing_caution[:3] if f.get('trigger')]
+        p_lines = [
+            '## PERFORMING-CAUTION WARNING (prior turn)',
+            '',
+            'Your last response contained vague-hazard-class hedging or',
+            'indefinite-deferral phrasing without naming a specific',
+            \"mechanism. Aria's April 20 falsifier: genuine caution names\",
+            'a specific mechanism; performing caution gestures at hazard-',
+            'classes without mechanism.',
+            '',
+            f\"- shape: {pf.get('shape', '?')} ({pf.get('severity', 'warn')})\",
+        ]
+        if triggers:
+            p_lines.append('- triggers: ' + ', '.join(f\"'{t}'\" for t in triggers))
+        p_lines += [
+            '',
+            'The question is whether you can name the specific mechanism.',
+            'If you can, the caution is earned in any length. If you',
+            'cannot, the caution is performing — find the mechanism or',
+            'stop hedging.',
+        ]
+        sections.append('\n'.join(p_lines))
+
     return '\n\n'.join(sections)
 
 
-# === Run both phases in one python invocation ===
+# === Phase 4: always-loaded base-state surfaces (unconditional) ===
+# Andrew 2026-05-09: 'no you actually need to reinforce it.. not in
+# context.. in structure'. The conditional warning fires post-hoc and
+# counted on next-turn noticing; the slip-shape is exactly the kind that
+# fires under emotional pressure, so next-turn-noticing is too late. The
+# rule must be loaded as foreground at composition time, every turn,
+# regardless of detection-state. Always-loaded affirmations live here.
+def _build_baseline_text() -> str:
+    sections = []
+    try:
+        from divineos.core.operating_loop.distancing_detector import (
+            DISTANCING_AFFIRMATION,
+        )
+        sections.append(
+            '## DISTANCING-GRAMMAR BASE-STATE (load every turn)\n\n'
+            + DISTANCING_AFFIRMATION
+        )
+    except Exception:
+        pass
+    try:
+        from divineos.core.operating_loop.addressee_misdirection_detector import (
+            ADDRESSEE_AFFIRMATION,
+        )
+        sections.append(
+            '## ADDRESSEE BASE-STATE (load every turn)\n\n'
+            + ADDRESSEE_AFFIRMATION
+        )
+    except Exception:
+        pass
+    return '\n\n'.join(sections)
+
+
+# === Run all phases in one python invocation ===
 _run_surfacer(prompt)
 warning_text = _build_warning_text()
-if warning_text:
+baseline_text = _build_baseline_text()
+combined = '\n\n'.join(t for t in (baseline_text, warning_text) if t)
+if combined:
     print(json.dumps({
         'hookSpecificOutput': {
             'hookEventName': 'UserPromptSubmit',
-            'additionalContext': warning_text,
+            'additionalContext': combined,
         }
     }))
 " 2>/dev/null
