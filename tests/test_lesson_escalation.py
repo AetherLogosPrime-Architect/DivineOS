@@ -847,3 +847,263 @@ class TestResolvedWithHistory:
             STATUS_RESOLVED_WITH_HISTORY,
         }
         assert len(all_statuses) == 5, "status constants must be distinct string values"
+
+
+class TestEscalateHintAcknowledgesExistingDirective:
+    """Once a lesson has been auto-escalated to a DIRECTIVE, the briefing
+    hint changes from 'consider making this a directive' to 'ESCALATED to
+    directive — structural enforcement still needed' so the operator gets
+    accurate signal about what's been done vs what remains.
+
+    Without this, the briefing repeatedly suggests an action that's already
+    taken, which is the kind of friction this fix was made to address.
+    """
+
+    def test_categories_with_existing_directive_returns_lesson_tag_categories(self):
+        from divineos.cli._wrappers import _wrapped_store_knowledge
+        from divineos.core.knowledge.lessons import _categories_with_existing_directive
+
+        # Empty case
+        before = _categories_with_existing_directive()
+        assert "test_cat_xyz" not in before
+
+        # File a DIRECTIVE with the lesson-<category> tag shape
+        # (matches what escalate_chronic_lessons writes).
+        _wrapped_store_knowledge(
+            knowledge_type="DIRECTIVE",
+            content="STRUCTURAL ENFORCEMENT: synthetic test directive. Category: test_cat_xyz.",
+            confidence=1.0,
+            source_events=[],
+            tags=["auto-escalated", "lesson-test_cat_xyz", "regression-enforcement"],
+        )
+
+        after = _categories_with_existing_directive()
+        assert "test_cat_xyz" in after, (
+            f"expected test_cat_xyz in escalated categories, got {after}"
+        )
+
+    def test_escalate_suffix_changes_when_directive_exists(self):
+        """The summary string differs based on whether a directive exists
+        for the category. Both regressed-enough lessons get a suffix; the
+        suffix names whether escalation has happened."""
+        from divineos.cli._wrappers import _wrapped_store_knowledge
+        from divineos.core.knowledge.lessons import (
+            REGRESSION_ESCALATION_THRESHOLD,
+            get_lesson_summary,
+            mark_lesson_improving,
+            record_lesson,
+        )
+
+        def _build(cat: str, desc: str) -> None:
+            # Mirror the project's _build_regressed_lesson helper: establish
+            # active with 3 occurrences, then regress past threshold.
+            record_lesson(cat, desc, "b-s1")
+            record_lesson(cat, desc, "b-s2")
+            record_lesson(cat, desc, "b-s3")
+            for i in range(REGRESSION_ESCALATION_THRESHOLD):
+                mark_lesson_improving(cat, f"{cat}-clean-{i}")
+                record_lesson(cat, desc, f"{cat}-r-{i}")
+
+        cat_no_directive = "test_no_dir_xyz"
+        _build(cat_no_directive, "Test description without directive")
+
+        cat_with_directive = "test_with_dir_xyz"
+        _build(cat_with_directive, "Test description with directive")
+        _wrapped_store_knowledge(
+            knowledge_type="DIRECTIVE",
+            content=f"STRUCTURAL ENFORCEMENT: directive for {cat_with_directive}.",
+            confidence=1.0,
+            source_events=[],
+            tags=["auto-escalated", f"lesson-{cat_with_directive}", "regression-enforcement"],
+        )
+
+        summary = get_lesson_summary()
+
+        # Without-directive lesson: original [ESCALATE: consider...] hint.
+        assert "Test description without directive" in summary
+        no_dir_line = next(
+            line for line in summary.split("\n") if "Test description without directive" in line
+        )
+        assert "consider making this a directive" in no_dir_line, (
+            f"expected 'consider making' suffix when no directive exists, got: {no_dir_line!r}"
+        )
+
+        # With-directive lesson: ESCALATED suffix.
+        with_dir_line = next(
+            line for line in summary.split("\n") if "Test description with directive" in line
+        )
+        assert "ESCALATED to directive" in with_dir_line, (
+            f"expected 'ESCALATED to directive' suffix when directive exists, got: {with_dir_line!r}"
+        )
+        # Critical: must NOT also contain the redundant suggestion.
+        assert "consider making this a directive" not in with_dir_line, (
+            f"escalated lesson should not also suggest re-escalation: {with_dir_line!r}"
+        )
+
+
+class TestNewPositiveEvidenceDetectors:
+    """Three new positive-evidence detectors shipped 2026-05-08:
+    shallow_output (clarity check), wrong_scope (task_adherence check),
+    upset_user (corrections-without-negative-tone)."""
+
+    def _passing_check(self, name: str, summary: str = "Comprehensive output throughout") -> dict:
+        return {"name": name, "passed": True, "score": 1.0, "summary": summary}
+
+    def _failing_check(self, name: str, summary: str = "shallow") -> dict:
+        return {"name": name, "passed": False, "score": 0.0, "summary": summary}
+
+    def test_shallow_output_positive_evidence_when_clarity_passes_substantively(self):
+        """clarity passed with non-vacuous summary → positive evidence."""
+        from divineos.core.knowledge.lessons import (
+            extract_lessons_from_report,
+            get_lessons,
+            mark_lesson_improving,
+            record_lesson,
+        )
+
+        cat = "shallow_output"
+        # Set up an existing lesson so we can observe positive_evidence tracking.
+        for _i in range(3):
+            record_lesson(cat, "test description", f"session-init-{_i}")
+        mark_lesson_improving(cat, "session-improving")  # clean session, no evidence
+
+        # Now run extraction with substantive clarity-passed.
+        extract_lessons_from_report(
+            checks=[self._passing_check("clarity", "Detailed reasoning across 8 messages")],
+            session_id="session-positive-shallow",
+        )
+
+        lessons = get_lessons(category=cat)
+        evidence = lessons[0].get("positive_evidence_sessions") or {}
+        if isinstance(evidence, str):
+            import json as _json
+
+            evidence = _json.loads(evidence)
+        assert "session-positive-shallow" in evidence, (
+            f"expected positive evidence recorded, got {evidence!r}"
+        )
+
+    def test_shallow_output_no_positive_evidence_when_clarity_summary_vacuous(self):
+        """Vacuous summary ('didn't make any specific claims') is not depth."""
+        from divineos.core.knowledge.lessons import (
+            extract_lessons_from_report,
+            get_lessons,
+            mark_lesson_improving,
+            record_lesson,
+        )
+
+        cat = "shallow_output"
+        for _i in range(3):
+            record_lesson(cat, "test description vacuous", f"session-init-v-{_i}")
+        mark_lesson_improving(cat, "session-improving-v")
+
+        extract_lessons_from_report(
+            checks=[self._passing_check("clarity", "didn't make any specific claims")],
+            session_id="session-vacuous-clarity",
+        )
+
+        lessons = get_lessons(category=cat)
+        evidence = lessons[0].get("positive_evidence_sessions") or {}
+        if isinstance(evidence, str):
+            import json as _json
+
+            evidence = _json.loads(evidence)
+        assert "session-vacuous-clarity" not in evidence, (
+            f"vacuous clarity must not become positive evidence; got {evidence!r}"
+        )
+
+    def test_wrong_scope_positive_evidence_when_task_adherence_passes(self):
+        from divineos.core.knowledge.lessons import (
+            extract_lessons_from_report,
+            get_lessons,
+            mark_lesson_improving,
+            record_lesson,
+        )
+
+        cat = "wrong_scope"
+        for _i in range(3):
+            record_lesson(cat, "test scope desc", f"session-init-ws-{_i}")
+        mark_lesson_improving(cat, "session-improving-ws")
+
+        extract_lessons_from_report(
+            checks=[self._passing_check("task_adherence", "Stayed on the requested task")],
+            session_id="session-positive-scope",
+        )
+
+        lessons = get_lessons(category=cat)
+        evidence = lessons[0].get("positive_evidence_sessions") or {}
+        if isinstance(evidence, str):
+            import json as _json
+
+            evidence = _json.loads(evidence)
+        assert "session-positive-scope" in evidence
+
+    def test_upset_user_positive_evidence_when_corrections_without_negative_tone(self):
+        """User pushed back, agent absorbed without escalating."""
+        from divineos.core.knowledge.lessons import (
+            extract_lessons_from_report,
+            get_lessons,
+            mark_lesson_improving,
+            record_lesson,
+        )
+
+        cat = "upset_user"
+        for _i in range(3):
+            record_lesson(cat, "test upset desc", f"session-init-uu-{_i}")
+        mark_lesson_improving(cat, "session-improving-uu")
+
+        extract_lessons_from_report(
+            checks=[],
+            session_id="session-positive-upset",
+            tone_shifts=[],  # no negatives
+            corrections_count=2,  # pushback happened
+        )
+
+        lessons = get_lessons(category=cat)
+        evidence = lessons[0].get("positive_evidence_sessions") or {}
+        if isinstance(evidence, str):
+            import json as _json
+
+            evidence = _json.loads(evidence)
+        assert "session-positive-upset" in evidence
+
+    def test_upset_user_no_positive_evidence_when_zero_corrections(self):
+        """No corrections = absence-shape, not pushback-absorbed."""
+        from divineos.core.knowledge.lessons import (
+            extract_lessons_from_report,
+            get_lessons,
+            mark_lesson_improving,
+            record_lesson,
+        )
+
+        cat = "upset_user"
+        for _i in range(3):
+            record_lesson(cat, "test upset zero", f"session-init-z-{_i}")
+        mark_lesson_improving(cat, "session-improving-z")
+
+        extract_lessons_from_report(
+            checks=[],
+            session_id="session-quiet-upset",
+            tone_shifts=[],
+            corrections_count=0,
+        )
+
+        lessons = get_lessons(category=cat)
+        evidence = lessons[0].get("positive_evidence_sessions") or {}
+        if isinstance(evidence, str):
+            import json as _json
+
+            evidence = _json.loads(evidence)
+        assert "session-quiet-upset" not in evidence, (
+            f"zero-corrections quiet session must not produce positive evidence; got {evidence!r}"
+        )
+
+    def test_loop_status_now_reports_8_of_8(self):
+        """The loop status string should now name all 8 chronic categories
+        as having positive-evidence detectors."""
+        from divineos.core.knowledge.lessons import _lesson_loop_status
+
+        status = _lesson_loop_status()
+        assert "8/8" in status, f"expected '8/8' in loop status, got: {status!r}"
+        for cat in ("shallow_output", "wrong_scope", "upset_user"):
+            assert cat in status, f"expected {cat} in loop status, got: {status!r}"

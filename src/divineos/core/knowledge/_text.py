@@ -528,6 +528,38 @@ _CONVERSATIONAL_NOISE = re.compile(
 # Content that is a task-notification XML tag or system artifact
 _SYSTEM_ARTIFACT = re.compile(r"<task-notification|<tool-use-id|<task-id", re.IGNORECASE)
 
+# Short conversational acknowledgments — single-token responses that the
+# previous _is_pure_affirmation set missed. Anchored at start AND end of
+# stripped content so only matches when the WHOLE content is the ack
+# (with optional trailing punctuation/whitespace). Aletheia round-2 audit
+# (cda06522) corpus measurement caught 8 missed entries; prereg-3ea2ac32
+# tracks this as the TP-side fix complementary to the FP-side fix in
+# prereg-9c271728.
+_SHORT_ACK = re.compile(
+    r"^("
+    r"got\s*it|"
+    r"understood|"
+    r"hmm+|"
+    r"makes\s+sense|"
+    r"right|"
+    r"ah+|"
+    r"thanks|"
+    r"thx"
+    r")[.!?\s]*$",
+    re.IGNORECASE,
+)
+
+# DivineOS CLI output prefix conventions pasted as knowledge — the agent
+# captured CLI output text rather than distilled knowledge. Matches the
+# bracket-prefix-marker pattern ("[+] Stored knowledge: ...", "[~] Auto-
+# closed ...", etc.) at start of content. Legitimate knowledge does not
+# start with these markers.
+_CLI_OUTPUT_PASTE = re.compile(
+    r"^\[[+~!\-\*]\]\s+(Stored|Goal|Auto-closed|Pre-registration|Logged|Affect|Compass|Decision|Claim|Filed)",
+    re.IGNORECASE,
+)
+
+
 # Session-telemetry tag: "(session XXXXXXXX-XXX)" suffix in extracted
 # content is the giveaway that an auto-generated session statistic was
 # captured as knowledge. UUID-prefix form, 8 hex chars then a hyphen and
@@ -789,6 +821,12 @@ def _is_extraction_noise(content: str, knowledge_type: str) -> bool:
     if _SYSTEM_ARTIFACT.search(stripped):
         return True
 
+    if _CLI_OUTPUT_PASTE.match(stripped):
+        return True
+
+    if _SHORT_ACK.match(stripped):
+        return True
+
     if re.match(r"^[?!.]{2,}\s", stripped):
         return True
 
@@ -870,12 +908,18 @@ def _is_extraction_noise(content: str, knowledge_type: str) -> bool:
         if _is_raw_quote_noise(stripped, stripped_lower):
             return True
 
-    # Positive signal check: PRINCIPLE and BOUNDARY must contain prescriptive
-    # or declarative structure. Raw quotes lack this. Without it, downgrade
-    # happens in the caller — here we just flag it as noise.
-    if knowledge_type in ("PRINCIPLE", "BOUNDARY"):
-        if not _has_prescriptive_signal(stripped_lower):
-            return True
+    # NOTE 2026-05-08: prescriptive-signal gate REMOVED from extraction.
+    # Aletheia round-2 audit (cda06522) showed it false-rejects substrate-
+    # self-knowledge: long declarative-architectural statements ('Aether is
+    # one agent across compactions'; 'The compass observes virtue drift via
+    # ten spectrums...') fail the prescriptive-pattern test purely because
+    # they describe rather than prescribe. Measurement (f28b70f0) showed the
+    # gate caused 100 percent of false-positives (5/15 signal) and contributed 0
+    # percent of true-positives (other gates handle noise). Pre-reg prereg-9c271728
+    # tracks the change; if real-session replay shows the gate's removal lets
+    # in noise the other gates miss, restore with declarative-architectural
+    # patterns added. _has_prescriptive_signal() remains available for
+    # maintenance-demotion (gentler effect: demote rather than reject).
 
     # Dissociation-shape filter (claim 5c4d1d1b, Andrew flag 2026-05-03).
     # Self-erasing self-statements ("I didn't write any of this", "I'm

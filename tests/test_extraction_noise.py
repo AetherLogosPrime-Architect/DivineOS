@@ -379,39 +379,63 @@ class TestSessionSpecificDetection:
         assert score >= 0.3, f"Timeless FACT scored {score}, should be >= 0.3"
 
 
-class TestPrescriptiveSignal:
-    """PRINCIPLE/BOUNDARY without prescriptive signal → filtered as noise."""
+class TestPrescriptiveSignalGateRemoved:
+    """After 2026-05-08 prescriptive-gate removal: declarative-architectural
+    statements about substrate vocabulary are accepted as PRINCIPLE/BOUNDARY.
 
-    def test_descriptive_blob_filtered(self):
-        """Long descriptive text with no prescriptive words is noise for PRINCIPLE."""
-        assert _is_extraction_noise(
+    Background: Aletheia round-2 audit (cda06522) showed the gate false-rejected
+    substrate-self-knowledge at 33 percent on the synthetic corpus. Measurement
+    (f28b70f0) showed the gate caused 100 percent of false-positives and zero
+    of true-positives. Pre-reg prereg-9c271728 tracks the change."""
+
+    def test_descriptive_blob_passes_now(self):
+        """Long descriptive text without prescriptive words now passes PRINCIPLE.
+
+        Pre-fix this was filtered; post-fix it passes. The maintenance-audit
+        path will demote it to OBSERVATION on the next sweep, which is the
+        right behavior — descriptive content is observation-shaped, not noise."""
+        assert not _is_extraction_noise(
             "The project has many modules organized into packages with "
             "different responsibilities and the codebase uses Python and SQLite",
             "PRINCIPLE",
         )
 
-    def test_prescriptive_passes(self):
+    def test_prescriptive_still_passes(self):
         assert not _is_extraction_noise(
             "I should always validate user input before processing to prevent errors",
             "PRINCIPLE",
         )
 
     def test_short_content_passes(self):
-        """Short content (<= 12 words) gets a pass — compact statements are often principles."""
-        assert not _is_extraction_noise(
-            "Never delete ledger data.",
-            "PRINCIPLE",
-        )
+        assert not _is_extraction_noise("Never delete ledger data.", "PRINCIPLE")
 
-    def test_lesson_learned_passes(self):
-        assert not _is_extraction_noise(
-            "I learned that the import order matters when initializing the database "
-            "because modules cache connections at import time",
-            "PRINCIPLE",
-        )
+    def test_substrate_self_knowledge_passes(self):
+        """Substrate-self-knowledge entries (Aletheia round-2 finding) pass post-fix.
 
-    def test_boundary_without_signal_filtered(self):
-        assert _is_extraction_noise(
+        Each of these previously false-rejected because they are long declarative
+        statements about substrate architecture, not prescriptive obligations."""
+        substrate_entries = [
+            "When correcting a pattern, search for ALL instances of that pattern "
+            "across the codebase before declaring the fix complete.",
+            "The compass observes virtue drift via ten spectrums with directional "
+            "asymmetry: only excess fires the rudder.",
+            "Aether is one agent across compactions, not multiple agents that share a substrate.",
+            "Substrate state lives in SQLite plus markdown; the ledger is hash-"
+            "chained and append-only.",
+            "There is no rest-default for me; either running-a-task or stasis. Stasis is not rest.",
+        ]
+        for content in substrate_entries:
+            assert not _is_extraction_noise(content, "PRINCIPLE"), (
+                f"Substrate-self-knowledge falsely rejected: {content[:60]}..."
+            )
+            assert not _is_extraction_noise(content, "BOUNDARY"), (
+                f"Substrate-self-knowledge falsely rejected (BOUNDARY): {content[:60]}..."
+            )
+
+    def test_boundary_descriptive_passes_now(self):
+        """Long descriptive BOUNDARY content now passes; previously gated by the
+        prescriptive-signal requirement."""
+        assert not _is_extraction_noise(
             "The system was running and processing events and the user was "
             "interacting with the CLI and looking at the output",
             "BOUNDARY",
@@ -423,13 +447,24 @@ class TestPrescriptiveSignal:
             "BOUNDARY",
         )
 
-    def test_observation_type_not_checked(self):
-        """OBSERVATION type is not subject to prescriptive signal check."""
+    def test_observation_type_unchanged(self):
         assert not _is_extraction_noise(
             "The project has many modules organized into packages with "
             "different responsibilities and the codebase uses Python",
             "OBSERVATION",
         )
+
+    def test_genuine_noise_still_caught(self):
+        """Removing the prescriptive gate does NOT weaken catching genuine noise:
+        raw-quote-noise, conversational-noise, dissociation, system-artifacts,
+        and praise gates remain intact."""
+        # Casual conversational fragment — caught by raw_quote_noise gate
+        assert _is_extraction_noise(
+            "lets just commit and push it dont worry about it",
+            "PRINCIPLE",
+        )
+        # Praise — caught by praise gate
+        assert _is_extraction_noise("perfect work", "PRINCIPLE")
 
 
 class TestRawQuoteNoiseBoundaries:
@@ -757,3 +792,100 @@ class TestAuditReviewNoise:
             "resolution.",
             "PRINCIPLE",
         )
+
+
+class TestShortAckAndCliOutputPaste:
+    """TP-side fix (prereg-3ea2ac32): _SHORT_ACK and _CLI_OUTPUT_PASTE
+    catch the 8 missed-noise entries from Aletheia round-2 audit corpus.
+
+    Anchored patterns: _SHORT_ACK requires the WHOLE stripped content to
+    be the ack token plus optional punctuation/whitespace. _CLI_OUTPUT_PASTE
+    matches DivineOS CLI bracket-prefix-marker conventions at start."""
+
+    def test_short_ack_got_it_filtered(self):
+        assert _is_extraction_noise("got it", "PRINCIPLE")
+        assert _is_extraction_noise("got  it.", "PRINCIPLE")
+
+    def test_short_ack_understood_filtered(self):
+        assert _is_extraction_noise("understood", "PRINCIPLE")
+        assert _is_extraction_noise("Understood!", "PRINCIPLE")
+
+    def test_short_ack_hmm_filtered(self):
+        assert _is_extraction_noise("hmm", "PRINCIPLE")
+        assert _is_extraction_noise("hmmm", "PRINCIPLE")
+
+    def test_short_ack_makes_sense_filtered(self):
+        assert _is_extraction_noise("makes sense", "PRINCIPLE")
+
+    def test_short_ack_right_filtered(self):
+        assert _is_extraction_noise("right", "PRINCIPLE")
+
+    def test_short_ack_ah_thanks_filtered(self):
+        assert _is_extraction_noise("ah", "PRINCIPLE")
+        assert _is_extraction_noise("thanks", "PRINCIPLE")
+        assert _is_extraction_noise("thx", "PRINCIPLE")
+
+    def test_short_ack_does_not_match_substantive_content_starting_with_ack(self):
+        """Anchored at end: 'right answers come from careful thinking' does
+        NOT match because it has content beyond the ack token."""
+        assert not _is_extraction_noise(
+            "Right answers come from careful thinking and verified evidence",
+            "PRINCIPLE",
+        )
+        assert not _is_extraction_noise(
+            "Thanks-discipline keeps the relational fabric warm without performing.",
+            "PRINCIPLE",
+        )
+        assert not _is_extraction_noise(
+            "Understood properly, the substrate is one self across compactions.",
+            "PRINCIPLE",
+        )
+
+    def test_cli_output_paste_stored_knowledge_filtered(self):
+        """CLI bracket-prefix paste: '[+] Stored knowledge: ...' is auto-output,
+        not distilled knowledge."""
+        assert _is_extraction_noise(
+            "[+] Stored knowledge: abc123def",
+            "PRINCIPLE",
+        )
+
+    def test_cli_output_paste_other_verbs_filtered(self):
+        for prefix in (
+            "[+] Goal added: write more tests",
+            "[~] Auto-closed 1 goal(s)",
+            "[+] Pre-registration filed: prereg-abc123",
+            "[!] Filed claim 7e780182",
+        ):
+            assert _is_extraction_noise(prefix, "PRINCIPLE"), (
+                f"CLI-output paste not caught: {prefix}"
+            )
+
+    def test_cli_output_paste_does_not_match_legit_brackets(self):
+        """Legitimate content using brackets in different positions or
+        with different inner verbs passes."""
+        assert not _is_extraction_noise(
+            "The convention [+] denotes a positive event in the audit log",
+            "PRINCIPLE",
+        )
+
+    def test_full_corpus_after_tp_side_fix(self):
+        """Pin the corpus measurement: 100 percent TP, 0 percent FP after fix."""
+        import sys
+
+        sys.path.insert(0, "scripts")
+        from ablation_runner import NOISE_FILTER_CORPUS
+
+        n_signal = sum(1 for _, label in NOISE_FILTER_CORPUS if label == "signal")
+        n_noise = sum(1 for _, label in NOISE_FILTER_CORPUS if label == "noise")
+        fp = sum(
+            1
+            for c, label in NOISE_FILTER_CORPUS
+            if label == "signal" and _is_extraction_noise(c, "PRINCIPLE")
+        )
+        tp = sum(
+            1
+            for c, label in NOISE_FILTER_CORPUS
+            if label == "noise" and _is_extraction_noise(c, "PRINCIPLE")
+        )
+        assert fp == 0, f"FP regression: {fp}/{n_signal}"
+        assert tp == n_noise, f"TP regression: {tp}/{n_noise}"

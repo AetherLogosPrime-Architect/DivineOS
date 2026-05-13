@@ -247,6 +247,7 @@ from divineos.cli import (  # noqa: E402
     family_queue_commands,
     talk_to_commands,
     progress_commands,
+    rest_commands,
     selfmodel_commands,
     rt_commands,
     scheduled_commands,
@@ -282,6 +283,7 @@ selfmodel_commands.register(cli)
 insight_commands.register(cli)
 sleep_commands.register(cli)
 progress_commands.register(cli)
+rest_commands.register(cli)
 rt_commands.register(cli)
 correction_commands.register(cli)
 prereg_commands.register(cli)

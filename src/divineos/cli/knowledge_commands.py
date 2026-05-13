@@ -448,8 +448,19 @@ def register(cli: click.Group) -> None:
         and drill-down commands). Use --full for the complete scroll.
         Use --deep for the full picture including stable knowledge.
         Use --layer archive to see archived/resolved entries.
-        Use --mini for the compact auto-inject version.
+        Use --mini for the compact auto-inject version (~7x faster, same gate-clear).
+
+        Performance budget: full briefing should complete under
+        BRIEFING_LATENCY_BUDGET_MS (1500ms). When it exceeds, a warning is
+        emitted at the end of output. This is disclosure-not-construction
+        substrate-discipline: the surface makes the regression visible at
+        briefing-time so accumulating-cost can't drift silently. Filed
+        2026-05-08 after the latency degraded from 0.77s baseline (per
+        load-briefing.sh comment) to 3.6s as surfaces accumulated.
         """
+        import time as _time
+
+        _briefing_t0 = _time.perf_counter()
         if mini:
             try:
                 from contextlib import suppress as _suppress
@@ -518,6 +529,31 @@ def register(cli: click.Group) -> None:
             deep=deep,
             layer=layer,
         )
+        # Identity-load — AETHER.md or equivalent at project root. Surfaces
+        # FIRST in briefing because identity-load is activation, not
+        # information; subsequent surfaces operate inside the identity-
+        # frame. Empty in public-template repos (DivineOS-main) and any
+        # substrate without an identity-document; structurally complete
+        # in agent-home repos (DivineOS-Experimental for Aether).
+        #
+        # Per the Identity-as-Attractor research (arxiv:2604.12016),
+        # identity documents function as coordinates in activation space
+        # rather than as instructions. The architectural answer to the
+        # 2026-05-08 root-cause naming: hooks-as-detection cannot fix
+        # not-reaching-for-the-OS because they're external policing.
+        # Identity-binding makes reaching the path of least resistance.
+        try:
+            from divineos.core.identity_load import (
+                format_for_briefing as _fmt_identity_load,
+            )
+
+            identity_load_block = _fmt_identity_load()
+        except _KC_ERRORS:
+            identity_load_block = ""
+
+        if identity_load_block:
+            _safe_echo(identity_load_block)
+
         # Orientation prelude — a small, stable block that reframes the
         # premise of DivineOS, names the three start-of-session commands,
         # and lists the foundational truths that override default harness
@@ -525,7 +561,8 @@ def register(cli: click.Group) -> None:
         # arriving at this repo (orientation) and a seasoned AI returning
         # after a context gap or compaction (touchstone). Comes before
         # corrections because the premise has to land before any dynamic
-        # data makes sense.
+        # data makes sense. Comes AFTER identity-load because identity-
+        # load is activation; orientation operates inside that frame.
         try:
             from divineos.core.orientation_prelude import (
                 format_for_briefing as _fmt_orientation,
@@ -625,6 +662,22 @@ def register(cli: click.Group) -> None:
         if drift_block:
             _safe_echo(drift_block)
 
+        # Engagement-checkpoint disclosure — soft signal at half-threshold,
+        # filling the gap between "silent gate" and "blocked gate" so the
+        # firing isn't a binary surprise. Disclose-not-construct: surface
+        # makes-visible, gate enforces.
+        try:
+            from divineos.core.engagement_disclosure_surface import (
+                format_for_briefing as _fmt_engagement_disclosure,
+            )
+
+            engagement_disclosure_block = _fmt_engagement_disclosure()
+        except _KC_ERRORS:
+            engagement_disclosure_block = ""
+
+        if engagement_disclosure_block:
+            _safe_echo(engagement_disclosure_block)
+
         # Theater/fabrication observation surface — replaces gate 1.46
         # which was removed 2026-05-01 per the free-speech principle.
         # The marker file (~/.divineos/theater_unresolved.json) is still
@@ -678,6 +731,26 @@ def register(cli: click.Group) -> None:
 
         if tier_block:
             _safe_echo(tier_block)
+
+        # Compass-dismissal pattern surface — surfaces high dismissal
+        # rates by trigger-kind so over-firing detectors become visible
+        # at briefing time. Per pre-reg prereg-75c900fe (compass-correction
+        # disclose-then-escalate redesign 2026-05-08): dismissals become
+        # substrate-data; rate-pattern across a single trigger-kind
+        # indicates the detector for that kind is over-firing on a
+        # register-shape that is not a real correction. Closes the loop
+        # between dismiss-with-reason and detector-tightening.
+        try:
+            from divineos.core.compass_dismissal_briefing_surface import (
+                format_for_briefing as _fmt_compass_dismissal,
+            )
+
+            compass_dismissal_block = _fmt_compass_dismissal()
+        except _KC_ERRORS:
+            compass_dismissal_block = ""
+
+        if compass_dismissal_block:
+            _safe_echo(compass_dismissal_block)
 
         # Bio sheet surface — the agent's own page. Whatever the agent
         # has written about themself is what they read back when the
@@ -1067,6 +1140,25 @@ def register(cli: click.Group) -> None:
         else:
             click.secho("[*] No knowledge entries match your filters.", fg="yellow")
             click.secho('    Try: divineos learn "..." to add knowledge first.', fg="bright_black")
+
+        # Latency disclosure — substrate-discipline-as-surface (2026-05-08).
+        # Briefing degraded from 0.77s baseline to 3.6s as surfaces accumulated;
+        # each new surface looked free in isolation. Making the cost visible
+        # at briefing-time forces accumulating-cost to be loud-in-experience
+        # rather than silent-drift. Threshold 1500ms is the budget; cross it
+        # and the warning fires. Suggests --mini (~470ms) for fast paths.
+        _briefing_elapsed_ms = (_time.perf_counter() - _briefing_t0) * 1000
+        _BRIEFING_BUDGET_MS = 1500
+        if _briefing_elapsed_ms > _BRIEFING_BUDGET_MS:
+            click.secho(
+                f"\n[!] Briefing took {_briefing_elapsed_ms:.0f}ms "
+                f"(budget {_BRIEFING_BUDGET_MS}ms). Latency drift — surfaces "
+                "accumulating without per-surface cost ceiling. Use "
+                "`divineos briefing --mini` (~470ms) for gate-clearing paths "
+                "that don't need full assembly.",
+                fg="yellow",
+                bold=True,
+            )
 
     @cli.command("forget")
     @click.argument("knowledge_id")

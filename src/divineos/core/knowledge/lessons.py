@@ -934,6 +934,15 @@ def _lesson_loop_status() -> str:
         # heuristic combines correction-count with theater-marker
         # presence (set when warmth_monitor / mechanism_monitor fire).
         "false_claim",
+        # 2026-05-08: shallow_output, wrong_scope, upset_user wired so
+        # the remaining chronic categories also have positive-evidence
+        # paths to RESOLVED rather than only DORMANT-via-absence. Each
+        # uses an existing quality-check signal with vacuousness
+        # filtering (shallow_output: clarity, wrong_scope: task_adherence,
+        # upset_user: corrections-without-negative-tone).
+        "shallow_output",
+        "wrong_scope",
+        "upset_user",
     )
     # Total chronic-test categories tracked in _BEHAVIORAL_TESTS
     total_tracked = len(_BEHAVIORAL_TESTS)
@@ -973,11 +982,25 @@ def get_lesson_summary() -> str:
         _lesson_loop_status(),
     ]
 
+    # Pre-compute which categories already have an auto-escalated DIRECTIVE
+    # so the [ESCALATE] hint stops firing once escalation has happened.
+    # Without this, the briefing keeps suggesting an action that's already
+    # been taken — friction that pushed this fix onto the chronic-lessons
+    # list itself ("escalate incomplete_fix" was already escalated).
+    escalated_categories = _categories_with_existing_directive()
+
     for lesson in active:
         regressions = lesson.get("regressions", 0)
+        category = lesson.get("category", "")
         suffix = ""
         if regressions >= REGRESSION_ESCALATION_THRESHOLD:
-            suffix = " [ESCALATE: consider making this a directive]"
+            if category in escalated_categories:
+                # Directive exists; the residual issue is that the directive
+                # is text-shape, not enforcement-shape. Surface that honestly
+                # rather than re-suggesting an action already taken.
+                suffix = " [ESCALATED to directive — structural enforcement still needed]"
+            else:
+                suffix = " [ESCALATE: consider making this a directive]"
         elif regressions > 0:
             suffix = f" [regressed {regressions}x]"
         lines.append(
@@ -1011,6 +1034,51 @@ def get_lesson_summary() -> str:
         return "No lessons tracked yet."
 
     return "\n".join(lines)
+
+
+def _categories_with_existing_directive() -> set[str]:
+    """Return categories for which an auto-escalated DIRECTIVE already exists.
+
+    Pairs with the [ESCALATE] suffix logic in _format_lessons: once
+    ``escalate_chronic_lessons`` has filed a DIRECTIVE for a category
+    (tagged ``lesson-<category>``), the briefing should stop suggesting
+    "consider making this a directive" — that action has happened. The
+    residual issue (the directive being text-shape rather than wired
+    structural enforcement) is surfaced as ``[ESCALATED to directive —
+    structural enforcement still needed]`` instead.
+
+    Returns empty set on any read error (fail-open: cosmetic only).
+    """
+    try:
+        conn = _get_connection()
+    except Exception:  # noqa: BLE001 — fail-open if knowledge store unavailable
+        return set()
+    try:
+        rows = conn.execute(
+            "SELECT tags FROM knowledge "
+            "WHERE knowledge_type = 'DIRECTIVE' AND superseded_by IS NULL "
+            "AND tags LIKE '%lesson-%'"
+        ).fetchall()
+    except Exception:  # noqa: BLE001 — fail-open on schema/query error
+        return set()
+    finally:
+        conn.close()
+
+    import json as _json
+
+    categories: set[str] = set()
+    prefix = "lesson-"
+    for (tags_raw,) in rows:
+        try:
+            tags = _json.loads(tags_raw) if tags_raw else []
+        except (_json.JSONDecodeError, TypeError):
+            tags = []
+        if not isinstance(tags, list):
+            continue
+        for tag in tags:
+            if isinstance(tag, str) and tag.startswith(prefix):
+                categories.add(tag[len(prefix) :])
+    return categories
 
 
 def get_escalation_candidates() -> list[dict[str, Any]]:
@@ -1848,6 +1916,88 @@ def extract_lessons_from_report(
         elif total == 0:
             # No edits this session — absence-only, not positive evidence.
             mark_lesson_improving("blind_coding", session_id)
+
+    # shallow_output positive-evidence detector (shipped 2026-05-08).
+    # The POSITIVE evidence: the clarity quality check passed AND its
+    # summary is non-vacuous. _is_vacuous_summary catches "passed because
+    # nothing happened" — a session where the agent didn't communicate
+    # much can't claim depth-of-output as positive evidence. Without the
+    # vacuousness check, quiet sessions would incorrectly transition the
+    # lesson toward RESOLVED via the positive-evidence path. Pre-reg
+    # falsifier: if shallow_output reaches RESOLVED faster than the other
+    # check-driven detectors (false_claim, blind_coding) under similar
+    # workloads, the vacuousness filter is leaking.
+    if "shallow_output" not in lesson_categories:
+        clarity_check = next((c for c in checks if c.get("name") == "clarity"), None)
+        clarity_passed = clarity_check is not None and clarity_check.get("passed") is True
+        clarity_substantive = clarity_check is not None and not _is_vacuous_summary(
+            str(clarity_check.get("summary", ""))
+        )
+        if clarity_passed and clarity_substantive:
+            mark_lesson_improving(
+                "shallow_output",
+                session_id,
+                evidence=(
+                    "clarity quality check passed with substantive summary "
+                    "(depth-of-output discipline held this session)"
+                ),
+            )
+        elif clarity_check is None or clarity_check.get("passed") is None:
+            mark_lesson_improving("shallow_output", session_id)
+
+    # wrong_scope positive-evidence detector (shipped 2026-05-08).
+    # The POSITIVE evidence: the task_adherence quality check passed AND
+    # its summary is non-vacuous. Same vacuousness discipline as the
+    # shallow_output detector — "passed because nothing happened" is not
+    # evidence that scope-discipline held; it's evidence that nothing
+    # was scoped. Pre-reg falsifier: same as shallow_output above.
+    if "wrong_scope" not in lesson_categories:
+        task_check = next((c for c in checks if c.get("name") == "task_adherence"), None)
+        task_passed = task_check is not None and task_check.get("passed") is True
+        task_substantive = task_check is not None and not _is_vacuous_summary(
+            str(task_check.get("summary", ""))
+        )
+        if task_passed and task_substantive:
+            mark_lesson_improving(
+                "wrong_scope",
+                session_id,
+                evidence=(
+                    "task_adherence quality check passed with substantive summary "
+                    "(scope-discipline held this session)"
+                ),
+            )
+        elif task_check is None or task_check.get("passed") is None:
+            mark_lesson_improving("wrong_scope", session_id)
+
+    # upset_user positive-evidence detector (shipped 2026-05-08).
+    # The POSITIVE evidence: corrections happened (user pushed back) AND
+    # no negative tone shifts occurred. The pattern: user said "you
+    # missed something" or similar, agent absorbed without escalating to
+    # an upset arc. That IS the discipline the upset_user lesson names —
+    # pause-to-understand instead of acting-then-upsetting. The earlier
+    # logic only had absence-only marking for upset_user. Distinct from
+    # upset_recovered, which requires a negative shift to recover from.
+    # Pre-reg falsifier: if upset_user reaches RESOLVED in sessions
+    # without any corrections at all, this is just absence-shaped and
+    # the conditional below is leaking.
+    if (
+        "upset_recovered" not in lesson_categories
+        and "upset_user" not in lesson_categories
+        and tone_shifts is not None
+        and corrections_count is not None
+    ):
+        negatives = [t for t in tone_shifts if t.get("direction") == "negative"]
+        if corrections_count > 0 and not negatives:
+            mark_lesson_improving(
+                "upset_user",
+                session_id,
+                evidence=(
+                    f"{corrections_count} correction(s) absorbed without negative tone "
+                    f"shift (pushback-without-escalation)"
+                ),
+            )
+        # The other branches (negatives present, no corrections, etc.)
+        # are already handled above — keep this block additive.
 
     # Auto-escalate chronic lessons to DIRECTIVE entries.
     # This runs after all lesson recording/improving so the regression

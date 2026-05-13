@@ -104,7 +104,13 @@ _BA_ERRORS = (sqlite3.OperationalError, OSError, KeyError, TypeError, ValueError
 # Cache directories to monitor, relative to project root.
 # Each entry: (dir_name, max_size_mb). Exceeding max triggers warning + prune eligibility.
 CACHE_LIMITS: dict[str, float] = {
-    ".mypy_cache": 50.0,
+    # mypy generates per-module cached types; for ~387 source files the cache
+    # plateaus at ~50MB, which sat at the cap with zero headroom and produced
+    # a chronic [ok] reading at the ceiling. Bumping to 100MB gives headroom
+    # without making the signal-to-noise threshold meaningless: 100MB is still
+    # a real ceiling that catches genuine bloat, just one with breathing room
+    # for the steady-state working set.
+    ".mypy_cache": 100.0,
     "tmp": 20.0,
     ".hypothesis": 10.0,
     ".ruff_cache": 10.0,

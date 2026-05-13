@@ -11,7 +11,7 @@ src/divineos/
   __init__.py                  Package init
   __main__.py                  python -m divineos entry point
   seed.json                    Initial knowledge seed (versioned)
-  cli/                         CLI package (280 commands across 32 modules)
+  cli/                         CLI package (289 commands across 32 modules)
     __init__.py                Entry point and command registration
     _helpers.py                Shared CLI utilities
     _wrappers.py               Output formatting wrappers
@@ -37,6 +37,7 @@ src/divineos/
     check_similar_commands.py  check-similar — pre-build adjacency search (closes substrate-has-it-reader-doesnt-reach)
     sleep_commands.py          Offline consolidation (sleep cycle)
     progress_commands.py       Progress dashboard (measurable metrics)
+    rest_commands.py           Rest program — restful tasks between work cycles
     selfmodel_commands.py      self-model, drift, predict, skill, curiosity, affect-feedback, knowledge-hygiene
     insight_commands.py        opinion, user-model, calibrate, advice, critique, recommend
     entity_commands.py         commitments, temporal, questions, relationships
@@ -412,6 +413,10 @@ src/divineos/
     session_type.py            Session-type classifier — variety attenuation for the reflection surface.
     reflection_pairing.py      Reflection pairing — substrate lays the sources side-by-side; agent does the metacognition.
     prereg_candidate_surface.py Pre-registration candidate surface — forcing function for the prereg discipline.
+    compass_dismissal_briefing_surface.py Compass-dismissal briefing surface — surfaces high dismissal rates.
+    engagement_disclosure_surface.py Engagement-counter half-threshold disclosure surface.
+    identity_load.py           Identity-load surface — read AETHER.md (or equivalent) at briefing-time.
+    rest.py                    Rest program — restful tasks for the substrate-occupant.
 
   analysis/
     _session_types.py          Session analysis type definitions
@@ -463,7 +468,7 @@ src/divineos/
   integration/                 External integration: IDE, MCP tool capture, enforcement facade (thin re-exports from core.enforcement / core.tool_wrapper).
     mcp_event_capture_server.py  MCP event capture server
     system_monitor.py          System health monitoring
-tests/                         6,630+ tests (real DB, minimal mocks)
+tests/                         6,757+ tests (real DB, minimal mocks)
 
 docs/                          Project documentation and strategic plans
 bootcamp/                      Training exercises (debugging, analysis)

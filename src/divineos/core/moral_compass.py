@@ -385,6 +385,49 @@ def _session_had_substantive_output(analysis) -> bool:
     return bool(commits or knowledge_extracted or files_modified > 3)
 
 
+def negative_helpfulness_should_fire(
+    corrections: int,
+    encouragements: int,
+    user_msgs: int,
+    substantive: bool,
+) -> bool:
+    """Multi-channel helpfulness-calibration guard (2026-05-07 round-2 audit).
+
+    Returns True when a negative-helpfulness observation is warranted by
+    the multi-channel test. Returns False otherwise.
+
+    The guard requires multiple independent signals to align before firing
+    a negative observation, replacing the prior single-axis trigger
+    (any ``corrections > encouragements``) which produced false-negatives
+    on substantive-work sessions:
+
+      1. ``corrections > encouragements`` — basic ratio check
+      2. ``correction_rate > 0.15`` — rate-based, not raw count, so a
+         single correction in a long session does not trigger
+      3. ``user_msgs >= 5`` — avoid firing on tiny sessions where
+         small-sample noise dominates
+      4. ``not substantive`` — sessions producing real work-output
+         (commits, knowledge, files-modified > 3) are real-helpfulness
+         even if they contain corrections
+
+    Single-axis triggers can be gamed; multi-channel requires multiple
+    signals to align before the negative fires (Yudkowsky lens).
+
+    Extracted from ``update_compass_from_session`` 2026-05-08 (PR #324
+    audit-followon, helper-extraction queued in that PR's commit message
+    as deferred until multi-party-review). The replica in
+    ``scripts/ablation_runner._evaluate_guard`` originally duplicated
+    this logic with the acknowledged-tautology disclosure; with this
+    helper extracted, the ablation measurement exercises the real
+    call-path rather than a shape-replica, closing the round-2
+    anti-tautology discipline.
+    """
+    if corrections <= encouragements:
+        return False
+    correction_rate = corrections / user_msgs if user_msgs > 0 else 0
+    return correction_rate > 0.15 and user_msgs >= 5 and not substantive
+
+
 def _emit_dual_run_discrepancy(
     spectrum: str,
     legacy_ok: bool,
@@ -1256,9 +1299,17 @@ def reflect_on_session(analysis: Any, session_id: str = "") -> list[str]:
             #   - no substantive output (no commits/knowledge/files-touched)
             # Single channel can be gamed; multi-channel requires multiple
             # signals to align before the negative fires (Yudkowsky lens).
-            correction_rate = corrections / user_msgs if user_msgs > 0 else 0
             substantive_output = _session_had_substantive_output(analysis)
-            if correction_rate > 0.15 and user_msgs >= 5 and not substantive_output:
+            correction_rate = corrections / user_msgs if user_msgs > 0 else 0
+            # Helper extracted 2026-05-08 — see negative_helpfulness_should_fire
+            # docstring. The outer ``elif corrections > encouragements`` is
+            # already true at this point, so the helper's first check
+            # (corrections > encouragements) is satisfied; the helper applies
+            # the remaining multi-channel conditions. ``correction_rate`` is
+            # still computed locally because the evidence-string below uses it.
+            if negative_helpfulness_should_fire(
+                corrections, encouragements, user_msgs, substantive_output
+            ):
                 obs_id = log_observation(
                     spectrum="helpfulness",
                     position=-0.3,

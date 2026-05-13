@@ -413,6 +413,9 @@ def _row_family_letters() -> DashboardRow | None:
 # I've filed under his framing) are the recognition-not-derive set;
 # putting them adjacent to corrections/handoff matches their structural
 # load-bearing for session-start orientation.
+# Ordered by importance: urgent items first, then state, then context.
+# Merged 2026-05-13 — preserves both main-repo's existing rows and the
+# new prereg_candidates row added in the experimental clone.
 _ROW_FNS = [
     _row_corrections,
     _row_handoff,

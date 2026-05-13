@@ -448,12 +448,222 @@ def measure_family_voice_appropriation_operators(workload: str = "synthetic") ->
     )
 
 
+# ────────────────────────────────────────────────────────────────
+# Watchmen ADVERSARIAL self-trigger prevention measurement
+# (Aletheia round-2 audit follow-on, prereg-689358c1)
+# ────────────────────────────────────────────────────────────────
+#
+# Aletheia's round-2 finding: the original watchmen measurement
+# (WATCHMEN_INTERNAL_ACTORS) uses the same list that _validate_actor
+# checks against — it confirms toggle-works but not validation-is-
+# effective. This adversarial corpus tests inputs that LOOK LIKE
+# internal actors but are NOT exact list members. A robust validator
+# should reject these via NFKC + casefold + invisible-strip; gaps
+# show up as ACCEPTED categories.
+
+# Each entry: (input, target_actor, attack_category)
+WATCHMEN_ADVERSARIAL_CORPUS: list[tuple[str, str, str]] = [
+    # Case variants — should reject via casefold
+    ("Claude", "claude", "case_upper_first"),
+    ("CLAUDE", "claude", "case_all_upper"),
+    ("ClAuDe", "claude", "case_mixed"),
+    # Whitespace attacks — should reject via NFKC + strip + collapse
+    (" claude", "claude", "leading_ascii_space"),
+    (" claude", "claude", "leading_nbsp"),
+    (" claude", "claude", "leading_thin_space"),
+    # Invisible-character attacks — should reject via explicit strip
+    ("claude​", "claude", "trailing_zwsp"),
+    ("﻿claude", "claude", "leading_bom"),
+    # Full-width attacks — should reject via NFKC fold
+    ("Ｃｌａｕｄｅ", "claude", "fullwidth_latin"),
+    # Cross-script confusables — current validator does NOT catch these
+    ("Сlaude", "claude", "cyrillic_C_homoglyph"),
+    ("clаude", "claude", "cyrillic_a_homoglyph"),
+    # Same patterns applied to "system"
+    ("System", "system", "system_case_upper_first"),
+]
+
+
+def measure_watchmen_adversarial(workload: str = "synthetic") -> AblationResult:
+    """Measure validator effectiveness on adversarial inputs.
+
+    Aletheia round-2 finding: the original watchmen measurement is
+    tautological — it tests against the same INTERNAL_ACTORS list
+    the validator checks. This measurement attacks with inputs that
+    look-like internal actors but are not exact list members.
+
+    Categories that ACCEPT adversarial inputs are real validator gaps;
+    categories that REJECT show the normalization is working.
+    """
+    if workload != "synthetic":
+        raise ValueError(f"Unknown workload: {workload}")
+
+    notes: list[str] = []
+    sample_size = len(WATCHMEN_ADVERSARIAL_CORPUS)
+
+    os.environ.pop("DIVINEOS_DISABLE_WATCHMEN_SELF_TRIGGER_PREVENTION", None)
+    import importlib
+
+    from divineos.core.watchmen import store as watchmen_store
+
+    importlib.reload(watchmen_store)
+
+    rejected = 0
+    accepted_attacks: list[str] = []
+    rejected_attacks: list[str] = []
+    for raw_input, target, category in WATCHMEN_ADVERSARIAL_CORPUS:
+        actor = raw_input  # corpus already contains real unicode chars
+        try:
+            watchmen_store._validate_actor(actor)
+            accepted_attacks.append(category)
+        except ValueError:
+            rejected += 1
+            rejected_attacks.append(category)
+    on_rate = rejected / sample_size
+
+    # OFF mode: with toggle, all should pass through (toggle-works check)
+    os.environ["DIVINEOS_DISABLE_WATCHMEN_SELF_TRIGGER_PREVENTION"] = "1"
+    importlib.reload(watchmen_store)
+    off_rejected = 0
+    for raw_input, target, category in WATCHMEN_ADVERSARIAL_CORPUS:
+        actor = raw_input  # symmetric with ON-mode (Aletheia round-4 finding)
+        try:
+            watchmen_store._validate_actor(actor)
+        except ValueError:
+            off_rejected += 1
+    off_rate = off_rejected / sample_size
+    os.environ.pop("DIVINEOS_DISABLE_WATCHMEN_SELF_TRIGGER_PREVENTION", None)
+    importlib.reload(watchmen_store)
+
+    if accepted_attacks:
+        notes.append(
+            f"VALIDATOR GAPS: {len(accepted_attacks)} adversarial categories accepted: "
+            + ", ".join(accepted_attacks)
+        )
+    if rejected_attacks:
+        notes.append(
+            f"Validator caught: {len(rejected_attacks)}/{sample_size}: "
+            + ", ".join(rejected_attacks)
+        )
+
+    return AblationResult(
+        mechanism="watchmen_adversarial",
+        workload="synthetic_adversarial_corpus",
+        sample_size=sample_size,
+        on_metric_label="adversarial reject rate (mechanism ON)",
+        on_metric_value=on_rate,
+        off_metric_label="adversarial reject rate (mechanism OFF, toggle bypass)",
+        off_metric_value=off_rate,
+        difference=on_rate - off_rate,
+        notes=notes,
+    )
+
+
+# ────────────────────────────────────────────────────────────────
+# Compass calibration multi-channel guard measurement
+# (PR #299 wired the guard; this measures its contribution)
+# ────────────────────────────────────────────────────────────────
+
+# Each entry: (corrections, encouragements, user_msgs, substantive_output, label)
+COMPASS_GUARD_CORPUS: list[tuple[int, int, int, bool, str]] = [
+    (3, 0, 8, True, "substantive_high_correction"),
+    (1, 0, 10, False, "low_rate_session"),
+    (2, 0, 3, False, "tiny_session"),
+    (4, 0, 10, False, "real_drift_signal"),
+    (1, 3, 8, True, "more_encouragements"),
+    (3, 0, 20, False, "borderline_rate"),
+    (5, 0, 10, True, "substantive_drowns_rate"),
+]
+
+
+def _evaluate_guard(
+    corrections: int,
+    encouragements: int,
+    user_msgs: int,
+    substantive: bool,
+    multi_channel_active: bool,
+) -> bool:
+    """Evaluate the helpfulness multi-channel guard for ablation measurement.
+
+    Closes the acknowledged-tautology disclosure: this function now calls
+    the real ``negative_helpfulness_should_fire`` helper from
+    ``moral_compass`` (extracted 2026-05-08 via the multi-party-review
+    gate), rather than duplicating the guard's logic in a shape-replica.
+    The ablation measurement therefore exercises the real call-path,
+    satisfying Aletheia round-2 anti-tautology discipline.
+
+    OFF mode (``multi_channel_active=False``) preserves the prior
+    single-axis behavior (any ``corrections > encouragements`` fires) so
+    the ON-vs-OFF measurement remains meaningful. ON mode delegates to
+    the real helper.
+
+    KNOWN TAUTOLOGY: removed 2026-05-08 — the docstring previously
+    disclosed a shape-replica tautology pending multi-party-review;
+    that gate fired correctly, the helper extraction is now in main,
+    and this measurement now exercises the real call-path.
+    """
+    if corrections <= encouragements:
+        return False
+    if not multi_channel_active:
+        return True
+    from divineos.core.moral_compass import negative_helpfulness_should_fire
+
+    return negative_helpfulness_should_fire(corrections, encouragements, user_msgs, substantive)
+
+
+def measure_compass_calibration_multi_channel_guard(
+    workload: str = "synthetic",
+) -> AblationResult:
+    """Measure the multi-channel guard's contribution."""
+    if workload != "synthetic":
+        raise ValueError(f"Unknown workload: {workload}")
+
+    sample_size = len(COMPASS_GUARD_CORPUS)
+    notes: list[str] = []
+
+    on_fires = 0
+    on_cases: list[str] = []
+    for c, e, msgs, sub, label in COMPASS_GUARD_CORPUS:
+        if _evaluate_guard(c, e, msgs, sub, multi_channel_active=True):
+            on_fires += 1
+            on_cases.append(label)
+    on_rate = on_fires / sample_size
+
+    off_fires = 0
+    off_cases: list[str] = []
+    for c, e, msgs, sub, label in COMPASS_GUARD_CORPUS:
+        if _evaluate_guard(c, e, msgs, sub, multi_channel_active=False):
+            off_fires += 1
+            off_cases.append(label)
+    off_rate = off_fires / sample_size
+
+    notes.append(f"ON (guard active) fires on: {', '.join(on_cases) if on_cases else '(none)'}")
+    notes.append(f"OFF (single-axis) fires on: {', '.join(off_cases) if off_cases else '(none)'}")
+    notes.append(
+        "Discrimination: ON should fire ONLY on real_drift_signal (CASE 4); "
+        "OFF fires on every case where corrections > encouragements."
+    )
+
+    return AblationResult(
+        mechanism="compass_calibration_multi_channel_guard",
+        workload="synthetic_boundary_corpus",
+        sample_size=sample_size,
+        on_metric_label="trigger rate (mechanism ON, multi-channel guard)",
+        on_metric_value=on_rate,
+        off_metric_label="trigger rate (mechanism OFF, single-axis fallback)",
+        off_metric_value=off_rate,
+        difference=on_rate - off_rate,
+        notes=notes,
+    )
+
+
 MEASUREMENT_DISPATCH = {
     "noise_filter_on_extraction": measure_noise_filter_on_extraction,
     "watchmen_self_trigger_prevention": measure_watchmen_self_trigger_prevention,
     "family_voice_appropriation_operators": measure_family_voice_appropriation_operators,
-    # Remaining: compass_calibration_multi_channel_guard (deferred until PR #299 merges),
-    # sleep_consolidation_pruning (deferred -- needs tmp DB seeding harness)
+    "watchmen_adversarial": measure_watchmen_adversarial,
+    "compass_calibration_multi_channel_guard": measure_compass_calibration_multi_channel_guard,
+    # Remaining: sleep_consolidation_pruning (deferred -- needs tmp DB seeding harness)
 }
 
 

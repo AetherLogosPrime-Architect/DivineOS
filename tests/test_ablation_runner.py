@@ -178,3 +178,177 @@ class TestDispatchExpanded:
         assert "noise_filter_on_extraction" in MEASUREMENT_DISPATCH
         assert "watchmen_self_trigger_prevention" in MEASUREMENT_DISPATCH
         assert "family_voice_appropriation_operators" in MEASUREMENT_DISPATCH
+
+
+class TestWatchmenAdversarial:
+    """Adversarial measurement (prereg-689358c1) — Aletheia round-2 audit.
+
+    Tests that the validator catches inputs that LOOK LIKE internal actors
+    but are NOT exact members of INTERNAL_ACTORS. Categories that PASS
+    represent real validator gaps."""
+
+    def test_returns_ablation_result(self):
+        from scripts.ablation_runner import measure_watchmen_adversarial
+
+        r = measure_watchmen_adversarial("synthetic")
+        assert r.mechanism == "watchmen_adversarial"
+        assert r.workload == "synthetic_adversarial_corpus"
+        assert r.sample_size > 0
+
+    def test_on_rate_meets_prereg_success_criterion(self):
+        """Prereg-689358c1 success: reject rate >=80 percent on adversarial corpus."""
+        from scripts.ablation_runner import measure_watchmen_adversarial
+
+        r = measure_watchmen_adversarial("synthetic")
+        assert r.on_metric_value >= 0.8, (
+            f"Adversarial reject rate fell below prereg threshold: {r.on_metric_value * 100:.1f} percent"
+        )
+
+    def test_off_mode_passes_all_through(self):
+        """Toggle-bypass: with prevention OFF, attacks pass."""
+        from scripts.ablation_runner import measure_watchmen_adversarial
+
+        r = measure_watchmen_adversarial("synthetic")
+        assert r.off_metric_value == 0.0
+
+    def test_difference_meaningful(self):
+        """ON-vs-OFF difference matches the prevention contribution."""
+        from scripts.ablation_runner import measure_watchmen_adversarial
+
+        r = measure_watchmen_adversarial("synthetic")
+        assert r.difference >= 0.5
+
+    def test_case_attacks_caught(self):
+        """Case-variant attacks must be caught (casefold)."""
+        from divineos.core.watchmen.store import _validate_actor
+
+        for variant in ("Claude", "CLAUDE", "ClAuDe"):
+            try:
+                _validate_actor(variant)
+                raise AssertionError(f"Case attack passed: {variant!r}")
+            except ValueError:
+                pass
+
+    def test_whitespace_attacks_caught(self):
+        """Whitespace + invisible-char attacks must be caught (NFKC + strip)."""
+        from divineos.core.watchmen.store import _validate_actor
+
+        attacks = [
+            " claude",  # NBSP
+            " claude",  # thin space
+            "claude​",  # ZWSP
+            "﻿claude",  # BOM
+        ]
+        for attack in attacks:
+            try:
+                _validate_actor(attack)
+                raise AssertionError(f"Whitespace attack passed: {attack!r}")
+            except ValueError:
+                pass
+
+    def test_fullwidth_latin_caught(self):
+        """Full-width Latin must be caught (NFKC fold)."""
+        from divineos.core.watchmen.store import _validate_actor
+
+        try:
+            _validate_actor("Ｃｌａｕｄｅ")
+            raise AssertionError("Full-width attack passed")
+        except ValueError:
+            pass
+
+    def test_cyrillic_homoglyphs_now_caught(self):
+        """GAP CLOSED 2026-05-08: Cyrillic homoglyphs are now rejected.
+
+        This test was previously named 'test_cyrillic_homoglyphs_currently_pass'
+        and DOCUMENTED THE GAP — the docstring noted 'When confusables-detection
+        ships, this test should flip to assertRaises(ValueError) and that flip
+        is the proof the gap closed.' The flip is now landed: the
+        _CYRILLIC_CONFUSABLES map applied after casefold in _validate_actor
+        catches these attacks, and the same adversarial corpus that flagged
+        the gap now shows 12/12 caught (was 10/12). This test is the gap-flip."""
+        import pytest
+
+        from divineos.core.watchmen.store import _validate_actor
+
+        # Cyrillic С (U+0421) + ASCII laude
+        cyrillic_c_attack = "Сlaude"
+        # cl + Cyrillic а (U+0430) + ude
+        cyrillic_a_attack = "clаude"
+        for attack in (cyrillic_c_attack, cyrillic_a_attack):
+            with pytest.raises(ValueError, match="internal component"):
+                _validate_actor(attack)
+
+
+class TestCompassMultiChannelGuard:
+    """Compass calibration multi-channel guard ablation (PR #299 wired-up)."""
+
+    def test_returns_ablation_result(self):
+        from scripts.ablation_runner import measure_compass_calibration_multi_channel_guard
+
+        r = measure_compass_calibration_multi_channel_guard("synthetic")
+        assert r.mechanism == "compass_calibration_multi_channel_guard"
+        assert r.sample_size == 7
+
+    def test_on_fires_only_on_real_drift(self):
+        from scripts.ablation_runner import measure_compass_calibration_multi_channel_guard
+
+        r = measure_compass_calibration_multi_channel_guard("synthetic")
+        assert abs(r.on_metric_value - 1 / 7) < 0.01
+
+    def test_off_fires_on_every_corrections_gt_encouragements_case(self):
+        from scripts.ablation_runner import measure_compass_calibration_multi_channel_guard
+
+        r = measure_compass_calibration_multi_channel_guard("synthetic")
+        assert abs(r.off_metric_value - 6 / 7) < 0.01
+
+    def test_difference_negative_meaning_guard_suppresses_false_fires(self):
+        from scripts.ablation_runner import measure_compass_calibration_multi_channel_guard
+
+        r = measure_compass_calibration_multi_channel_guard("synthetic")
+        assert r.difference < -0.5
+
+    def test_tautology_resolved_via_helper_extraction(self):
+        """The earlier acknowledged-tautology was closed 2026-05-08 when the
+        helper-extraction shipped through multi-party-review. The replica
+        now delegates to the real ``negative_helpfulness_should_fire``
+        helper in ``moral_compass``. This test pins the resolution: doc
+        names the closure, and the implementation imports the helper."""
+        import inspect
+
+        from scripts.ablation_runner import _evaluate_guard
+
+        doc = _evaluate_guard.__doc__ or ""
+        # Resolution-shape: docstring names the tautology was REMOVED.
+        assert "KNOWN TAUTOLOGY" in doc and "removed" in doc, (
+            "docstring should record the tautology-was-resolved history"
+        )
+        # Implementation: source must import + call the helper.
+        src = inspect.getsource(_evaluate_guard)
+        assert "negative_helpfulness_should_fire" in src, (
+            "implementation must delegate to the real helper, not a replica"
+        )
+
+    def test_evaluate_guard_results_match_real_helper(self):
+        """Behavior preservation: _evaluate_guard ON-mode should produce
+        the same boolean as calling negative_helpfulness_should_fire
+        directly. If they diverge, the ablation measurement is no longer
+        measuring the real call-path."""
+        from divineos.core.moral_compass import negative_helpfulness_should_fire
+        from scripts.ablation_runner import COMPASS_GUARD_CORPUS, _evaluate_guard
+
+        for corrections, encouragements, user_msgs, substantive, _label in COMPASS_GUARD_CORPUS:
+            real = negative_helpfulness_should_fire(
+                corrections, encouragements, user_msgs, substantive
+            )
+            ablation_on = _evaluate_guard(
+                corrections,
+                encouragements,
+                user_msgs,
+                substantive,
+                multi_channel_active=True,
+            )
+            assert ablation_on == real, (
+                f"ablation ON-mode diverged from helper for "
+                f"({corrections}, {encouragements}, {user_msgs}, {substantive}): "
+                f"helper={real} ablation={ablation_on}"
+            )
