@@ -904,11 +904,16 @@ class TestEscalateHintAcknowledgesExistingDirective:
                 mark_lesson_improving(cat, f"{cat}-clean-{i}")
                 record_lesson(cat, desc, f"{cat}-r-{i}")
 
+        # Descriptions must be lexically distant — the fuzzy-dedup in
+        # record_lesson would otherwise fold both rows into one (it catches
+        # near-duplicates like "retried 2x" vs "retried 11x" by design, which
+        # also catches "description with directive" vs "description without
+        # directive"). Distinct phrasings keep them as separate lessons.
         cat_no_directive = "test_no_dir_xyz"
-        _build(cat_no_directive, "Test description without directive")
+        _build(cat_no_directive, "Alpha lesson signal-A unique-marker-aaa")
 
         cat_with_directive = "test_with_dir_xyz"
-        _build(cat_with_directive, "Test description with directive")
+        _build(cat_with_directive, "Bravo lesson signal-B unique-marker-bbb")
         _wrapped_store_knowledge(
             knowledge_type="DIRECTIVE",
             content=f"STRUCTURAL ENFORCEMENT: directive for {cat_with_directive}.",
@@ -920,18 +925,14 @@ class TestEscalateHintAcknowledgesExistingDirective:
         summary = get_lesson_summary()
 
         # Without-directive lesson: original [ESCALATE: consider...] hint.
-        assert "Test description without directive" in summary
-        no_dir_line = next(
-            line for line in summary.split("\n") if "Test description without directive" in line
-        )
+        assert "unique-marker-aaa" in summary
+        no_dir_line = next(line for line in summary.split("\n") if "unique-marker-aaa" in line)
         assert "consider making this a directive" in no_dir_line, (
             f"expected 'consider making' suffix when no directive exists, got: {no_dir_line!r}"
         )
 
         # With-directive lesson: ESCALATED suffix.
-        with_dir_line = next(
-            line for line in summary.split("\n") if "Test description with directive" in line
-        )
+        with_dir_line = next(line for line in summary.split("\n") if "unique-marker-bbb" in line)
         assert "ESCALATED to directive" in with_dir_line, (
             f"expected 'ESCALATED to directive' suffix when directive exists, got: {with_dir_line!r}"
         )
