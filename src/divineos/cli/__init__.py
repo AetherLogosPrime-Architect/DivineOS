@@ -240,6 +240,7 @@ from divineos.cli import (  # noqa: E402
     ledger_commands,
     loadout_commands,
     memory_commands,
+    oscillating_read_commands,
     prereg_commands,
     admin_reset_template,
     admin_migrate_family,
@@ -273,6 +274,7 @@ directive_commands.register(cli)
 dream_commands.register(cli)
 entity_commands.register(cli)
 memory_commands.register(cli)
+oscillating_read_commands.register(cli)
 analysis_commands.register(cli)
 hud_commands.register(cli)
 event_commands.register(cli)
