@@ -56,6 +56,7 @@ src/divineos/
     mansion_commands.py        Functional internal space (8 rooms)
     ledger_commands.py         log, list, search, context, export
     memory_commands.py         core, recall, active, remember, refresh
+    oscillating_read_commands.py  read-oscillating — chunked reading with pause markers for per-section comprehension
     rt_commands.py             Resonant Truth protocol (load, invoke, deactivate)
     correction_commands.py     correction (log raw), corrections (read)
     empirica_commands.py       corroborate (record provenance event), kappa (classifier agreement)
@@ -417,6 +418,7 @@ src/divineos/
     engagement_disclosure_surface.py Engagement-counter half-threshold disclosure surface.
     identity_load.py           Identity-load surface — read AETHER.md (or equivalent) at briefing-time.
     rest.py                    Rest program — restful tasks for the substrate-occupant.
+    oscillating_read.py        Oscillating-read module — chunks reading material into discrete
 
   analysis/
     _session_types.py          Session analysis type definitions
